@@ -1,0 +1,212 @@
+#include  <iostream>
+
+#include "SimulationController.h"
+
+//----------------------------------------------------------------------------------------------------------------------
+
+SimulationController* SimulationController::m_instance=nullptr;
+
+//----------------------------------------------------------------------------------------------------------------------
+
+SimulationController::SimulationController()
+{
+  /// @brief Set up simulation parameters and create grid and emitter pointers
+
+  //Setup if don't read from file
+  //Timer setup
+  m_simTimeStep=0.01;
+  m_elapsedTimeAfterFrame=0.0;
+  m_noFrames=0;
+
+  //Grid setup
+  m_gridPosition=ngl::Vec3(-0.5, -0.5, -0.5);
+  m_gridSize=1.0;
+  m_noCells=16;
+
+  //Particle setup
+  m_noParticles=10000;
+  m_particleMass=0.1;
+
+  //Material setup
+  m_lameMuConstant=1.0;
+  m_lameLambdaConstant=1.0;
+  m_heatCapacitySolid=1.0;
+  m_heatCapacityFluid=1.0;
+  m_heatConductivitySolid=1.0;
+  m_heatConductivityFluid=1.0;
+  m_latentHeat=1.0;
+  m_freezingTemperature=0.0;
+  m_compressionLimit=1.0;
+  m_stretchLimit=1.0;
+
+
+
+  //Read simulation parameters from file
+  std::string simulationParamFile="../HoudiniFiles/particles.geo";
+  readSimulationParameters(simulationParamFile);
+
+  //Read particle positions from file. This also sets the number of particles
+  std::string particlePositionFile="../HoudiniFiles/particles.geo";
+  std::vector<ngl::Vec3> particlePositions;
+  readParticlePositions(particlePositionFile, &particlePositions);
+  m_noParticles=particlePositions.size();
+
+  //Create emitter
+  m_emitter=new Emitter(m_noParticles, m_particleMass);
+  m_emitter->setParticlePosition(&particlePositions);
+  m_emitter->setStrainConstants(m_lameMuConstant, m_lameLambdaConstant, m_compressionLimit, m_stretchLimit);
+  m_emitter->setTemperatureConstants(m_heatCapacitySolid, m_heatCapacityFluid, m_heatConductivitySolid, m_heatConductivityFluid, m_latentHeat, m_freezingTemperature);
+
+  //Create grid
+  m_grid=Grid::createGrid(m_gridPosition, m_gridSize, m_noCells);
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+SimulationController::~SimulationController()
+{
+  /// @brief Delete all pointers
+
+  //Delete emitter and grid pointers
+  delete m_emitter;
+  delete m_grid;
+
+  std::cout<<"Removing simulation controller\n";
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+SimulationController* SimulationController::instance()
+{
+  /// @brief Create simulation controller if doesn't exist, then return instance pointer
+
+  if (m_instance==nullptr)
+  {
+    m_instance=new SimulationController();
+  }
+
+  return m_instance;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void SimulationController::setRenderParameters(ngl::Camera _camera, std::string _shaderName)
+{
+  /// @brief Sets paramteres for rendering and the particle size
+  /// @todo: Not sure what use the camera is. Will change as window is resized
+
+  //Set camera. Not sure what use this is?
+  m_camera=_camera;
+
+  m_shaderName=_shaderName;
+
+  //Particle size
+  m_particleRadius=0.1;
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void SimulationController::readSimulationParameters(std::string _fileName)
+{
+  /// @brief Sets all simulation parameters from geo file
+
+  //Parameters to be read in as strings
+  std::string simStep="timeStep";
+  std::string totNoFrames="totalNoFrames";
+
+  std::string gridPos="gridOrigin";
+  std::string gridSize="gridSize";
+  std::string noCells="noGridCells";
+
+  std::string lameMu="LameMu";
+  std::string lameLambda="LameLambda";
+  std::string compLimit="CompressionLimit";
+  std::string stretchLimit="StretchLimit";
+
+  std::string heatCapSolid="HeatCapacitySolid";
+  std::string heatCapFluid="HeatCapacityFluid";
+  std::string heatCondSolid="HeatConductivitySolid";
+  std::string heatCondFluid="HeatConductivityFluid";
+  std::string latentHeat="LatentHeat";
+  std::string freezeTemp="FreezingTemperature";
+
+  //Need to read in each value from file
+  ReadGeo* file=new ReadGeo(_fileName);
+
+  m_simTimeStep=file->getSimulationParameter_Float(simStep);
+  m_totalNoFrames=file->getSimulationParameter_Float(totNoFrames);
+
+  m_gridPosition=file->getSimulationParameter_Vec3(gridPos);
+  m_gridSize=file->getSimulationParameter_Float(gridSize);
+  m_noCells=file->getSimulationParameter_Float(noCells);
+
+  m_lameMuConstant=file->getSimulationParameter_Float(lameMu);
+  m_lameLambdaConstant=file->getSimulationParameter_Float(lameLambda);
+  m_compressionLimit=file->getSimulationParameter_Float(compLimit);
+  m_stretchLimit=file->getSimulationParameter_Float(stretchLimit);
+
+  m_heatCapacitySolid=file->getSimulationParameter_Float(heatCapSolid);
+  m_heatCapacityFluid=file->getSimulationParameter_Float(heatCapFluid);
+  m_heatConductivitySolid=file->getSimulationParameter_Float(heatCondSolid);
+  m_heatConductivityFluid=file->getSimulationParameter_Float(heatCondFluid);
+  m_latentHeat=file->getSimulationParameter_Float(latentHeat);
+  m_freezingTemperature=file->getSimulationParameter_Float(freezeTemp);
+
+  delete file;
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void SimulationController::readParticlePositions(std::string _fileName, std::vector<ngl::Vec3>* o_particlePositions)
+{
+  /// @brief Read in particle positions from geo file; _fileName.
+
+  //Read particle positions to vector
+  ReadGeo* file=new ReadGeo(_fileName);
+  file->getPointPositions(o_particlePositions);
+  delete file;
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void SimulationController::readParticleParameter(std::string _fileName, std::string _paramName, std::vector<ngl::Vec3> *o_particleData)
+{
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void SimulationController::update()
+{
+  /// @brief Steps the simulation. This controls the interlink between the particles and the grid
+
+  //Update elastic/plastic
+
+  //Calculate interpolation weights
+
+  //Transfer data from particles to grid
+
+  //Update grid to calculate new velocity and temperature
+
+  //Transfer data back to particles
+
+  //Update particles
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void SimulationController::render()
+{
+  /// @brief Renders particles through the emitter.Checks whether it is time to write to frame
+
+  //Render particles
+
+  //Check whether to create frame
+
+}
