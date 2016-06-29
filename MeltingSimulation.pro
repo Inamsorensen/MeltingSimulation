@@ -42,6 +42,7 @@ HEADERS+= $$PWD/include/ReadGeo.h \
 
 # and add the include dir into the search path for Qt and make
 INCLUDEPATH +=./include
+INCLUDEPATH +=/usr/local/include/eigen3/Eigen/
 
 # where our exe is going to live (root of project)
 DESTDIR=./

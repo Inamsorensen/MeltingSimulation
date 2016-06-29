@@ -15,7 +15,7 @@ CXX           = clang++
 DEFINES       = -DQT5BUILD -DQT5BUILD -DNGL_DEBUG -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -g -Wall -W -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -msse -msse2 -msse3 -march=native -g -std=c++11 -Wall -W -Wno-unused-parameter -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -Iinclude -I/home/i7435906/NGL/include -I/opt/qt/5.5/gcc_64/include -I/opt/qt/5.5/gcc_64/include/QtOpenGL -I/opt/qt/5.5/gcc_64/include/QtWidgets -I/opt/qt/5.5/gcc_64/include/QtGui -I/opt/qt/5.5/gcc_64/include/QtCore -Imoc -I/opt/qt/5.5/gcc_64/mkspecs/linux-clang
+INCPATH       = -I. -Iinclude -I/usr/local/include/eigen3/Eigen -I/home/i7435906/NGL/include -I/opt/qt/5.5/gcc_64/include -I/opt/qt/5.5/gcc_64/include/QtOpenGL -I/opt/qt/5.5/gcc_64/include/QtWidgets -I/opt/qt/5.5/gcc_64/include/QtGui -I/opt/qt/5.5/gcc_64/include/QtCore -Imoc -I/opt/qt/5.5/gcc_64/mkspecs/linux-clang
 QMAKE         = /opt/qt/5.5/gcc_64/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -602,7 +602,7 @@ moc/moc_OpenGLWindow.cpp: /home/i7435906/NGL/include/ngl/Camera.h \
 		include/CellFace.h \
 		include/ReadGeo.h \
 		include/OpenGLWindow.h
-	/opt/qt/5.5/gcc_64/bin/moc $(DEFINES) -I/opt/qt/5.5/gcc_64/mkspecs/linux-clang -I/home/i7435906/MasterProject/MeltingSimulation -I/home/i7435906/MasterProject/MeltingSimulation/include -I/home/i7435906/NGL/include -I/opt/qt/5.5/gcc_64/include -I/opt/qt/5.5/gcc_64/include/QtOpenGL -I/opt/qt/5.5/gcc_64/include/QtWidgets -I/opt/qt/5.5/gcc_64/include/QtGui -I/opt/qt/5.5/gcc_64/include/QtCore include/OpenGLWindow.h -o moc/moc_OpenGLWindow.cpp
+	/opt/qt/5.5/gcc_64/bin/moc $(DEFINES) -I/opt/qt/5.5/gcc_64/mkspecs/linux-clang -I/home/i7435906/MasterProject/MeltingSimulation -I/home/i7435906/MasterProject/MeltingSimulation/include -I/usr/local/include/eigen3/Eigen -I/home/i7435906/NGL/include -I/opt/qt/5.5/gcc_64/include -I/opt/qt/5.5/gcc_64/include/QtOpenGL -I/opt/qt/5.5/gcc_64/include/QtWidgets -I/opt/qt/5.5/gcc_64/include/QtGui -I/opt/qt/5.5/gcc_64/include/QtCore include/OpenGLWindow.h -o moc/moc_OpenGLWindow.cpp
 
 compiler_moc_source_make_all:
 compiler_moc_source_clean:
@@ -784,7 +784,8 @@ obj/main.o: src/main.cpp /opt/qt/5.5/gcc_64/include/QtGui/QGuiApplication \
 		include/Grid.h \
 		include/CellCentre.h \
 		include/CellFace.h \
-		include/ReadGeo.h
+		include/ReadGeo.h \
+		include/MathFunctions.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/main.o src/main.cpp
 
 obj/SimulationController.o: src/SimulationController.cpp include/SimulationController.h \
