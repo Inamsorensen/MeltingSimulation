@@ -924,9 +924,8 @@ obj/SimulationController.o: src/SimulationController.cpp include/SimulationContr
 		include/ReadGeo.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/SimulationController.o src/SimulationController.cpp
 
-obj/Emitter.o: src/Emitter.cpp include/Emitter.h \
-		include/Particle.h \
-		/home/i7435906/NGL/include/ngl/Vec3.h \
+obj/Emitter.o: src/Emitter.cpp /home/i7435906/NGL/include/ngl/Transformation.h \
+		/home/i7435906/NGL/include/ngl/Mat4.h \
 		/home/i7435906/NGL/include/ngl/Types.h \
 		/home/i7435906/NGL/include/ngl/glew.h \
 		/opt/qt/5.5/gcc_64/include/QtOpenGL/QGLContext \
@@ -1044,7 +1043,27 @@ obj/Emitter.o: src/Emitter.cpp include/Emitter.h \
 		/opt/qt/5.5/gcc_64/include/QtOpenGL/qtopenglglobal.h \
 		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
 		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h \
-		/home/i7435906/NGL/include/ngl/Mat3.h
+		/home/i7435906/NGL/include/ngl/NGLassert.h \
+		/home/i7435906/NGL/include/ngl/Vec4.h \
+		/home/i7435906/NGL/include/ngl/Vec2.h \
+		/home/i7435906/NGL/include/ngl/Vec3.h \
+		/home/i7435906/NGL/include/ngl/ShaderLib.h \
+		/home/i7435906/NGL/include/ngl/Colour.h \
+		/home/i7435906/NGL/include/ngl/Shader.h \
+		/home/i7435906/NGL/include/ngl/ShaderProgram.h \
+		/home/i7435906/NGL/include/ngl/Util.h \
+		/home/i7435906/NGL/include/ngl/Singleton.h \
+		/home/i7435906/NGL/include/ngl/Mat3.h \
+		/home/i7435906/NGL/include/ngl/VAOPrimitives.h \
+		/home/i7435906/NGL/include/ngl/VertexArrayObject.h \
+		include/Emitter.h \
+		/home/i7435906/NGL/include/ngl/Camera.h \
+		/home/i7435906/NGL/include/ngl/RibExport.h \
+		/home/i7435906/NGL/include/ngl/Plane.h \
+		/home/i7435906/NGL/include/ngl/AABB.h \
+		/home/i7435906/NGL/include/ngl/BBox.h \
+		/home/i7435906/NGL/include/ngl/AbstractVAO.h \
+		include/Particle.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Emitter.o src/Emitter.cpp
 
 obj/Particle.o: src/Particle.cpp include/Particle.h \

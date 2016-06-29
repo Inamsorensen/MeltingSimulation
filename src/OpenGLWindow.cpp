@@ -72,16 +72,63 @@ void OpenGLWindow::initializeGL()
   glEnable(GL_MULTISAMPLE);
 
   //Camera setup
-  ngl::Vec3 from(0,0,1);
+  ngl::Vec3 from(0,0,3);
   ngl::Vec3 to(0,0,0);
   ngl::Vec3 up(0,1,0);
   m_camera.set(from,to,up);
   m_camera.setShape(60,(float)720.0/576.0,0.5,150);
 
   //Set shaders for bounding box and particles
+  ngl::ShaderLib* shaderLib=ngl::ShaderLib::instance();
+
+  //Phong shader for particles
+  shaderLib->createShaderProgram("Phong");
+  shaderLib->attachShader("PhongVertex", ngl::ShaderType::VERTEX);
+  shaderLib->attachShader("PhongFragment", ngl::ShaderType::FRAGMENT);
+  shaderLib->loadShaderSource("PhongVertex", "shaders/Phong.vs");
+  shaderLib->loadShaderSource("PhongFragment", "shaders/Phong.fs");
+  shaderLib->compileShader("PhongVertex");
+  shaderLib->compileShader("PhongFragment");
+  shaderLib->attachShaderToProgram("Phong", "PhongVertex");
+  shaderLib->attachShaderToProgram("Phong", "PhongFragment");
+  shaderLib->bindAttribute("Phong", 0, "inVert");
+  shaderLib->bindAttribute("Phong", 1, "inUV");
+  shaderLib->bindAttribute("Phong", 2, "inNormal");
+  shaderLib->linkProgramObject("Phong");
+  (*shaderLib)["Phong"]->use();
+  shaderLib->setShaderParam1i("Normalize", 1);
+
+  //Create material
+  ngl::Material material(ngl::STDMAT::GOLD);
+  material.loadToShader("material");
+
+  //Create light source
+  ngl::Light light(ngl::Vec3(2,2,20), ngl::Colour(1,1,1,1), ngl::Colour(1,1,1,1), ngl::LightModes::POINTLIGHT);
+  ngl::Mat4 IV=m_camera.getViewMatrix();
+  IV.transpose();
+  light.setTransform(IV);
+  light.setAttenuation(1,0,0);
+  light.enable();
+  light.loadToShader("light");
+  ngl::VAOPrimitives *vaoPrimitives=ngl::VAOPrimitives::instance();
+  vaoPrimitives->createSphere("sphere", 0.1, 10);
+
+  //Colour shader for bounding box
+  shaderLib->createShaderProgram("Colour");
+  shaderLib->attachShader("ColourVertex", ngl::ShaderType::VERTEX);
+  shaderLib->attachShader("ColourFragment", ngl::ShaderType::FRAGMENT);
+  shaderLib->loadShaderSource("ColourVertex", "shaders/colour.vs");
+  shaderLib->loadShaderSource("ColourFragment", "shaders/colour.fs");
+  shaderLib->compileShader("ColourVertex");
+  shaderLib->compileShader("ColourFragment");
+  shaderLib->attachShaderToProgram("Colour", "ColourVertex");
+  shaderLib->attachShaderToProgram("Colour", "ColourFragment");
+  shaderLib->linkProgramObject("Colour");
+  (*shaderLib)["Colour"]->use();
 
   //Set up simulation controller
   m_simulationController=SimulationController::instance();
+  m_simulationController->setRenderParameters(&m_camera, "Phong");
 
   //Setup VAO for bounding box
   buildVAO();
@@ -116,9 +163,33 @@ void OpenGLWindow::paintGL()
   m_transformationScene.m_31=m_scenePosition.m_y;
   m_transformationScene.m_32=m_scenePosition.m_z;
 
+
   //Draw bounding box
+  ngl::ShaderLib* shaderLib=ngl::ShaderLib::instance();
+  shaderLib->use("Colour");
+
+  ngl::Mat4 MVP;
+  ngl::Mat4 M;
+  ngl::Transformation modelMatrix_BoundingBox;
+
+  ngl::Vec3 gridPosition=m_simulationController->getGridPosition();
+  modelMatrix_BoundingBox.setPosition(gridPosition.m_x, gridPosition.m_y, gridPosition.m_z);
+  float gridSize=m_simulationController->getGridSize();
+  modelMatrix_BoundingBox.setScale(gridSize, gridSize, gridSize);
+
+  M=modelMatrix_BoundingBox.getMatrix()*m_transformationScene;
+  MVP=M*m_camera.getVPMatrix();
+
+  shaderLib->setShaderParamFromMat4("MVP", MVP);
+
+  m_vao->bind();
+  m_vao->draw();
+  m_vao->unbind();
+
+
 
   //Draw particles
+  m_simulationController->render(m_transformationScene);
 
 
 
@@ -270,7 +341,7 @@ void OpenGLWindow::mouseMoveEvent(QMouseEvent* _event)
 
     //Add difference to scene position
     m_scenePosition.m_x+=s_INCREMENT*diffX;
-    m_scenePosition.m_y+=s_INCREMENT*diffY;
+    m_scenePosition.m_y-=s_INCREMENT*diffY;
 
     //Set new origin for translation
     m_originXTrans=_event->x();
@@ -312,7 +383,7 @@ void OpenGLWindow::wheelEvent(QWheelEvent* _event)
   }
   else if (_event->delta()<0)
   {
-    m_scenePosition.m_z+=s_ZOOM;
+    m_scenePosition.m_z-=s_ZOOM;
   }
 
   //Update window

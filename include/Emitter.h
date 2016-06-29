@@ -4,6 +4,9 @@
 #include <iostream>
 #include <vector>
 
+#include <ngl/Mat4.h>
+#include <ngl/Camera.h>
+
 #include "Particle.h"
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -22,36 +25,48 @@ public:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Constructor
   //----------------------------------------------------------------------------------------------------------------------
-  Emitter(int _noParticles, float _particleMass);
+  Emitter();
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Instance creator
+  /// @brief Destructor. Removes particle pointers
   //----------------------------------------------------------------------------------------------------------------------
   ~Emitter();
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Generate particles. Can't be done in constructor as requires simulation constants to be read in first.
+  //----------------------------------------------------------------------------------------------------------------------
+  void createParticles(int _noParticles, std::vector<ngl::Vec3>* _particlePositions, std::vector<float>* _particleMass, std::vector<float>* _particleTemperature, std::vector<float>* _particlePhase);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set material constants
   //----------------------------------------------------------------------------------------------------------------------
   void setStrainConstants(float _lameMuConstant, float _lameLambdaConstant, float _compressionLim, float _stretchLim);
   void setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, float _heatCondSolid, float _heatCondFluid, float _latentHeat, float _freezeTemp);
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Set particle positions. Used if particle positions read from file
+  /// @brief Set render parameters
   //----------------------------------------------------------------------------------------------------------------------
-  void setParticlePosition(std::vector<ngl::Vec3>* _particlePositions);
+  void setRenderParameters(std::string _shaderName, float _particleRadius);
+
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Instance creator
+  /// @brief Get latent heat
+  //----------------------------------------------------------------------------------------------------------------------
+  inline float getLatentHeat() const {return m_latentHeat;}
+
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Update particles.
   //----------------------------------------------------------------------------------------------------------------------
   void updateParticles();
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Instance creator
+  /// @brief Render particles
+  /// @param [in] _modelMatrixCamera gives the scene transformations that also need to be applied to particle positions
+  /// @param [in] _camera is used to get the view and projection matrices to give to the shader.
   //----------------------------------------------------------------------------------------------------------------------
-  void renderParticles();
+  void renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera *_camera);
 
 private:
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Instance creator
+  /// @brief Number of particles contained by emitter
   //----------------------------------------------------------------------------------------------------------------------
   int m_noParticles;
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Instance creator
+  /// @brief List of particles contained by emitter
   //----------------------------------------------------------------------------------------------------------------------
   std::vector<Particle*> m_particles;
 
@@ -63,6 +78,21 @@ private:
   /// @brief Lame constant lambda. Depends on the material being simulated
   //----------------------------------------------------------------------------------------------------------------------
   float m_lameLambdaConstant;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Hardness coefficient
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_hardnessCoefficient;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Compression limit sets the compression value above which compression goes from elastic to plastic+elastic.
+  /// Depends on the material being simulated
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_compressionLimit;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Stretch limit sets the stretch value above which stretch goes from elastic to plastic+elastic.
+  /// Depends on the material being simulated
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_stretchLimit;
+
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Heat capacity of solid. Depends on the material being simulated
   //----------------------------------------------------------------------------------------------------------------------
@@ -88,16 +118,7 @@ private:
   /// @brief Freezing or melting temperature of material being simulated
   //----------------------------------------------------------------------------------------------------------------------
   float m_freezingTemperature;
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Compression limit sets the compression value above which compression goes from elastic to plastic+elastic.
-  /// Depends on the material being simulated
-  //----------------------------------------------------------------------------------------------------------------------
-  float m_compressionLimit;
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Stretch limit sets the stretch value above which stretch goes from elastic to plastic+elastic.
-  /// Depends on the material being simulated
-  //----------------------------------------------------------------------------------------------------------------------
-  float m_stretchLimit;
+
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Shader name used to set which shader to use when rendering particles

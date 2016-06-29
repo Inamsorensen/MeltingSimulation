@@ -30,32 +30,26 @@ SimulationController::SimulationController()
   //Material setup
   m_lameMuConstant=1.0;
   m_lameLambdaConstant=1.0;
+  m_hardnessCoefficient=1.0;
+  m_compressionLimit=1.0;
+  m_stretchLimit=1.0;
+
   m_heatCapacitySolid=1.0;
   m_heatCapacityFluid=1.0;
   m_heatConductivitySolid=1.0;
   m_heatConductivityFluid=1.0;
   m_latentHeat=1.0;
   m_freezingTemperature=0.0;
-  m_compressionLimit=1.0;
-  m_stretchLimit=1.0;
 
+  //Read in simulation parameters
+  std::string simulationParametersFile="../HoudiniFiles/particles.geo";
+  readSimulationParameters(simulationParametersFile);
 
-
-  //Read simulation parameters from file
-  std::string simulationParamFile="../HoudiniFiles/particles.geo";
-  readSimulationParameters(simulationParamFile);
-
-  //Read particle positions from file. This also sets the number of particles
-  std::string particlePositionFile="../HoudiniFiles/particles.geo";
-  std::vector<ngl::Vec3> particlePositions;
-  readParticlePositions(particlePositionFile, &particlePositions);
-  m_noParticles=particlePositions.size();
-
-  //Create emitter
-  m_emitter=new Emitter(m_noParticles, m_particleMass);
-  m_emitter->setParticlePosition(&particlePositions);
+  //Create emitter and particles
+  m_emitter=new Emitter();
   m_emitter->setStrainConstants(m_lameMuConstant, m_lameLambdaConstant, m_compressionLimit, m_stretchLimit);
   m_emitter->setTemperatureConstants(m_heatCapacitySolid, m_heatCapacityFluid, m_heatConductivitySolid, m_heatConductivityFluid, m_latentHeat, m_freezingTemperature);
+  setupParticles();
 
   //Create grid
   m_grid=Grid::createGrid(m_gridPosition, m_gridSize, m_noCells);
@@ -92,7 +86,7 @@ SimulationController* SimulationController::instance()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void SimulationController::setRenderParameters(ngl::Camera _camera, std::string _shaderName)
+void SimulationController::setRenderParameters(ngl::Camera *_camera, std::string _shaderName)
 {
   /// @brief Sets paramteres for rendering and the particle size
   /// @todo: Not sure what use the camera is. Will change as window is resized
@@ -104,6 +98,8 @@ void SimulationController::setRenderParameters(ngl::Camera _camera, std::string 
 
   //Particle size
   m_particleRadius=0.1;
+
+  m_emitter->setRenderParameters(m_shaderName, m_particleRadius);
 
 }
 
@@ -161,21 +157,34 @@ void SimulationController::readSimulationParameters(std::string _fileName)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void SimulationController::readParticlePositions(std::string _fileName, std::vector<ngl::Vec3>* o_particlePositions)
+void SimulationController::setupParticles()
 {
-  /// @brief Read in particle positions from geo file; _fileName.
+  std::string particleFileName="../HoudiniFiles/particles.geo";
 
-  //Read particle positions to vector
-  ReadGeo* file=new ReadGeo(_fileName);
-  file->getPointPositions(o_particlePositions);
+  //Set up vectors to contain positions, mass, phase and temperature
+  std::string mass="mass";
+  std::string phase="phase";
+  std::string temperature="temperature";
+
+  std::vector<ngl::Vec3> positionList;
+  std::vector<float> massList;
+  std::vector<float> phaseList;
+  std::vector<float> temperatureList;
+
+  //Read in the data from file
+  ReadGeo* file=new ReadGeo(particleFileName);
+
+  file->getPointPositions(&positionList);
+  file->getPointParameter_Float(mass, &massList);
+  file->getPointParameter_Float(phase, &phaseList);
+  file->getPointParameter_Float(temperature, &temperatureList);
+
   delete file;
 
-}
+  //Create emitter by passing in the data
+  int noParticles=positionList.size();
+  m_emitter->createParticles(noParticles, &positionList, &massList, &temperatureList, &phaseList);
 
-//----------------------------------------------------------------------------------------------------------------------
-
-void SimulationController::readParticleParameter(std::string _fileName, std::string _paramName, std::vector<ngl::Vec3> *o_particleData)
-{
 
 }
 
@@ -201,11 +210,12 @@ void SimulationController::update()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void SimulationController::render()
+void SimulationController::render(ngl::Mat4 _modelMatrixCamera)
 {
   /// @brief Renders particles through the emitter.Checks whether it is time to write to frame
 
   //Render particles
+  m_emitter->renderParticles(_modelMatrixCamera, m_camera);
 
   //Check whether to create frame
 

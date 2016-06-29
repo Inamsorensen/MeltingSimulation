@@ -1,12 +1,32 @@
 #include "MathFunctions.h"
 
+#include <stdexcept>
+#include <cmath>
+#include <math.h>
+
 //----------------------------------------------------------------------------------------------------------------------
 
-ngl::Vec3 MathFunctions::getParticleGridCell(ngl::Vec3 _particlePosition)
+int MathFunctions::getVectorIndex(int i, int j, int k, int _noCells)
 {
-  float result=0.0;
-  return result;
+  int vectorIndex=i+(_noCells*j)+(_noCells*_noCells*k);
+  return vectorIndex;
+}
 
+//----------------------------------------------------------------------------------------------------------------------
+
+ngl::Vec3 MathFunctions::getParticleGridCell(ngl::Vec3 _particlePosition, float _cellSize, ngl::Vec3 _gridOrigin)
+{
+  ngl::Vec3 index;
+
+  //Find grid indices from particle position.
+  ngl::Vec3 indexParticle=(1.0/_cellSize)*(_particlePosition-_gridOrigin);
+
+  //Find which cell the particle is in
+  index.m_x=floor(indexParticle.m_x);
+  index.m_y=floor(indexParticle.m_y);
+  index.m_z=floor(indexParticle.m_z);
+
+  return index;
 }
 
 //----------------------------------------------------------------------------------------------------------------------

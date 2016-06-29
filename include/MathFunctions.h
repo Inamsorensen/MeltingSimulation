@@ -20,10 +20,16 @@
 struct MathFunctions
 {
   //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get vector index from (i,j,k) cell index
+  /// @param [in] Cell index in 3d (i,j,k)
+  /// @param [in] _noCells is the total number of cells in grid
+  //----------------------------------------------------------------------------------------------------------------------
+  int getVectorIndex(int i, int j, int k, int _noCells);
+  //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get cell index of a particle
   /// @param [in] Position of particle
   //----------------------------------------------------------------------------------------------------------------------
-  ngl::Vec3 getParticleGridCell(ngl::Vec3 _particlePosition);
+  ngl::Vec3 getParticleGridCell(ngl::Vec3 _particlePosition, float _cellSize, ngl::Vec3 _gridOrigin);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Returns value of cubic B-spline
   /// @param [in] Position in a single direction, x

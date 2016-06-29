@@ -32,22 +32,21 @@ public:
   /// @brief Destructor
   //----------------------------------------------------------------------------------------------------------------------
   ~SimulationController();
+
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set render parameters
   //----------------------------------------------------------------------------------------------------------------------
-  void setRenderParameters(ngl::Camera _camera, std::string _shaderName);
+  void setRenderParameters(ngl::Camera* _camera, std::string _shaderName);
+
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Read in simulation parameters from geo file
+  /// @brief Get the position of the grid
   //----------------------------------------------------------------------------------------------------------------------
-  void readSimulationParameters(std::string _fileName);
+  inline ngl::Vec3 getGridPosition(){return m_gridPosition;}
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Read in particle positions from geo file
+  /// @brief Get grid size
   //----------------------------------------------------------------------------------------------------------------------
-  void readParticlePositions(std::string _fileName, std::vector<ngl::Vec3> *o_particlePositions);
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Read in particle parameter data from geo file
-  //----------------------------------------------------------------------------------------------------------------------
-  void readParticleParameter(std::string _fileName, std::string _paramName, std::vector<ngl::Vec3> *o_particleData);
+  inline float getGridSize(){return m_gridSize;}
+
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Updates the simulation using a set time step.
   //----------------------------------------------------------------------------------------------------------------------
@@ -55,7 +54,7 @@ public:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Renders particles to visualise the simulation
   //----------------------------------------------------------------------------------------------------------------------
-  void render();
+  void render(ngl::Mat4 _modelMatrixCamera);
 
 private:
   //----------------------------------------------------------------------------------------------------------------------
@@ -79,7 +78,7 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Pointer to camera
   //----------------------------------------------------------------------------------------------------------------------
-  ngl::Camera m_camera;
+  ngl::Camera* m_camera;
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Shader name used to set which shader to use when rendering particles
   //----------------------------------------------------------------------------------------------------------------------
@@ -138,6 +137,21 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   float m_lameLambdaConstant;
   //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Hardness coefficient
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_hardnessCoefficient;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Compression limit sets the compression value above which compression goes from elastic to plastic+elastic.
+  /// Depends on the material being simulated
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_compressionLimit;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Stretch limit sets the stretch value above which stretch goes from elastic to plastic+elastic.
+  /// Depends on the material being simulated
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_stretchLimit;
+
+  //----------------------------------------------------------------------------------------------------------------------
   /// @brief Heat capacity of solid. Depends on the material being simulated
   //----------------------------------------------------------------------------------------------------------------------
   float m_heatCapacitySolid;
@@ -162,16 +176,16 @@ private:
   /// @brief Freezing or melting temperature of material being simulated
   //----------------------------------------------------------------------------------------------------------------------
   float m_freezingTemperature;
+
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Compression limit sets the compression value above which compression goes from elastic to plastic+elastic.
-  /// Depends on the material being simulated
+  /// @brief Read in simulation parameters from geo file
   //----------------------------------------------------------------------------------------------------------------------
-  float m_compressionLimit;
+  void readSimulationParameters(std::string _fileName);
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Stretch limit sets the stretch value above which stretch goes from elastic to plastic+elastic.
-  /// Depends on the material being simulated
+  /// @brief Set up particles from emitter by using default values or reading from file.
   //----------------------------------------------------------------------------------------------------------------------
-  float m_stretchLimit;
+  void setupParticles();
+
 
 
 };
