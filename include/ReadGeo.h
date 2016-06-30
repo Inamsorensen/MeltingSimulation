@@ -5,6 +5,8 @@
 #include <fstream>
 #include <vector>
 
+#include <eigen3/Eigen/Core>
+
 #include <ngl/Vec3.h>
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -34,7 +36,7 @@ public:
   /// @brief Reads point positions from file and returns them in positionData
   /// @param [out] Pointer to vector containing position data
   //----------------------------------------------------------------------------------------------------------------------
-  void getPointPositions(std::vector<ngl::Vec3> *o_positionData);
+  void getPointPositions(std::vector<Eigen::Vector3f> *o_positionData);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Reads a point parameter, ie. a different value for each point.
   /// @param [in] _paramName is the name of the parameter to be read
@@ -50,7 +52,7 @@ public:
   /// @brief Reads a simulation parameter, ie. one for entire file. In this case a vec3
   /// @param [in] _paramName is the name of the parameter to be read
   //----------------------------------------------------------------------------------------------------------------------
-  ngl::Vec3 getSimulationParameter_Vec3(std::string _paramName);
+  Eigen::Vector3f getSimulationParameter_Vec3(std::string _paramName);
 
 private:
   //----------------------------------------------------------------------------------------------------------------------

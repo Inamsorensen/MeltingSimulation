@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 
+#include <eigen3/Eigen/Core>
+
 #include <ngl/Mat4.h>
 #include <ngl/Camera.h>
 
@@ -33,7 +35,7 @@ public:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Generate particles. Can't be done in constructor as requires simulation constants to be read in first.
   //----------------------------------------------------------------------------------------------------------------------
-  void createParticles(int _noParticles, std::vector<ngl::Vec3>* _particlePositions, std::vector<float>* _particleMass, std::vector<float>* _particleTemperature, std::vector<float>* _particlePhase);
+  void createParticles(int _noParticles, std::vector<Eigen::Vector3f>* _particlePositions, std::vector<float>* _particleMass, std::vector<float>* _particleTemperature, std::vector<float>* _particlePhase);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set material constants
   //----------------------------------------------------------------------------------------------------------------------

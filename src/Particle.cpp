@@ -2,7 +2,7 @@
 
 //----------------------------------------------------------------------------------------------------------------------
 
-Particle::Particle(ngl::Vec3 _position, float _mass, float _temperature, bool _solid, float _latentHeat, Emitter *_emitter)
+Particle::Particle(Eigen::Vector3f _position, float _mass, float _temperature, bool _solid, float _latentHeat, Emitter *_emitter)
 {
   /// @brief Initiates particle values that need to be initialised
 

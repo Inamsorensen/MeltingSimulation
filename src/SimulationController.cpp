@@ -19,7 +19,11 @@ SimulationController::SimulationController()
   m_noFrames=0;
 
   //Grid setup
-  m_gridPosition=ngl::Vec3(-0.5, -0.5, -0.5);
+  Eigen::Vector3f gridPos;
+  gridPos(0)=-0.5;
+  gridPos(1)=-0.5;
+  gridPos(2)=-0.5;
+  m_gridPosition=gridPos;
   m_gridSize=1.0;
   m_noCells=16;
 
@@ -166,7 +170,7 @@ void SimulationController::setupParticles()
   std::string phase="phase";
   std::string temperature="temperature";
 
-  std::vector<ngl::Vec3> positionList;
+  std::vector<Eigen::Vector3f> positionList;
   std::vector<float> massList;
   std::vector<float> phaseList;
   std::vector<float> temperatureList;

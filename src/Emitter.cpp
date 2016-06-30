@@ -39,14 +39,14 @@ Emitter::~Emitter()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Emitter::createParticles(int _noParticles, std::vector<ngl::Vec3> *_particlePositions, std::vector<float> *_particleMass, std::vector<float> *_particleTemperature, std::vector<float> *_particlePhase)
+void Emitter::createParticles(int _noParticles, std::vector<Eigen::Vector3f> *_particlePositions, std::vector<float> *_particleMass, std::vector<float> *_particleTemperature, std::vector<float> *_particlePhase)
 {
   m_noParticles=_noParticles;
 
   //Create particles
   for (int i=0; i<m_noParticles; i++)
   {
-    ngl::Vec3 position=_particlePositions->at(i);
+    Eigen::Vector3f position=_particlePositions->at(i);
     float mass=_particleMass->at(i);
     float temperature=_particleTemperature->at(i);
     bool solid=_particlePhase->at(i);
@@ -102,6 +102,7 @@ void Emitter::updateParticles()
 void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera)
 {
   /// @brief Render particles
+  /// Uses a mix of  Eigen and ngl vector+matrices cause need ngl to communicate with shader?
 
   //Get shader and VAO
   ngl::ShaderLib* shaderLib=ngl::ShaderLib::instance();
@@ -115,10 +116,10 @@ void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera
   {
     //Get particle position and make into Vec4
     ngl::Vec4 particlePosition;
-    ngl::Vec3 particlePositionVec3=m_particles[i]->getPosition();
-    particlePosition.m_x=particlePositionVec3.m_x;
-    particlePosition.m_y=particlePositionVec3.m_y;
-    particlePosition.m_z=particlePositionVec3.m_z;
+    Eigen::Vector3f particlePositionVec3=m_particles[i]->getPosition();
+    particlePosition.m_x=particlePositionVec3(0);
+    particlePosition.m_y=particlePositionVec3(1);
+    particlePosition.m_z=particlePositionVec3(2);
     particlePosition.m_w=1.0;
 
     //Calculate new position due to scene transformations

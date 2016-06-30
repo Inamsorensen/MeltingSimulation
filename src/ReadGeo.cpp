@@ -37,7 +37,7 @@ ReadGeo::~ReadGeo()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void ReadGeo::getPointPositions(std::vector<ngl::Vec3>* o_positionData)
+void ReadGeo::getPointPositions(std::vector<Eigen::Vector3f> *o_positionData)
 {
   /// @brief Reads in number of points and position data. Done by searching for certain words in the file and reading the values after it
   /// Also checks that it has found the same number of position data as there are points according to the file
@@ -130,7 +130,11 @@ void ReadGeo::getPointPositions(std::vector<ngl::Vec3>* o_positionData)
 //          std::cout<<"x:"<<x<<" y:"<<y<<" z:"<<z<<"\n";
 
         //Store position data
-        o_positionData->push_back(ngl::Vec3(x,y,z));
+        Eigen::Vector3f position;
+        position(0)=x;
+        position(1)=y;
+        position(2)=z;
+        o_positionData->push_back(position);
 
         //Clear strings for new read in
         xPos.clear();
@@ -155,7 +159,6 @@ void ReadGeo::getPointPositions(std::vector<ngl::Vec3>* o_positionData)
         }
       }
     }
-
 
   //Check that the data stored in pointPositions is the same as the number of points
     int positionDataSize=o_positionData->size();
@@ -336,12 +339,12 @@ float ReadGeo::getSimulationParameter_Float(std::string _paramName)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-ngl::Vec3 ReadGeo::getSimulationParameter_Vec3(std::string _paramName)
+Eigen::Vector3f ReadGeo::getSimulationParameter_Vec3(std::string _paramName)
 {
   /// @brief Searches for "globalattributes" then paramName then "tuples" to find line with value.
   /// Single value found is then returned. In case file isn't open, then returns [0,0,0].
 
-  ngl::Vec3 result;
+  Eigen::Vector3f result;
 
   if (m_file.is_open())
   {
@@ -391,9 +394,9 @@ ngl::Vec3 ReadGeo::getSimulationParameter_Vec3(std::string _paramName)
           float y=std::stof(y_str);
           float z=std::stof(z_str);
 
-          result.m_x=x;
-          result.m_y=y;
-          result.m_z=z;
+          result(0)=x;
+          result(1)=y;
+          result(2)=z;
 
           //Set dimension to start
           dimension=0;

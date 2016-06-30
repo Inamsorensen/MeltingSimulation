@@ -37,7 +37,7 @@ struct MathFunctions
   /// @brief Get cell index of a particle
   /// @param [in] Position of particle
   //----------------------------------------------------------------------------------------------------------------------
-  static ngl::Vec3 getParticleGridCell(ngl::Vec3 _particlePosition, float _cellSize, ngl::Vec3 _gridOrigin);
+  static Eigen::Vector3f getParticleGridCell(Eigen::Vector3f _particlePosition, float _cellSize, Eigen::Vector3f _gridOrigin);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Returns value of cubic B-spline
   /// @param [in] Position in a single direction, x
@@ -70,7 +70,7 @@ struct MathFunctions
   /// @param [in] _x0 is a 1 dimensional vector giving the first guess at the solution
   /// @param[out] o_x is the solution
   //----------------------------------------------------------------------------------------------------------------------
-  static void conjugateResidual(std::vector<float> _A, std::vector<float> _B, std::vector<float> _x0, std::vector<float> o_x, float _maxLoops, float _minResidual);
+  static void conjugateResidual(std::vector<float>* _A, std::vector<float>* _B, std::vector<float>* _x0, std::vector<float>* o_x, float _maxLoops, float _minResidual);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Solves Ax=B using conjugate gradient method. Only works for square matrix A
   /// @param [in] _A and _B which are a 2 and 1 dimensional matrix respectively.

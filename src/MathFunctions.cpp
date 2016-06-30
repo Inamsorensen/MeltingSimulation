@@ -15,17 +15,17 @@ int MathFunctions::getVectorIndex(int i, int j, int k, int _noCells)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-ngl::Vec3 MathFunctions::getParticleGridCell(ngl::Vec3 _particlePosition, float _cellSize, ngl::Vec3 _gridOrigin)
+Eigen::Vector3f MathFunctions::getParticleGridCell(Eigen::Vector3f _particlePosition, float _cellSize, Eigen::Vector3f _gridOrigin)
 {
-  ngl::Vec3 index;
+  Eigen::Vector3f index;
 
   //Find grid indices from particle position.
-  ngl::Vec3 indexParticle=(1.0/_cellSize)*(_particlePosition-_gridOrigin);
+  Eigen::Vector3f indexParticle=(1.0/_cellSize)*(_particlePosition-_gridOrigin);
 
   //Find which cell the particle is in
-  index.m_x=floor(indexParticle.m_x);
-  index.m_y=floor(indexParticle.m_y);
-  index.m_z=floor(indexParticle.m_z);
+  index(0)=floor(indexParticle(0));
+  index(1)=floor(indexParticle(1));
+  index(2)=floor(indexParticle(2));
 
   return index;
 }
@@ -72,7 +72,7 @@ float MathFunctions::calcTightQuadraticStencil_Diff(float _x)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void MathFunctions::conjugateResidual(std::vector<float> _A, std::vector<float> _B, std::vector<float> _x0, std::vector<float> o_x, float _maxLoops, float _minResidual)
+void MathFunctions::conjugateResidual(std::vector<float> *_A, std::vector<float> *_B, std::vector<float> *_x0, std::vector<float> *o_x, float _maxLoops, float _minResidual)
 {
 
 }
@@ -184,12 +184,10 @@ void MathFunctions::linearSystemSolve(std::vector<float>* _A, std::vector<float>
 
   //Set up solver
   Eigen::ColPivHouseholderQR<Eigen::Matrix3f> qrSolver(A);
-//  qrSolver.compute(A);
 
   //Find solution x
   Eigen::Vector3f x;
   x=qrSolver.solve(b);
-//  x=A.colPivHouseholderQr().solve(b);
 
 
   //Read solution into o_x
@@ -242,55 +240,6 @@ void MathFunctions::polarDecomposition(Eigen::Matrix3f *_decomposeMatrix, Eigen:
 void MathFunctions::singularValueDecomposition(Eigen::Matrix3f *_decomposeMatrix, Eigen::Matrix3f *o_U, Eigen::Matrix3f *o_singularValues, Eigen::Matrix3f *o_V)
 {
   /// @brief Uses Eigen library JacobiSVD. Set up so can only solve for 3x3 matrices.
-
-  //Set up matrices
-//  Eigen::Matrix3f A;
-//  Eigen::Matrix3f U;
-//  Eigen::Vector3f S;
-//  Eigen::Matrix3f V;
-
-//  //Fill A
-//  for (int i=0; i<3; i++)
-//  {
-//    for (int j=0; j<3; j++)
-//    {
-//      //Find index for vector
-//      int index=j+(i*3);
-
-//      //Fill A
-//      A(i,j)=_decomposeMatrix->at(index);
-//    }
-//  }
-
-  //Set up singular value decomposition
-//  Eigen::JacobiSVD<Eigen::Matrix3f> SVD(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-  //Find matrices
-//  S=SVD.singularValues();
-//  U=SVD.matrixU();
-//  V=SVD.matrixV();
-
-
-//  //Fill return vectors
-//  for (int i=0; i<3; i++)
-//  {
-//    for (int j=0; j<3; j++)
-//    {
-////      o_U->push_back(U(i,j));
-////      o_V->push_back(V(i,j));
-
-//      //Fill 3x3 matrix from 3x1 vector
-//      if (i==j)
-//      {
-////        o_singularValues->push_back(S(i));
-//      }
-//      else
-//      {
-////        o_singularValues->push_back(0.0);
-//      }
-//    }
-//  }
-
 
   //Set up singular value decomposition solver
   Eigen::JacobiSVD<Eigen::Matrix3f> SVD_solver(*_decomposeMatrix, Eigen::ComputeFullU | Eigen::ComputeFullV);

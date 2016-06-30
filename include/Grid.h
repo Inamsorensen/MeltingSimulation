@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include <eigen3/Eigen/Core>
+
 #include <ngl/Vec3.h>
 
 #include "CellCentre.h"
@@ -29,7 +31,7 @@ public:
   /// @param [in] _gridSize is the size of one lenght of the grid. Grid is always cubic, so same lenght in all directions
   /// @param [in] _noCells is the number of grid cells in one direction. Same number in all directions
   //----------------------------------------------------------------------------------------------------------------------
-  static Grid* createGrid(ngl::Vec3 _origin, float _gridSize, int _noCells);
+  static Grid* createGrid(Eigen::Vector3f _origin, float _gridSize, int _noCells);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get instance of grid
   //----------------------------------------------------------------------------------------------------------------------
@@ -49,7 +51,7 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Constructor. Private for a singleton
   //----------------------------------------------------------------------------------------------------------------------
-  Grid(ngl::Vec3 _origin, float _gridSize, int _noCells);
+  Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Instance pointer
   //----------------------------------------------------------------------------------------------------------------------
@@ -58,7 +60,7 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Location of grid origin. Origin set to lower, back left corner.
   //----------------------------------------------------------------------------------------------------------------------
-  ngl::Vec3 m_origin;
+  Eigen::Vector3f m_origin;
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Size of grid along one side. Grid always cubic so same length in all directions.
   //----------------------------------------------------------------------------------------------------------------------

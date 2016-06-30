@@ -11,7 +11,7 @@ Grid* Grid::m_instance=nullptr;
 
 //----------------------------------------------------------------------------------------------------------------------
 
-Grid::Grid(ngl::Vec3 _origin, float _gridSize, int _noCells)
+Grid::Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
 {
   /// @brief Sets grid variables defining size of grid and cells, and the grid origin.
   /// Uses this to set up the cell lists
@@ -93,7 +93,7 @@ Grid::~Grid()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-Grid* Grid::createGrid(ngl::Vec3 _origin, float _gridSize, int _noCells)
+Grid* Grid::createGrid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
 {
   /// @brief Creates grid from input variables. Only if grid has not already been created.
 

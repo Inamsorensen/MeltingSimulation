@@ -172,7 +172,11 @@ void OpenGLWindow::paintGL()
   ngl::Mat4 M;
   ngl::Transformation modelMatrix_BoundingBox;
 
-  ngl::Vec3 gridPosition=m_simulationController->getGridPosition();
+  ngl::Vec3 gridPosition;
+  Eigen::Vector3f gridPos_Eigen=m_simulationController->getGridPosition();
+  gridPosition.m_x=gridPos_Eigen(0);
+  gridPosition.m_y=gridPos_Eigen(1);
+  gridPosition.m_z=gridPos_Eigen(2);
   modelMatrix_BoundingBox.setPosition(gridPosition.m_x, gridPosition.m_y, gridPosition.m_z);
   float gridSize=m_simulationController->getGridSize();
   modelMatrix_BoundingBox.setScale(gridSize, gridSize, gridSize);
