@@ -32,18 +32,6 @@ int main(int argc, char *argv[])
 
   return app.exec();
 
-//  ReadGeo* file=new ReadGeo("../HoudiniFiles/particles.geo");
-//  std::vector<ngl::Vec3> positions;
-//  std::vector<float> pointParameters;
-//  file->getPointPositions(&positions);
-//  file->getPointParameter_Float("temperature", &pointParameters);
-////  file->getPointPositions(&positions);
-//  float compLimit=file->getSimulationParameter_Float("gridSize");
-//  std::cout<<compLimit<<"\n";
-//  ngl::Vec3 gridOrigin=file->getSimulationParameter_Vec3("gridOrigin");
-//  std::cout<<gridOrigin.m_x<<" "<<gridOrigin.m_y<<" "<<gridOrigin.m_z<<"\n";
-//  delete file;
-
 //  //Test conjugate gradient + linear system solve
 //  std::vector<float> Amatrix;
 //  std::vector<float> Bmatrix;
@@ -146,6 +134,66 @@ int main(int argc, char *argv[])
 
 //  std::cout<<"V*:\n";
 //  std::cout<<V_conjTrans<<"\n";
+
+
+  //Test matrix constructors
+//  Eigen::MatrixXf testMINRES_A(7,7);
+//  testMINRES_A.setConstant(-1.0);
+
+//  for (int i=0; i<7; i++)
+//  {
+//    testMINRES_A(i,i)=6.0;
+//  }
+//  Eigen::VectorXf testMINRES_b(7);
+//  testMINRES_b.setOnes();
+
+//  Eigen::MatrixXf testMINRES_A(3,3);
+//  testMINRES_A(0,0)=1.0;
+//  testMINRES_A(0,1)=2.0;
+//  testMINRES_A(0,2)=4.0;
+//  testMINRES_A(1,0)=2.0;
+//  testMINRES_A(1,1)=3.0;
+//  testMINRES_A(1,2)=2.0;
+//  testMINRES_A(2,0)=4.0;
+//  testMINRES_A(2,1)=2.0;
+//  testMINRES_A(2,2)=6.0;
+
+//  Eigen::VectorXf testMINRES_b(3);
+//  testMINRES_b(0)=2.0;
+//  testMINRES_b(1)=4.0;
+//  testMINRES_b(2)=6.0;
+
+//  Eigen::VectorXf x(3);
+//  x.setZero();
+
+//  Eigen::MatrixXf testMINRES_A(2,2);
+//  testMINRES_A(0,0)=1.0;
+//  testMINRES_A(0,1)=2.0;
+//  testMINRES_A(1,0)=2.0;
+//  testMINRES_A(1,1)=3.0;
+
+//  Eigen::VectorXf testMINRES_b(2);
+//  testMINRES_b(0)=1.0;
+//  testMINRES_b(1)=2.0;
+
+//  Eigen::VectorXf x(2);
+//  x.setZero();
+
+//  Eigen::MatrixXf* preconditioner=nullptr;
+
+//  int maxLoops=10;
+
+//  float tolerance=0.000000000001;
+
+//  float shift=0.0;
+
+//  bool show=true;
+
+
+
+//  MathFunctions::MinRes(&testMINRES_A, &testMINRES_b, &x, preconditioner, shift, maxLoops, tolerance, show);
+
+//  std::cout<<x<<"\n";
 
   return EXIT_SUCCESS;
 

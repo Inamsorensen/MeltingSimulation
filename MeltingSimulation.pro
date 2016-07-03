@@ -26,7 +26,8 @@ SOURCES+= $$PWD/src/main.cpp \
     src/Grid_deviatoricVelocity.cpp \
     src/Grid_pressureVelocity.cpp \
     src/Grid_Temperature.cpp \
-    src/ReadGeo.cpp
+    src/ReadGeo.cpp \
+    src/MinRes.cpp
 
 # same for the .h files
 HEADERS+= $$PWD/include/ReadGeo.h \

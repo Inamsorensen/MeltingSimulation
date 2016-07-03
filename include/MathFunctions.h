@@ -14,6 +14,7 @@
 #include <eigen3/Eigen/SVD>
 
 
+
 //------------------------------------------------------------------------------------------------------------------------------------------------------
 /// @file MathFunctions.h
 /// @brief Structure which contains general mathematical calculations. Most of these will be using the Eigen library.
@@ -64,13 +65,17 @@ struct MathFunctions
   //----------------------------------------------------------------------------------------------------------------------
   static float calcTightQuadraticStencil_Diff(float _x);
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Solves Ax=B using conjugate residual method
-  /// @param [in] _A and _B which are a 2 and 1 dimensional matrix respectively.
-  /// @param [in] _maxLoops is the max number of loops the method will do unless _minResidual is met first.
-  /// @param [in] _x0 is a 1 dimensional vector giving the first guess at the solution
+  /// @brief Solves Ax=B using MINRES method written based on Stanford code
+  /// @param [in] _A and _B are the matrices in the problem
+  /// @param [in] _x0 is  the first guess at the solution
+  /// @param [in] _preconditioner is the preconditioner matrix which must be positive definite. If no preconditioner, pass nullptr
+  /// @param [in] _shift is a value other than zero if want to solve (A-shift*I)x=b instead
+  /// @param [in] _maxLoops is the max number of loops the method will do
+  /// @param [in] _tolerance is the value below which the function will exit.
   /// @param[out] o_x is the solution
+  /// @todo Need to work out how to apply a preconditioner
   //----------------------------------------------------------------------------------------------------------------------
-  static void conjugateResidual(std::vector<float>* _A, std::vector<float>* _B, std::vector<float>* _x0, std::vector<float>* o_x, float _maxLoops, float _minResidual);
+  static void MinRes(Eigen::MatrixXf* _A, Eigen::VectorXf* _B, Eigen::VectorXf* io_x, Eigen::MatrixXf* _preconditioner, float _shift, float _maxLoops, float _tolerance, bool _show);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Solves Ax=B using conjugate gradient method. Only works for square matrix A
   /// @param [in] _A and _B which are a 2 and 1 dimensional matrix respectively.

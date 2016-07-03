@@ -72,13 +72,6 @@ float MathFunctions::calcTightQuadraticStencil_Diff(float _x)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void MathFunctions::conjugateResidual(std::vector<float> *_A, std::vector<float> *_B, std::vector<float> *_x0, std::vector<float> *o_x, float _maxLoops, float _minResidual)
-{
-
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-
 void MathFunctions::conjugateGradient(std::vector<float> *_A, std::vector<float> *_B, std::vector<float> *_x0, std::vector<float> *o_x, float _maxLoops, float _minResidual)
 {
   /// @brief Function which uses Conjugate Gradient to solve Ax=b
