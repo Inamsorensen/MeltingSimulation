@@ -22,6 +22,11 @@ Grid::Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
   m_noCells=_noCells;
   m_cellSize=m_gridSize/((float)m_noCells);
 
+//  m_cellCentres.reserve(m_noCells);
+//  m_cellFacesX.reserve(m_noCells);
+//  m_cellFacesY.reserve(m_noCells);
+//  m_cellFacesZ.reserve(m_noCells);
+
   //Setup cell lists
   for (int i=0; i<pow(m_noCells,3); i++)
   {
@@ -34,7 +39,9 @@ Grid::Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
     m_cellFacesX.push_back(cellFaceX);
     m_cellFacesY.push_back(cellFaceY);
     m_cellFacesZ.push_back(cellFaceZ);
+
   }
+
 
 }
 
@@ -120,29 +127,161 @@ Grid* Grid::getGrid()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::update(float _dt)
+void Grid::update(float _dt, bool _isFirstStep)
 {
+  /* Outline
+  ---------------------------------------------------------------------------------------------------------------------
+  Set m_dt=_dt
+
+  Clear InterpolationData for each grid cell so all empty before start adding particles
+
+  findParticleInCell - need to find out which particles are in which cells and their respective interp weight
+
+  Get particle data to grid
+
+  Classify cells
+
+  Compute deviatoric force
+
+  Set velocity due to collisions - Not sure why here
+
+  Apply implicit velocity update
+
+  Project velocity, ie. calc pressure
+
+  Solve heat equation - do this in a separate thread?
+
+  Update particle from grid
+
+  ---------------------------------------------------------------------------------------------------------------
+  */
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void Grid::clearCellData()
+{
+  /* Outline
+  --------------------------------------------------------------------------------------------------------------
+  Loop over all cells
+    If m_interpolationData.size!=0, clear it
+  --------------------------------------------------------------------------------------------------------------
+  */
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void Grid::findParticleInCell()
+{
+  /* Outline
+  ----------------------------------------------------------------------------------------------------
+   Loop over all particles - This is where parallel should be inserted I think
+   {
+     Find position of particle in grid using getParticleGridCell
+     This gives vector of i,j,k for cell
+
+     Get neighbours i+-2, j+-2, k+-2. Ie loop over these
+
+     Pass in cell i,j,k to calcInterpolationWeights
+    }
+  ------------------------------------------------------------------------------------------------------
+  */
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void Grid::calcInterpolationWeights(Particle* _particle, int _i, int _j, int _k)
+{
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Calculate interpolation weights for the particle and the cell with given _i, _j,_k
+
+  Calculate i*, ix, iy, iz for the cell in question
+
+  Calculate x values for these
+
+  Set up floats to recieve from maths functions
+
+  Pass in x and get interpolation weights:
+       cubicBspline
+       cubicBspline_Diff
+       cubicBspline_Integ
+       tightQuadraticStencil
+       tightQuadraticStencil_Diff
+
+  Store interpolation weights in cell centre and face
+  ------------------------------------------------------------------------------------------------------
+  */
 
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::calcInterpolationWeights()
+void Grid::transferParticleData(bool _isFirstStep)
 {
+  /* Outline
+  -----------------------------------------------------------------------------------------------------
+  Loop over all cells - Parallelise here
+  Could potentially set this so loop over all faces and centres, ie. use more threads
 
+    Check that m_InterpolationData is not empty - If it is, set everything to zero?
+
+    For each particle in the list calculate all variables
+      m_i
+      v_i
+      kappa_i
+      m_c
+      J_c
+      JE_c
+      c
+      T
+      lambda^-1
+      JP_c
+
+
+     If first step in simulation, add to particle density
+
+  If first step in simulation, loop over particles
+    Calculate V_p
+
+
+  -----------------------------------------------------------------------------------------------------
+  */
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
 void Grid::classifyCells()
 {
+  /* Outline - Current setup might be time consuming since two loops. Could rectify this for bounding box, but not for level sets I think
+  ----------------------------------------------------------------------------------------------------------------------
+  Loop over all cell faces
+    Check faces against collision
+      For now use bounding box, so colliding if i<2||>n-2, j<2||>n-2, k<2||>n-2
 
+  Loop over all cell centres
+    Check if all 6 faces are colliding - If cell centre is i=n-1, j=n-1 or k=n-1 then only three faces
+      If all colliding - colliding
+      If not all and no particles - empty
+      Otherwise - interior
+    If colliding, also need to set temperature. Also need to set temp for empty
+
+
+  ----------------------------------------------------------------------------------------------------------------------
+  */
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
 void Grid::setBoundaryVelocity()
 {
+  /* Outline
+  ---------------------------------------------------------------------------------------------------------------------
+  Loop over all cells
+    Set velocity to zero at colliding cell faces
+
+  ---------------------------------------------------------------------------------------------------------------------
+  */
 
 }
 

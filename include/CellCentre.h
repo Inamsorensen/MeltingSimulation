@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "Particle.h"
+#include "InterpolationData.h"
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------
 /// @file CellCentre.h
@@ -28,19 +28,9 @@ enum State
 struct CellCentre
 {
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief List of particles inside the cell at current time step
+  /// @brief List of interpolation data containing particle pointer and interpolation weights
   //----------------------------------------------------------------------------------------------------------------------
-  std::vector<Particle*> m_particles;
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief List of interpolation weights for each of these particles.
-  /// Used to transfer data from particles to grid
-  //----------------------------------------------------------------------------------------------------------------------
-  std::vector<float> m_interpWeights_PartToGrid;
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief List of interpolation weights differential for each of these particles.
-  /// Used to transfer data from particles to grid
-  //----------------------------------------------------------------------------------------------------------------------
-  std::vector<float> m_interpWeightsDiff_PartToGrid;
+  std::vector<InterpolationData*> m_interpolationData;
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Collision state of cell. Is it colliding, empty or interior
   //----------------------------------------------------------------------------------------------------------------------

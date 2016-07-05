@@ -11,6 +11,7 @@ Particle::Particle(Eigen::Vector3f _position, float _mass, float _temperature, b
   m_temperature=_temperature;
   m_emitter=_emitter;
 
+  //Need to set this to zero as cells will add on to this
   m_initalDensity=0.0;
 
   //Set phase and fill/empty transition heat depending on whether solid or liquid

@@ -38,7 +38,8 @@ HEADERS+= $$PWD/include/ReadGeo.h \
     include/OpenGLWindow.h \
     include/MathFunctions.h \
     include/CellCentre.h \
-    include/CellFace.h
+    include/CellFace.h \
+    include/InterpolationData.h
 
 
 # and add the include dir into the search path for Qt and make
