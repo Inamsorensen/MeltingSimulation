@@ -15,6 +15,8 @@ isEqual(QT_MAJOR_VERSION, 5) {
 MOC_DIR=moc
 # on a mac we don't create a .app bundle file ( for ease of multiplatform use)
 CONFIG-=app_bundle
+
+
 # Auto include all .cpp files in the project src directory (can specifiy individually if required)
 SOURCES+= $$PWD/src/main.cpp \
     src/SimulationController.cpp \
@@ -27,7 +29,8 @@ SOURCES+= $$PWD/src/main.cpp \
     src/Grid_pressureVelocity.cpp \
     src/Grid_Temperature.cpp \
     src/ReadGeo.cpp \
-    src/MinRes.cpp
+    src/MinRes.cpp \
+    src/Grid_updateParticleFromGrid.cpp
 
 # same for the .h files
 HEADERS+= $$PWD/include/ReadGeo.h \
@@ -45,6 +48,8 @@ HEADERS+= $$PWD/include/ReadGeo.h \
 # and add the include dir into the search path for Qt and make
 INCLUDEPATH +=./include
 INCLUDEPATH +=/usr/local/include/eigen3/Eigen/
+#INCLUDEPATH +=/usr/lib/gcc/x86_64-redhat-linux/4.8.2/include
+
 
 # where our exe is going to live (root of project)
 DESTDIR=./

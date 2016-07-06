@@ -22,24 +22,45 @@ Grid::Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
   m_noCells=_noCells;
   m_cellSize=m_gridSize/((float)m_noCells);
 
-//  m_cellCentres.reserve(m_noCells);
-//  m_cellFacesX.reserve(m_noCells);
-//  m_cellFacesY.reserve(m_noCells);
-//  m_cellFacesZ.reserve(m_noCells);
+  m_cellCentres.reserve(pow(m_noCells,3));
+  m_cellFacesX.reserve(pow(m_noCells,3));
+  m_cellFacesY.reserve(pow(m_noCells,3));
+  m_cellFacesZ.reserve(pow(m_noCells,3));
 
   //Setup cell lists
-  for (int i=0; i<pow(m_noCells,3); i++)
+  for (int k=0; k<m_noCells; k++)
   {
-    CellCentre* cellCentre=new CellCentre();
-    CellFace* cellFaceX=new CellFace();
-    CellFace* cellFaceY=new CellFace();
-    CellFace* cellFaceZ=new CellFace();
+    for (int j=0; j<m_noCells; j++)
+    {
+      for (int i=0; i<m_noCells; i++)
+      {
+        CellCentre* cellCentre=new CellCentre();
+        CellFace* cellFaceX=new CellFace();
+        CellFace* cellFaceY=new CellFace();
+        CellFace* cellFaceZ=new CellFace();
 
-    m_cellCentres.push_back(cellCentre);
-    m_cellFacesX.push_back(cellFaceX);
-    m_cellFacesY.push_back(cellFaceY);
-    m_cellFacesZ.push_back(cellFaceZ);
+        cellCentre->m_iIndex=i;
+        cellCentre->m_jIndex=j;
+        cellCentre->m_kIndex=k;
 
+        cellFaceX->m_iIndex=i;
+        cellFaceX->m_jIndex=j;
+        cellFaceX->m_kIndex=k;
+
+        cellFaceY->m_iIndex=i;
+        cellFaceY->m_jIndex=j;
+        cellFaceY->m_kIndex=k;
+
+        cellFaceZ->m_iIndex=i;
+        cellFaceZ->m_jIndex=j;
+        cellFaceZ->m_kIndex=k;
+
+        m_cellCentres.push_back(cellCentre);
+        m_cellFacesX.push_back(cellFaceX);
+        m_cellFacesY.push_back(cellFaceY);
+        m_cellFacesZ.push_back(cellFaceZ);
+      }
+    }
   }
 
 

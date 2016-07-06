@@ -81,7 +81,8 @@ DIST          = MeltingSimulation.pro include/ReadGeo.h \
 		include/OpenGLWindow.h \
 		include/MathFunctions.h \
 		include/CellCentre.h \
-		include/CellFace.h src/main.cpp \
+		include/CellFace.h \
+		include/InterpolationData.h src/main.cpp \
 		src/SimulationController.cpp \
 		src/Emitter.cpp \
 		src/Particle.cpp \
@@ -416,7 +417,7 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents include/ReadGeo.h include/SimulationController.h include/Emitter.h include/Particle.h include/Grid.h include/OpenGLWindow.h include/MathFunctions.h include/CellCentre.h include/CellFace.h $(DISTDIR)/
+	$(COPY_FILE) --parents include/ReadGeo.h include/SimulationController.h include/Emitter.h include/Particle.h include/Grid.h include/OpenGLWindow.h include/MathFunctions.h include/CellCentre.h include/CellFace.h include/InterpolationData.h $(DISTDIR)/
 	$(COPY_FILE) --parents src/main.cpp src/SimulationController.cpp src/Emitter.cpp src/Particle.cpp src/Grid.cpp src/OpenGLWindow.cpp src/MathFunctions.cpp src/Grid_deviatoricVelocity.cpp src/Grid_pressureVelocity.cpp src/Grid_Temperature.cpp src/ReadGeo.cpp src/MinRes.cpp $(DISTDIR)/
 
 
@@ -602,6 +603,7 @@ moc/moc_OpenGLWindow.cpp: /home/i7435906/NGL/include/ngl/Camera.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
 		include/Grid.h \
 		include/CellCentre.h \
+		include/InterpolationData.h \
 		include/CellFace.h \
 		include/ReadGeo.h \
 		include/OpenGLWindow.h
@@ -786,9 +788,11 @@ obj/main.o: src/main.cpp /opt/qt/5.5/gcc_64/include/QtGui/QGuiApplication \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
 		include/Grid.h \
 		include/CellCentre.h \
+		include/InterpolationData.h \
 		include/CellFace.h \
 		include/ReadGeo.h \
-		include/MathFunctions.h
+		include/MathFunctions.h \
+		include/omp.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/main.o src/main.cpp
 
 obj/SimulationController.o: src/SimulationController.cpp include/SimulationController.h \
@@ -924,6 +928,7 @@ obj/SimulationController.o: src/SimulationController.cpp include/SimulationContr
 		/home/i7435906/NGL/include/ngl/Mat3.h \
 		include/Grid.h \
 		include/CellCentre.h \
+		include/InterpolationData.h \
 		include/CellFace.h \
 		include/ReadGeo.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/SimulationController.o src/SimulationController.cpp
@@ -1312,6 +1317,7 @@ obj/Grid.o: src/Grid.cpp include/Grid.h \
 		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
 		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h \
 		include/CellCentre.h \
+		include/InterpolationData.h \
 		include/Particle.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
 		include/CellFace.h
@@ -1493,11 +1499,13 @@ obj/OpenGLWindow.o: src/OpenGLWindow.cpp /opt/qt/5.5/gcc_64/include/QtGui/QMouse
 		include/Particle.h \
 		include/Grid.h \
 		include/CellCentre.h \
+		include/InterpolationData.h \
 		include/CellFace.h \
 		include/ReadGeo.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/OpenGLWindow.o src/OpenGLWindow.cpp
 
 obj/MathFunctions.o: src/MathFunctions.cpp include/MathFunctions.h \
+		include/omp.h \
 		/home/i7435906/NGL/include/ngl/Vec3.h \
 		/home/i7435906/NGL/include/ngl/Types.h \
 		/home/i7435906/NGL/include/ngl/glew.h \
@@ -1739,6 +1747,7 @@ obj/Grid_deviatoricVelocity.o: src/Grid_deviatoricVelocity.cpp include/Grid.h \
 		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
 		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h \
 		include/CellCentre.h \
+		include/InterpolationData.h \
 		include/Particle.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
 		include/CellFace.h
@@ -1864,6 +1873,7 @@ obj/Grid_pressureVelocity.o: src/Grid_pressureVelocity.cpp include/Grid.h \
 		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
 		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h \
 		include/CellCentre.h \
+		include/InterpolationData.h \
 		include/Particle.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
 		include/CellFace.h
@@ -1989,6 +1999,7 @@ obj/Grid_Temperature.o: src/Grid_Temperature.cpp include/Grid.h \
 		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
 		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h \
 		include/CellCentre.h \
+		include/InterpolationData.h \
 		include/Particle.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
 		include/CellFace.h
@@ -2116,6 +2127,7 @@ obj/ReadGeo.o: src/ReadGeo.cpp include/ReadGeo.h \
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/ReadGeo.o src/ReadGeo.cpp
 
 obj/MinRes.o: src/MinRes.cpp include/MathFunctions.h \
+		include/omp.h \
 		/home/i7435906/NGL/include/ngl/Vec3.h \
 		/home/i7435906/NGL/include/ngl/Types.h \
 		/home/i7435906/NGL/include/ngl/glew.h \
