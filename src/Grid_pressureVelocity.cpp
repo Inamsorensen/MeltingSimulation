@@ -58,6 +58,7 @@ void Grid::setUpA_projectVelocity()
         Else use volume of cell
 
         Add, hence must be initialised to zero, GicGic' equal to (2/px +2/py + 2/pz) for i==j and -1/px/y/z otherwise x/y/z depends which value of i and j
+        Need to set to zero for certain j values since only nearest neighbours have effect
 
         Check if colliding as need to take 1/px/y/z away from ii and set ij to zero
 

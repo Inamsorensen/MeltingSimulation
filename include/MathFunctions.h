@@ -40,7 +40,7 @@ struct MathFunctions
   /// @brief Get cell index of a particle
   /// @param [in] Position of particle
   //----------------------------------------------------------------------------------------------------------------------
-  static Eigen::Vector3f getParticleGridCell(Eigen::Vector3f _particlePosition, float _cellSize, Eigen::Vector3f _gridOrigin);
+  static Eigen::Vector3i getParticleGridCell(Eigen::Vector3f _particlePosition, float _cellSize, Eigen::Vector3f _gridOrigin);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Returns value of cubic B-spline
   /// @param [in] Position in a single direction, x

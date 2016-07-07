@@ -9,6 +9,8 @@
 
 #include "CellCentre.h"
 #include "CellFace.h"
+#include "Emitter.h"
+#include "MathFunctions.h"
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------
 /// @file Grid.h
@@ -18,7 +20,12 @@
 /// @version 1.0
 /// @date 27.06.16
 ///
-/// @todo
+/// @done:Staggered grid
+///
+///
+/// @todo Reserve memory for interpolation data vectors
+///       Verify particle position in grid
+///       Check that particles stored correctly in interp data
 //------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -41,10 +48,18 @@ public:
   //----------------------------------------------------------------------------------------------------------------------
   ~Grid();
   //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Find which cells have particles in or near them such that interpolation weight will not be zero
+  //----------------------------------------------------------------------------------------------------------------------
+  void findParticleInCell(Emitter *_emitter);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief TEST findParticleInCell. Loops over all grid cells for each particle, calculating cubicBSpline and storing if !=0
+  //----------------------------------------------------------------------------------------------------------------------
+  void TEST_findParticleInCell(Emitter *_emitter);
+  //----------------------------------------------------------------------------------------------------------------------
   /// @brief Does all calculations for one time step. Updates velocity and temperature through force, pressure and
   /// temperature calculations
   //----------------------------------------------------------------------------------------------------------------------
-  void update(float _dt, bool _isFirstStep);
+  void update(float _dt, Emitter *_emitter, bool _isFirstStep);
 
 
 private:
@@ -92,10 +107,6 @@ private:
   /// @brief Clear list of InterpolationData
   //----------------------------------------------------------------------------------------------------------------------
   void clearCellData();
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Find which cells have particles in or near them such that interpolation weight will not be zero
-  //----------------------------------------------------------------------------------------------------------------------
-  void findParticleInCell();
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate interpolation weights for transitions Particle-Grid and Grid-Particle
   //----------------------------------------------------------------------------------------------------------------------

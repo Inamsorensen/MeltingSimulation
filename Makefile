@@ -59,7 +59,8 @@ SOURCES       = src/main.cpp \
 		src/Grid_pressureVelocity.cpp \
 		src/Grid_Temperature.cpp \
 		src/ReadGeo.cpp \
-		src/MinRes.cpp moc/moc_OpenGLWindow.cpp
+		src/MinRes.cpp \
+		src/Grid_updateParticleFromGrid.cpp moc/moc_OpenGLWindow.cpp
 OBJECTS       = obj/main.o \
 		obj/SimulationController.o \
 		obj/Emitter.o \
@@ -72,6 +73,7 @@ OBJECTS       = obj/main.o \
 		obj/Grid_Temperature.o \
 		obj/ReadGeo.o \
 		obj/MinRes.o \
+		obj/Grid_updateParticleFromGrid.o \
 		obj/moc_OpenGLWindow.o
 DIST          = MeltingSimulation.pro include/ReadGeo.h \
 		include/SimulationController.h \
@@ -93,7 +95,8 @@ DIST          = MeltingSimulation.pro include/ReadGeo.h \
 		src/Grid_pressureVelocity.cpp \
 		src/Grid_Temperature.cpp \
 		src/ReadGeo.cpp \
-		src/MinRes.cpp
+		src/MinRes.cpp \
+		src/Grid_updateParticleFromGrid.cpp
 QMAKE_TARGET  = MeltingSimulation
 DESTDIR       = #avoid trailing-slash linebreak
 TARGET        = MeltingSimulation
@@ -418,7 +421,7 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents include/ReadGeo.h include/SimulationController.h include/Emitter.h include/Particle.h include/Grid.h include/OpenGLWindow.h include/MathFunctions.h include/CellCentre.h include/CellFace.h include/InterpolationData.h $(DISTDIR)/
-	$(COPY_FILE) --parents src/main.cpp src/SimulationController.cpp src/Emitter.cpp src/Particle.cpp src/Grid.cpp src/OpenGLWindow.cpp src/MathFunctions.cpp src/Grid_deviatoricVelocity.cpp src/Grid_pressureVelocity.cpp src/Grid_Temperature.cpp src/ReadGeo.cpp src/MinRes.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents src/main.cpp src/SimulationController.cpp src/Emitter.cpp src/Particle.cpp src/Grid.cpp src/OpenGLWindow.cpp src/MathFunctions.cpp src/Grid_deviatoricVelocity.cpp src/Grid_pressureVelocity.cpp src/Grid_Temperature.cpp src/ReadGeo.cpp src/MinRes.cpp src/Grid_updateParticleFromGrid.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -1505,7 +1508,6 @@ obj/OpenGLWindow.o: src/OpenGLWindow.cpp /opt/qt/5.5/gcc_64/include/QtGui/QMouse
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/OpenGLWindow.o src/OpenGLWindow.cpp
 
 obj/MathFunctions.o: src/MathFunctions.cpp include/MathFunctions.h \
-		include/omp.h \
 		/home/i7435906/NGL/include/ngl/Vec3.h \
 		/home/i7435906/NGL/include/ngl/Types.h \
 		/home/i7435906/NGL/include/ngl/glew.h \
@@ -1624,7 +1626,8 @@ obj/MathFunctions.o: src/MathFunctions.cpp include/MathFunctions.h \
 		/opt/qt/5.5/gcc_64/include/QtOpenGL/qtopenglglobal.h \
 		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
 		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h \
-		/home/i7435906/NGL/include/ngl/Mat3.h
+		/home/i7435906/NGL/include/ngl/Mat3.h \
+		include/omp.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/MathFunctions.o src/MathFunctions.cpp
 
 obj/Grid_deviatoricVelocity.o: src/Grid_deviatoricVelocity.cpp include/Grid.h \
@@ -2127,7 +2130,6 @@ obj/ReadGeo.o: src/ReadGeo.cpp include/ReadGeo.h \
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/ReadGeo.o src/ReadGeo.cpp
 
 obj/MinRes.o: src/MinRes.cpp include/MathFunctions.h \
-		include/omp.h \
 		/home/i7435906/NGL/include/ngl/Vec3.h \
 		/home/i7435906/NGL/include/ngl/Types.h \
 		/home/i7435906/NGL/include/ngl/glew.h \
@@ -2246,8 +2248,135 @@ obj/MinRes.o: src/MinRes.cpp include/MathFunctions.h \
 		/opt/qt/5.5/gcc_64/include/QtOpenGL/qtopenglglobal.h \
 		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
 		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h \
-		/home/i7435906/NGL/include/ngl/Mat3.h
+		/home/i7435906/NGL/include/ngl/Mat3.h \
+		include/omp.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/MinRes.o src/MinRes.cpp
+
+obj/Grid_updateParticleFromGrid.o: src/Grid_updateParticleFromGrid.cpp include/Grid.h \
+		/home/i7435906/NGL/include/ngl/Vec3.h \
+		/home/i7435906/NGL/include/ngl/Types.h \
+		/home/i7435906/NGL/include/ngl/glew.h \
+		/opt/qt/5.5/gcc_64/include/QtOpenGL/QGLContext \
+		/opt/qt/5.5/gcc_64/include/QtOpenGL/qgl.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qopengl.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qglobal.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qconfig.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qfeatures.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qsystemdetection.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qprocessordetection.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qcompilerdetection.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qtypeinfo.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qtypetraits.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qsysinfo.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qlogging.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qflags.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qbasicatomic.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_bootstrap.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qgenericatomic.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_cxx11.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_gcc.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_msvc.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_armv7.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_armv6.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_armv5.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_ia64.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_mips.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_x86.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_unix.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qglobalstatic.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qmutex.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qnumeric.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qt_windows.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qopengles2ext.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qopenglext.h \
+		/opt/qt/5.5/gcc_64/include/QtWidgets/qwidget.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qwindowdefs.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qobjectdefs.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qnamespace.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qobjectdefs_impl.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qwindowdefs_win.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qobject.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qstring.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qchar.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qbytearray.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qrefcount.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qarraydata.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qstringbuilder.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qlist.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qalgorithms.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qiterator.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qbytearraylist.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qstringlist.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qregexp.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qstringmatcher.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qcoreevent.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qscopedpointer.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qmetatype.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qvarlengtharray.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qcontainerfwd.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qisenum.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qobject_impl.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qmargins.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpaintdevice.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qrect.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qsize.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qpoint.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpalette.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qcolor.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qrgb.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qbrush.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qpair.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qvector.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qmatrix.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpolygon.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qregion.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qdatastream.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qiodevice.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qline.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qtransform.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpainterpath.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qimage.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpixelformat.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpixmap.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qsharedpointer.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qshareddata.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qhash.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qsharedpointer_impl.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qfont.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qfontmetrics.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qfontinfo.h \
+		/opt/qt/5.5/gcc_64/include/QtWidgets/qsizepolicy.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qcursor.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qkeysequence.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qevent.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qvariant.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qmap.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qdebug.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qtextstream.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qlocale.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qset.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qcontiguouscache.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qurl.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qurlquery.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qfile.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qfiledevice.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qvector2d.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qtouchdevice.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpaintengine.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpainter.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qtextoption.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpen.h \
+		/opt/qt/5.5/gcc_64/include/QtOpenGL/qglcolormap.h \
+		/opt/qt/5.5/gcc_64/include/QtOpenGL/qtopenglglobal.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
+		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h \
+		include/CellCentre.h \
+		include/InterpolationData.h \
+		include/Particle.h \
+		/home/i7435906/NGL/include/ngl/Mat3.h \
+		include/CellFace.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Grid_updateParticleFromGrid.o src/Grid_updateParticleFromGrid.cpp
 
 obj/moc_OpenGLWindow.o: moc/moc_OpenGLWindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/moc_OpenGLWindow.o moc/moc_OpenGLWindow.cpp

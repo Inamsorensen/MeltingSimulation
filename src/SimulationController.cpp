@@ -56,7 +56,18 @@ SimulationController::SimulationController()
   setupParticles();
 
   //Create grid
-  m_grid=Grid::createGrid(m_gridPosition, m_gridSize, m_noCells);
+  //Need to stagger grid as Houdini setup has origin in lower back corner, but MAC staggered
+  //has origin in the middle of the cell in the lower back corner
+  float halfCellSize=(1.0/2.0)*(m_gridSize/((float)m_noCells));
+  Eigen::Vector3f staggeredGridPosition=m_gridPosition;
+  staggeredGridPosition(0)+=halfCellSize;
+  staggeredGridPosition(1)+=halfCellSize;
+  staggeredGridPosition(2)+=halfCellSize;
+  m_grid=Grid::createGrid(staggeredGridPosition, m_gridSize, m_noCells);
+  m_grid->findParticleInCell(m_emitter);
+  m_grid->TEST_findParticleInCell(m_emitter);
+
+  //std::cout<<"test\n";
 
 }
 

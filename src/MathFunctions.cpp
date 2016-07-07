@@ -15,9 +15,9 @@ int MathFunctions::getVectorIndex(int i, int j, int k, int _noCells)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-Eigen::Vector3f MathFunctions::getParticleGridCell(Eigen::Vector3f _particlePosition, float _cellSize, Eigen::Vector3f _gridOrigin)
+Eigen::Vector3i MathFunctions::getParticleGridCell(Eigen::Vector3f _particlePosition, float _cellSize, Eigen::Vector3f _gridOrigin)
 {
-  Eigen::Vector3f index;
+  Eigen::Vector3i index;
 
   //Find grid indices from particle position.
   Eigen::Vector3f indexParticle=(1.0/_cellSize)*(_particlePosition-_gridOrigin);
@@ -35,6 +35,15 @@ Eigen::Vector3f MathFunctions::getParticleGridCell(Eigen::Vector3f _particlePosi
 float MathFunctions::calcCubicBSpline(float _x)
 {
   float result=0.0;
+  float absX=std::abs(_x);
+  if (absX<1.0)
+  {
+    result=1.0; //For now
+  }
+  else if (absX>=1.0 && absX<2.0)
+  {
+    result=0.5; //For now
+  }
   return result;
 }
 
@@ -43,6 +52,15 @@ float MathFunctions::calcCubicBSpline(float _x)
 float MathFunctions::calcCubicBSpline_Diff(float _x)
 {
   float result=0.0;
+  float absX=std::abs(_x);
+  if (absX<1.0)
+  {
+    result=1.0; //For now
+  }
+  else if (absX>=1.0 && absX<2.0)
+  {
+    result=0.5; //For now
+  }
   return result;
 }
 
@@ -59,6 +77,15 @@ float MathFunctions::calcCubicBSpline_Integ(float _x)
 float MathFunctions::calcTightQuadraticStencil(float _x)
 {
   float result=0.0;
+  float absX=std::abs(_x);
+  if (absX<0.5)
+  {
+    result=1.0; //For now
+  }
+  else if (absX>=0.5 && absX<1.5)
+  {
+    result=0.5; //For now
+  }
   return result;
 }
 
@@ -67,6 +94,15 @@ float MathFunctions::calcTightQuadraticStencil(float _x)
 float MathFunctions::calcTightQuadraticStencil_Diff(float _x)
 {
   float result=0.0;
+  float absX=std::abs(_x);
+  if (absX<0.5)
+  {
+    result=1.0; //For now
+  }
+  else if (absX>=0.5 && absX<1.5)
+  {
+    result=0.5; //For now
+  }
   return result;
 }
 
