@@ -4,6 +4,7 @@
 #include <cmath>
 #include <math.h>
 #include <iostream>
+#include <limits>
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -15,12 +16,12 @@ int MathFunctions::getVectorIndex(int i, int j, int k, int _noCells)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-Eigen::Vector3i MathFunctions::getParticleGridCell(Eigen::Vector3f _particlePosition, float _cellSize, Eigen::Vector3f _gridOrigin)
+Eigen::Vector3i MathFunctions::getParticleGridCell(Eigen::Vector3f _particlePosition, float _cellSize, Eigen::Vector3f _gridEdgeOrigin)
 {
   Eigen::Vector3i index;
 
   //Find grid indices from particle position.
-  Eigen::Vector3f indexParticle=(1.0/_cellSize)*(_particlePosition-_gridOrigin);
+  Eigen::Vector3f indexParticle=(1.0/_cellSize)*(_particlePosition-_gridEdgeOrigin);
 
   //Find which cell the particle is in
   index(0)=floor(indexParticle(0));
@@ -34,16 +35,32 @@ Eigen::Vector3i MathFunctions::getParticleGridCell(Eigen::Vector3f _particlePosi
 
 float MathFunctions::calcCubicBSpline(float _x)
 {
+  /*Cubic B-Spline
+  --------------------------------------------------------------------------------------------------
+  N(x) = (|x|^3)/2 - x^2 + 2/3            if 0<=|x|<1
+       = -(|x|^3)/6 + x^2 - 2*|x| + 4/3   if 1<=|x|<2
+       = 0                              otherwise
+  --------------------------------------------------------------------------------------------------
+  */
+
   float result=0.0;
   float absX=std::abs(_x);
+
   if (absX<1.0)
   {
-    result=1.0; //For now
+    result=0.5*(pow(absX,3));
+    result-=pow(_x,2);
+    result+=(2.0/3.0);
   }
+
   else if (absX>=1.0 && absX<2.0)
   {
-    result=0.5; //For now
+    result=(-1.0/6.0)*(pow(absX,3));
+    result+=pow(_x,2);
+    result-=2.0*absX;
+    result+=(4.0/3.0);
   }
+
   return result;
 }
 
@@ -51,16 +68,32 @@ float MathFunctions::calcCubicBSpline(float _x)
 
 float MathFunctions::calcCubicBSpline_Diff(float _x)
 {
+  /*Cubic B-Spline differentiated
+  --------------------------------------------------------------------------------------------------
+  N(x) = (3/2)*(|x|^2)*signFunction(x) - 2x                       if 0<=|x|<1
+       = -(1/2)*(|x|^2)*signFunction(x) + 2x - 2*signFunction(x)  if 1<=|x|<2
+       = 0                                                        otherwise
+  --------------------------------------------------------------------------------------------------
+  */
+
   float result=0.0;
   float absX=std::abs(_x);
+
+  float signX=MathFunctions::signFunction(_x);
+
   if (absX<1.0)
   {
-    result=1.0; //For now
+    result=(3.0/2.0)*(pow(absX,2))*signX;
+    result-=(2.0*_x);
   }
+
   else if (absX>=1.0 && absX<2.0)
   {
-    result=0.5; //For now
+    result=(-0.5)*(pow(absX,2))*signX;
+    result+=(2.0*_x);
+    result-=(2.0*signX);
   }
+
   return result;
 }
 
@@ -76,16 +109,30 @@ float MathFunctions::calcCubicBSpline_Integ(float _x)
 
 float MathFunctions::calcTightQuadraticStencil(float _x)
 {
+  /*Tight Quadratic Stencil
+  --------------------------------------------------------------------------------------------------
+  N(x) = -x^2 +3/4                       if 0<=|x|<1/2
+       = (1/2)*(x^2) - (3/2)x + 9/8      if 1/2<=|x|<3/2  NB! Paper says 1<=|x|<3/2 but assuming meant 1/2
+       = 0                               otherwise
+  --------------------------------------------------------------------------------------------------
+  */
+
   float result=0.0;
   float absX=std::abs(_x);
+
   if (absX<0.5)
   {
-    result=1.0; //For now
+    result=(-1.0)*(pow(_x,2));
+    result+=(3.0/4.0);
   }
+
   else if (absX>=0.5 && absX<1.5)
   {
-    result=0.5; //For now
+    result=0.5*(pow(_x,2));
+    result-=((3.0/2.0)*_x);
+    result+=(9.0/8.0);
   }
+
   return result;
 }
 
@@ -93,16 +140,28 @@ float MathFunctions::calcTightQuadraticStencil(float _x)
 
 float MathFunctions::calcTightQuadraticStencil_Diff(float _x)
 {
+  /*Tight Quadratic Stencil
+  --------------------------------------------------------------------------------------------------
+  N(x) = -2x              if 0<=|x|<1/2
+       = x - 3/2          if 1/2<=|x|<3/2  NB! Paper says 1<=|x|<3/2 but assuming meant 1/2
+       = 0                otherwise
+  --------------------------------------------------------------------------------------------------
+  */
+
   float result=0.0;
   float absX=std::abs(_x);
+
   if (absX<0.5)
   {
-    result=1.0; //For now
+    result=(-2.0*_x);
   }
+
   else if (absX>=0.5 && absX<1.5)
   {
-    result=0.5; //For now
+    result=_x;
+    result-=(3.0/2.0);
   }
+
   return result;
 }
 
@@ -308,6 +367,45 @@ void MathFunctions::singularValueDecomposition(Eigen::Matrix3f *_decomposeMatrix
 void MathFunctions::centralDifferenceGradient()
 {
 
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+float MathFunctions::signFunction(float _x)
+{
+  float signValue=0.0;
+
+  if (_x>0.0)
+  {
+    signValue=1.0;
+  }
+
+  else if (_x<0.0)
+  {
+    signValue=-1.0;
+  }
+
+  return signValue;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+int MathFunctions::findMinVectorValue(std::vector<int> *_vectorList)
+{
+  int vectorSize=_vectorList->size();
+
+  int minValue=std::numeric_limits<int>::max();
+
+  for (int i=0; i<vectorSize; i++)
+  {
+    int testValue=_vectorList->at(i);
+    if (testValue<minValue && testValue>0)
+    {
+      minValue=testValue;
+    }
+  }
+
+  return minValue;
 }
 
 //----------------------------------------------------------------------------------------------------------------------

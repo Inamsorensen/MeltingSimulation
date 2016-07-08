@@ -40,7 +40,7 @@ struct MathFunctions
   /// @brief Get cell index of a particle
   /// @param [in] Position of particle
   //----------------------------------------------------------------------------------------------------------------------
-  static Eigen::Vector3i getParticleGridCell(Eigen::Vector3f _particlePosition, float _cellSize, Eigen::Vector3f _gridOrigin);
+  static Eigen::Vector3i getParticleGridCell(Eigen::Vector3f _particlePosition, float _cellSize, Eigen::Vector3f _gridEdgeOrigin);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Returns value of cubic B-spline
   /// @param [in] Position in a single direction, x
@@ -109,6 +109,14 @@ struct MathFunctions
   /// @brief Calculates the central difference gradient
   //----------------------------------------------------------------------------------------------------------------------
   static void centralDifferenceGradient();
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Sign function. Gives sign of input value and zero if input is zero. Used for differentiating |x|
+  //----------------------------------------------------------------------------------------------------------------------
+  static float signFunction(float _x);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Find minimum above zero in vector
+  //----------------------------------------------------------------------------------------------------------------------
+  static int findMinVectorValue(std::vector<int>* _vectorList);
 
 };
 

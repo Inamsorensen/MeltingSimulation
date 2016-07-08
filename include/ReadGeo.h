@@ -36,7 +36,7 @@ public:
   /// @brief Reads point positions from file and returns them in positionData
   /// @param [out] Pointer to vector containing position data
   //----------------------------------------------------------------------------------------------------------------------
-  void getPointPositions(std::vector<Eigen::Vector3f> *o_positionData);
+  void getPointPositions(int o_noPoints, std::vector<Eigen::Vector3f> *o_positionData);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Reads a point parameter, ie. a different value for each point.
   /// @param [in] _paramName is the name of the parameter to be read

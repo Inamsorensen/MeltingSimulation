@@ -37,7 +37,7 @@ ReadGeo::~ReadGeo()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void ReadGeo::getPointPositions(std::vector<Eigen::Vector3f> *o_positionData)
+void ReadGeo::getPointPositions(int o_noPoints, std::vector<Eigen::Vector3f> *o_positionData)
 {
   /// @brief Reads in number of points and position data. Done by searching for certain words in the file and reading the values after it
   /// Also checks that it has found the same number of position data as there are points according to the file
@@ -51,7 +51,7 @@ void ReadGeo::getPointPositions(std::vector<Eigen::Vector3f> *o_positionData)
     std::string paramName="P";
 
     //Data that is read from file
-    int noPoints=0;
+    o_noPoints=0;
 
     //Return pointer to beginning of file
     m_file.clear();
@@ -75,7 +75,7 @@ void ReadGeo::getPointPositions(std::vector<Eigen::Vector3f> *o_positionData)
         {
           noPointsString+=line[i];
         }
-        noPoints=std::stoi(noPointsString);
+        o_noPoints=std::stoi(noPointsString);
 //        std::cout<<"Number of points: "<<noPoints<<"\n";
 
         break;
@@ -83,7 +83,7 @@ void ReadGeo::getPointPositions(std::vector<Eigen::Vector3f> *o_positionData)
     }
 
     //If no points found, then return.
-    if (noPoints==0)
+    if (o_noPoints==0)
     {
       std::cout<<"No points found\n";
       return;
@@ -162,9 +162,9 @@ void ReadGeo::getPointPositions(std::vector<Eigen::Vector3f> *o_positionData)
 
   //Check that the data stored in pointPositions is the same as the number of points
     int positionDataSize=o_positionData->size();
-    std::cout<<"Number of points: "<<noPoints<<"\n";
+    std::cout<<"Number of points: "<<o_noPoints<<"\n";
     std::cout<<"Size of position data: "<<positionDataSize<<"\n";
-    if (positionDataSize==noPoints)
+    if (positionDataSize==o_noPoints)
     {
       std::cout<<"Same number of points as position data\n";
     }

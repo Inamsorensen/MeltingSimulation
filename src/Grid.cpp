@@ -262,21 +262,29 @@ void Grid::findParticleInCell(Emitter* _emitter)
 
   std::vector<Particle*>* particleListPtr=_emitter->getParticlesList();
 
+  //To calc position of particle, need origin of grid ege, not centre of first grid cell, as this is how its
+  //defined in Houdini/import file
+  float halfCellSize=m_cellSize/2.0;
+  Eigen::Vector3f gridEdgePosition=m_origin;
+  gridEdgePosition(0)-=halfCellSize;
+  gridEdgePosition(1)-=halfCellSize;
+  gridEdgePosition(2)-=halfCellSize;
+
   for (int particleItr=0; particleItr<_emitter->getNoParticles(); particleItr++)
   {
     Eigen::Vector3f particlePosition=particleListPtr->at(particleItr)->getPosition();
-    Eigen::Vector3i particleIndex=MathFunctions::getParticleGridCell(particlePosition, m_cellSize, m_origin);
+    Eigen::Vector3i particleIndex=MathFunctions::getParticleGridCell(particlePosition, m_cellSize, gridEdgePosition);
 
     //Loop over i+-2, j+-2, k+-2
     int iParticle=particleIndex(0);
     int jParticle=particleIndex(1);
     int kParticle=particleIndex(2);
 
-    for (int k=(kParticle-2); k<(kParticle+3); k++)
+    for (int k=(kParticle-2); k<(kParticle+4); k++)
     {
-      for (int j=(jParticle-2); j<(jParticle+3); j++)
+      for (int j=(jParticle-2); j<(jParticle+4); j++)
       {
-        for (int i=(iParticle-2); i<(iParticle+3); i++)
+        for (int i=(iParticle-2); i<(iParticle+4); i++)
         {
           //Check that not in outer cells or outside grid
           if (i>=0 && i<=(m_noCells-1) && j>=0 && j<=(m_noCells-1) && k>=0 && k<=(m_noCells-1))
@@ -659,108 +667,153 @@ void Grid::setBoundaryVelocity()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::TEST_findParticleInCell(Emitter *_emitter)
+void Grid::findNoParticlesInCells(Emitter *_emitter, std::vector<int> *o_listParticleNo)
 {
-  std::vector<Particle*>* particleListPtr=_emitter->getParticlesList();
+  /* Outline
+  ---------------------------------------------------------------------------------------------------------------------
+  Set up vector so large enough to contain all cells
+  Initialise all members to zero
 
-  for (int particleItr=0; particleItr<_emitter->getNoParticles(); particleItr++)
+  Loop over all particles
+    Find index of particle position
+    Add to that cell in the vector
+
+  ---------------------------------------------------------------------------------------------------------------------
+  */
+
+  //Initialise list
+  //o_listParticleNo=new std::vector<int>(pow(m_noCells,3),0);
+
+  //Get particle list
+  std::vector<Particle*>* particleList=_emitter->getParticlesList();
+  int noParticles=_emitter->getNoParticles();
+
+  //Calculate position of grid edge as this is origin for particle positions
+  float halfCellSize=m_cellSize/2.0;
+  Eigen::Vector3f gridEdgePosition=m_origin;
+  gridEdgePosition(0)-=halfCellSize;
+  gridEdgePosition(1)-=halfCellSize;
+  gridEdgePosition(2)-=halfCellSize;
+
+  for (int i=0; i<noParticles; i++)
   {
-    Eigen::Vector3f particlePosition=particleListPtr->at(particleItr)->getPosition();
-    //Eigen::Vector3i particleIndex=MathFunctions::getParticleGridCell(particlePosition, m_cellSize, m_origin);
+    //Get grid cell index from particle position
+    Eigen::Vector3f particlePosition=particleList->at(i)->getPosition();
+    Eigen::Vector3i particleIndex=MathFunctions::getParticleGridCell(particlePosition, m_cellSize, gridEdgePosition);
 
-    //Loop over all grid cells
-    for (int k=0; k<m_noCells; k++)
-    {
-      for (int j=0; j<m_noCells; j++)
-      {
-        for (int i=0; i<m_noCells; i++)
-        {
-          //Cell position
-          float xPos=(i*m_cellSize)+m_origin(0);
-          float yPos=(j*m_cellSize)+m_origin(1);
-          float zPos=(k*m_cellSize)+m_origin(2);
+    //Get vector index of the cell the particle is in
+    int cellIndex=MathFunctions::getVectorIndex(particleIndex(0), particleIndex(1), particleIndex(2), m_noCells);
 
-          //Position vectors for centre and faces
-          Eigen::Vector3f centreVector(xPos, yPos, zPos);
-
-          float halfCellSize=m_cellSize/2.0;
-          Eigen::Vector3f faceXVector(xPos-halfCellSize, yPos, zPos);
-          Eigen::Vector3f faceYVector(xPos, yPos-halfCellSize, zPos);
-          Eigen::Vector3f faceZVector(xPos, yPos, zPos-halfCellSize);
-
-          //Eigen::Vector3f particlePosition=_particle->getPosition();
-
-          //Calculate posDifference for each face and cell centre
-          Eigen::Vector3f centrePosDiff=particlePosition-centreVector;
-          Eigen::Vector3f faceXPosDiff=particlePosition-faceXVector;
-          Eigen::Vector3f faceYPosDiff=particlePosition-faceYVector;
-          Eigen::Vector3f faceZPosDiff=particlePosition-faceZVector;
-
-          //Need to calculate weights for each of these
-          //Check whether worth calculating all?
-
-          //Centre
-          float NxCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(0)/m_cellSize);
-          float NyCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(1)/m_cellSize);
-          float NzCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(2)/m_cellSize);
-          float NCentre_cubicBS=NxCentre_cubicBS*NyCentre_cubicBS*NzCentre_cubicBS;
-
-          //FaceX
-          float NxFaceX_cubicBS=MathFunctions::calcCubicBSpline(faceXPosDiff(0)/m_cellSize);
-          float NyFaceX_cubicBS=MathFunctions::calcCubicBSpline(faceXPosDiff(1)/m_cellSize);
-          float NzFaceX_cubicBS=MathFunctions::calcCubicBSpline(faceXPosDiff(2)/m_cellSize);
-          float NFaceX_cubicBS=NxFaceX_cubicBS*NyFaceX_cubicBS*NzFaceX_cubicBS;
-
-          //FaceY
-          float NxFaceY_cubicBS=MathFunctions::calcCubicBSpline(faceYPosDiff(0)/m_cellSize);
-          float NyFaceY_cubicBS=MathFunctions::calcCubicBSpline(faceYPosDiff(1)/m_cellSize);
-          float NzFaceY_cubicBS=MathFunctions::calcCubicBSpline(faceYPosDiff(2)/m_cellSize);
-          float NFaceY_cubicBS=NxFaceY_cubicBS*NyFaceY_cubicBS*NzFaceY_cubicBS;
-
-          //FaceZ
-          float NxFaceZ_cubicBS=MathFunctions::calcCubicBSpline(faceZPosDiff(0)/m_cellSize);
-          float NyFaceZ_cubicBS=MathFunctions::calcCubicBSpline(faceZPosDiff(1)/m_cellSize);
-          float NzFaceZ_cubicBS=MathFunctions::calcCubicBSpline(faceZPosDiff(2)/m_cellSize);
-          float NFaceZ_cubicBS=NxFaceZ_cubicBS*NyFaceZ_cubicBS*NzFaceZ_cubicBS;
-
-          //Check whether worth keep going, ie. if cubicBS are non-zero
-          //NB! Might need to check if smaller than smallest value difference
-
-          int cellListIndex=MathFunctions::getVectorIndex(i, j, k, m_noCells);
-
-          if (NCentre_cubicBS!=0)
-          {
-            InterpolationData* newInterpData=new InterpolationData;
-            newInterpData->m_particle=particleListPtr->at(particleItr);
-            newInterpData->m_cubicBSpline=NCentre_cubicBS;
-            m_cellCentres[cellListIndex]->m_interpolationData.push_back(newInterpData);
-          }
-
-          if (NFaceX_cubicBS!=0)
-          {
-            InterpolationData* newInterpData=new InterpolationData;
-            newInterpData->m_particle=particleListPtr->at(particleItr);
-            newInterpData->m_cubicBSpline=NFaceX_cubicBS;
-            m_cellFacesX[cellListIndex]->m_interpolationData.push_back(newInterpData);
-          }
-
-          if (NFaceY_cubicBS!=0)
-          {
-            InterpolationData* newInterpData=new InterpolationData;
-            newInterpData->m_particle=particleListPtr->at(particleItr);
-            newInterpData->m_cubicBSpline=NFaceY_cubicBS;
-            m_cellFacesY[cellListIndex]->m_interpolationData.push_back(newInterpData);
-          }
-
-          if (NFaceZ_cubicBS!=0)
-          {
-            InterpolationData* newInterpData=new InterpolationData;
-            newInterpData->m_particle=particleListPtr->at(particleItr);
-            newInterpData->m_cubicBSpline=NFaceZ_cubicBS;
-            m_cellFacesZ[cellListIndex]->m_interpolationData.push_back(newInterpData);
-          }
-        }
-      }
-    }
+    //Increase the particle count for that cell
+    o_listParticleNo->at(cellIndex)+=1;
   }
+
 }
+
+//----------------------------------------------------------------------------------------------------------------------
+
+//void Grid::TEST_findParticleInCell(Emitter *_emitter)
+//{
+//  std::vector<Particle*>* particleListPtr=_emitter->getParticlesList();
+
+//  for (int particleItr=0; particleItr<_emitter->getNoParticles(); particleItr++)
+//  {
+//    Eigen::Vector3f particlePosition=particleListPtr->at(particleItr)->getPosition();
+//    //Eigen::Vector3i particleIndex=MathFunctions::getParticleGridCell(particlePosition, m_cellSize, m_origin);
+
+//    //Loop over all grid cells
+//    for (int k=0; k<m_noCells; k++)
+//    {
+//      for (int j=0; j<m_noCells; j++)
+//      {
+//        for (int i=0; i<m_noCells; i++)
+//        {
+//          //Cell position
+//          float xPos=(i*m_cellSize)+m_origin(0);
+//          float yPos=(j*m_cellSize)+m_origin(1);
+//          float zPos=(k*m_cellSize)+m_origin(2);
+
+//          //Position vectors for centre and faces
+//          Eigen::Vector3f centreVector(xPos, yPos, zPos);
+
+//          float halfCellSize=m_cellSize/2.0;
+//          Eigen::Vector3f faceXVector(xPos-halfCellSize, yPos, zPos);
+//          Eigen::Vector3f faceYVector(xPos, yPos-halfCellSize, zPos);
+//          Eigen::Vector3f faceZVector(xPos, yPos, zPos-halfCellSize);
+
+//          //Eigen::Vector3f particlePosition=_particle->getPosition();
+
+//          //Calculate posDifference for each face and cell centre
+//          Eigen::Vector3f centrePosDiff=particlePosition-centreVector;
+//          Eigen::Vector3f faceXPosDiff=particlePosition-faceXVector;
+//          Eigen::Vector3f faceYPosDiff=particlePosition-faceYVector;
+//          Eigen::Vector3f faceZPosDiff=particlePosition-faceZVector;
+
+//          //Need to calculate weights for each of these
+//          //Check whether worth calculating all?
+
+//          //Centre
+//          float NxCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(0)/m_cellSize);
+//          float NyCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(1)/m_cellSize);
+//          float NzCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(2)/m_cellSize);
+//          float NCentre_cubicBS=NxCentre_cubicBS*NyCentre_cubicBS*NzCentre_cubicBS;
+
+//          //FaceX
+//          float NxFaceX_cubicBS=MathFunctions::calcCubicBSpline(faceXPosDiff(0)/m_cellSize);
+//          float NyFaceX_cubicBS=MathFunctions::calcCubicBSpline(faceXPosDiff(1)/m_cellSize);
+//          float NzFaceX_cubicBS=MathFunctions::calcCubicBSpline(faceXPosDiff(2)/m_cellSize);
+//          float NFaceX_cubicBS=NxFaceX_cubicBS*NyFaceX_cubicBS*NzFaceX_cubicBS;
+
+//          //FaceY
+//          float NxFaceY_cubicBS=MathFunctions::calcCubicBSpline(faceYPosDiff(0)/m_cellSize);
+//          float NyFaceY_cubicBS=MathFunctions::calcCubicBSpline(faceYPosDiff(1)/m_cellSize);
+//          float NzFaceY_cubicBS=MathFunctions::calcCubicBSpline(faceYPosDiff(2)/m_cellSize);
+//          float NFaceY_cubicBS=NxFaceY_cubicBS*NyFaceY_cubicBS*NzFaceY_cubicBS;
+
+//          //FaceZ
+//          float NxFaceZ_cubicBS=MathFunctions::calcCubicBSpline(faceZPosDiff(0)/m_cellSize);
+//          float NyFaceZ_cubicBS=MathFunctions::calcCubicBSpline(faceZPosDiff(1)/m_cellSize);
+//          float NzFaceZ_cubicBS=MathFunctions::calcCubicBSpline(faceZPosDiff(2)/m_cellSize);
+//          float NFaceZ_cubicBS=NxFaceZ_cubicBS*NyFaceZ_cubicBS*NzFaceZ_cubicBS;
+
+//          //Check whether worth keep going, ie. if cubicBS are non-zero
+//          //NB! Might need to check if smaller than smallest value difference
+
+//          int cellListIndex=MathFunctions::getVectorIndex(i, j, k, m_noCells);
+
+//          if (NCentre_cubicBS!=0)
+//          {
+//            InterpolationData* newInterpData=new InterpolationData;
+//            newInterpData->m_particle=particleListPtr->at(particleItr);
+//            newInterpData->m_cubicBSpline=NCentre_cubicBS;
+//            m_cellCentres[cellListIndex]->m_interpolationData.push_back(newInterpData);
+//          }
+
+//          if (NFaceX_cubicBS!=0)
+//          {
+//            InterpolationData* newInterpData=new InterpolationData;
+//            newInterpData->m_particle=particleListPtr->at(particleItr);
+//            newInterpData->m_cubicBSpline=NFaceX_cubicBS;
+//            m_cellFacesX[cellListIndex]->m_interpolationData.push_back(newInterpData);
+//          }
+
+//          if (NFaceY_cubicBS!=0)
+//          {
+//            InterpolationData* newInterpData=new InterpolationData;
+//            newInterpData->m_particle=particleListPtr->at(particleItr);
+//            newInterpData->m_cubicBSpline=NFaceY_cubicBS;
+//            m_cellFacesY[cellListIndex]->m_interpolationData.push_back(newInterpData);
+//          }
+
+//          if (NFaceZ_cubicBS!=0)
+//          {
+//            InterpolationData* newInterpData=new InterpolationData;
+//            newInterpData->m_particle=particleListPtr->at(particleItr);
+//            newInterpData->m_cubicBSpline=NFaceZ_cubicBS;
+//            m_cellFacesZ[cellListIndex]->m_interpolationData.push_back(newInterpData);
+//          }
+//        }
+//      }
+//    }
+//  }
+//}

@@ -48,13 +48,13 @@ public:
   //----------------------------------------------------------------------------------------------------------------------
   ~Grid();
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Find which cells have particles in or near them such that interpolation weight will not be zero
+  /// @brief Find no of particles in each grid cell. Takes particle in emitter and checks positions against grid cells
+  /// Returns vector containing the number of particles in each cell.
+  /// @param [in] _emitter is used to get the list of particles to check for
+  /// @param [out] o_listParticleNo: Stores the number of particles, one number for each cell. If _storeZero=true, then can
+  /// access one grid cell using getVectorIndex from MathFunctions
   //----------------------------------------------------------------------------------------------------------------------
-  void findParticleInCell(Emitter *_emitter);
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief TEST findParticleInCell. Loops over all grid cells for each particle, calculating cubicBSpline and storing if !=0
-  //----------------------------------------------------------------------------------------------------------------------
-  void TEST_findParticleInCell(Emitter *_emitter);
+  void findNoParticlesInCells(Emitter* _emitter, std::vector<int> *o_listParticleNo);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Does all calculations for one time step. Updates velocity and temperature through force, pressure and
   /// temperature calculations
@@ -107,6 +107,10 @@ private:
   /// @brief Clear list of InterpolationData
   //----------------------------------------------------------------------------------------------------------------------
   void clearCellData();
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Find which cells have particles in or near them such that interpolation weight will not be zero
+  //----------------------------------------------------------------------------------------------------------------------
+  void findParticleInCell(Emitter *_emitter);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate interpolation weights for transitions Particle-Grid and Grid-Particle
   //----------------------------------------------------------------------------------------------------------------------
