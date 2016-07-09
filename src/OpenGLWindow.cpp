@@ -405,6 +405,7 @@ void OpenGLWindow::keyPressEvent(QKeyEvent* _event)
   {
   case Qt::Key_Escape: QGuiApplication::exit(EXIT_SUCCESS); break;
   case Qt::Key_F: showFullScreen(); break;
+  case Qt::Key_U: m_simulationController->update(); break;
   default: break;
   }
 

@@ -608,6 +608,8 @@ moc/moc_OpenGLWindow.cpp: /home/i7435906/NGL/include/ngl/Camera.h \
 		include/CellCentre.h \
 		include/InterpolationData.h \
 		include/CellFace.h \
+		include/MathFunctions.h \
+		include/omp.h \
 		include/ReadGeo.h \
 		include/OpenGLWindow.h
 	/opt/qt/5.5/gcc_64/bin/moc $(DEFINES) -I/opt/qt/5.5/gcc_64/mkspecs/linux-clang -I/home/i7435906/MasterProject/MeltingSimulation -I/home/i7435906/MasterProject/MeltingSimulation/include -I/usr/local/include/eigen3/Eigen -I/home/i7435906/NGL/include -I/opt/qt/5.5/gcc_64/include -I/opt/qt/5.5/gcc_64/include/QtOpenGL -I/opt/qt/5.5/gcc_64/include/QtWidgets -I/opt/qt/5.5/gcc_64/include/QtGui -I/opt/qt/5.5/gcc_64/include/QtCore include/OpenGLWindow.h -o moc/moc_OpenGLWindow.cpp
@@ -793,9 +795,9 @@ obj/main.o: src/main.cpp /opt/qt/5.5/gcc_64/include/QtGui/QGuiApplication \
 		include/CellCentre.h \
 		include/InterpolationData.h \
 		include/CellFace.h \
-		include/ReadGeo.h \
 		include/MathFunctions.h \
-		include/omp.h
+		include/omp.h \
+		include/ReadGeo.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/main.o src/main.cpp
 
 obj/SimulationController.o: src/SimulationController.cpp include/SimulationController.h \
@@ -933,6 +935,8 @@ obj/SimulationController.o: src/SimulationController.cpp include/SimulationContr
 		include/CellCentre.h \
 		include/InterpolationData.h \
 		include/CellFace.h \
+		include/MathFunctions.h \
+		include/omp.h \
 		include/ReadGeo.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/SimulationController.o src/SimulationController.cpp
 
@@ -1197,7 +1201,17 @@ obj/Particle.o: src/Particle.cpp include/Particle.h \
 		/opt/qt/5.5/gcc_64/include/QtOpenGL/qtopenglglobal.h \
 		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
 		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h \
-		/home/i7435906/NGL/include/ngl/Mat3.h
+		/home/i7435906/NGL/include/ngl/Mat3.h \
+		include/Emitter.h \
+		/home/i7435906/NGL/include/ngl/Mat4.h \
+		/home/i7435906/NGL/include/ngl/Camera.h \
+		/home/i7435906/NGL/include/ngl/Vec4.h \
+		/home/i7435906/NGL/include/ngl/Vec2.h \
+		/home/i7435906/NGL/include/ngl/RibExport.h \
+		/home/i7435906/NGL/include/ngl/Plane.h \
+		/home/i7435906/NGL/include/ngl/AABB.h \
+		/home/i7435906/NGL/include/ngl/BBox.h \
+		/home/i7435906/NGL/include/ngl/AbstractVAO.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Particle.o src/Particle.cpp
 
 obj/Grid.o: src/Grid.cpp include/Grid.h \
@@ -1323,7 +1337,19 @@ obj/Grid.o: src/Grid.cpp include/Grid.h \
 		include/InterpolationData.h \
 		include/Particle.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
-		include/CellFace.h
+		include/CellFace.h \
+		include/Emitter.h \
+		/home/i7435906/NGL/include/ngl/Mat4.h \
+		/home/i7435906/NGL/include/ngl/Camera.h \
+		/home/i7435906/NGL/include/ngl/Vec4.h \
+		/home/i7435906/NGL/include/ngl/Vec2.h \
+		/home/i7435906/NGL/include/ngl/RibExport.h \
+		/home/i7435906/NGL/include/ngl/Plane.h \
+		/home/i7435906/NGL/include/ngl/AABB.h \
+		/home/i7435906/NGL/include/ngl/BBox.h \
+		/home/i7435906/NGL/include/ngl/AbstractVAO.h \
+		include/MathFunctions.h \
+		include/omp.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Grid.o src/Grid.cpp
 
 obj/OpenGLWindow.o: src/OpenGLWindow.cpp /opt/qt/5.5/gcc_64/include/QtGui/QMouseEvent \
@@ -1504,6 +1530,8 @@ obj/OpenGLWindow.o: src/OpenGLWindow.cpp /opt/qt/5.5/gcc_64/include/QtGui/QMouse
 		include/CellCentre.h \
 		include/InterpolationData.h \
 		include/CellFace.h \
+		include/MathFunctions.h \
+		include/omp.h \
 		include/ReadGeo.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/OpenGLWindow.o src/OpenGLWindow.cpp
 
@@ -1753,7 +1781,19 @@ obj/Grid_deviatoricVelocity.o: src/Grid_deviatoricVelocity.cpp include/Grid.h \
 		include/InterpolationData.h \
 		include/Particle.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
-		include/CellFace.h
+		include/CellFace.h \
+		include/Emitter.h \
+		/home/i7435906/NGL/include/ngl/Mat4.h \
+		/home/i7435906/NGL/include/ngl/Camera.h \
+		/home/i7435906/NGL/include/ngl/Vec4.h \
+		/home/i7435906/NGL/include/ngl/Vec2.h \
+		/home/i7435906/NGL/include/ngl/RibExport.h \
+		/home/i7435906/NGL/include/ngl/Plane.h \
+		/home/i7435906/NGL/include/ngl/AABB.h \
+		/home/i7435906/NGL/include/ngl/BBox.h \
+		/home/i7435906/NGL/include/ngl/AbstractVAO.h \
+		include/MathFunctions.h \
+		include/omp.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Grid_deviatoricVelocity.o src/Grid_deviatoricVelocity.cpp
 
 obj/Grid_pressureVelocity.o: src/Grid_pressureVelocity.cpp include/Grid.h \
@@ -1879,7 +1919,19 @@ obj/Grid_pressureVelocity.o: src/Grid_pressureVelocity.cpp include/Grid.h \
 		include/InterpolationData.h \
 		include/Particle.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
-		include/CellFace.h
+		include/CellFace.h \
+		include/Emitter.h \
+		/home/i7435906/NGL/include/ngl/Mat4.h \
+		/home/i7435906/NGL/include/ngl/Camera.h \
+		/home/i7435906/NGL/include/ngl/Vec4.h \
+		/home/i7435906/NGL/include/ngl/Vec2.h \
+		/home/i7435906/NGL/include/ngl/RibExport.h \
+		/home/i7435906/NGL/include/ngl/Plane.h \
+		/home/i7435906/NGL/include/ngl/AABB.h \
+		/home/i7435906/NGL/include/ngl/BBox.h \
+		/home/i7435906/NGL/include/ngl/AbstractVAO.h \
+		include/MathFunctions.h \
+		include/omp.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Grid_pressureVelocity.o src/Grid_pressureVelocity.cpp
 
 obj/Grid_Temperature.o: src/Grid_Temperature.cpp include/Grid.h \
@@ -2005,7 +2057,19 @@ obj/Grid_Temperature.o: src/Grid_Temperature.cpp include/Grid.h \
 		include/InterpolationData.h \
 		include/Particle.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
-		include/CellFace.h
+		include/CellFace.h \
+		include/Emitter.h \
+		/home/i7435906/NGL/include/ngl/Mat4.h \
+		/home/i7435906/NGL/include/ngl/Camera.h \
+		/home/i7435906/NGL/include/ngl/Vec4.h \
+		/home/i7435906/NGL/include/ngl/Vec2.h \
+		/home/i7435906/NGL/include/ngl/RibExport.h \
+		/home/i7435906/NGL/include/ngl/Plane.h \
+		/home/i7435906/NGL/include/ngl/AABB.h \
+		/home/i7435906/NGL/include/ngl/BBox.h \
+		/home/i7435906/NGL/include/ngl/AbstractVAO.h \
+		include/MathFunctions.h \
+		include/omp.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Grid_Temperature.o src/Grid_Temperature.cpp
 
 obj/ReadGeo.o: src/ReadGeo.cpp include/ReadGeo.h \
@@ -2375,7 +2439,19 @@ obj/Grid_updateParticleFromGrid.o: src/Grid_updateParticleFromGrid.cpp include/G
 		include/InterpolationData.h \
 		include/Particle.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
-		include/CellFace.h
+		include/CellFace.h \
+		include/Emitter.h \
+		/home/i7435906/NGL/include/ngl/Mat4.h \
+		/home/i7435906/NGL/include/ngl/Camera.h \
+		/home/i7435906/NGL/include/ngl/Vec4.h \
+		/home/i7435906/NGL/include/ngl/Vec2.h \
+		/home/i7435906/NGL/include/ngl/RibExport.h \
+		/home/i7435906/NGL/include/ngl/Plane.h \
+		/home/i7435906/NGL/include/ngl/AABB.h \
+		/home/i7435906/NGL/include/ngl/BBox.h \
+		/home/i7435906/NGL/include/ngl/AbstractVAO.h \
+		include/MathFunctions.h \
+		include/omp.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Grid_updateParticleFromGrid.o src/Grid_updateParticleFromGrid.cpp
 
 obj/moc_OpenGLWindow.o: moc/moc_OpenGLWindow.cpp 

@@ -12,11 +12,19 @@ SimulationController::SimulationController()
 {
   /// @brief Set up simulation parameters and create grid and emitter pointers
 
+  //Initialise render parameters to zero. Set by separate function
+  m_camera=nullptr;
+  m_shaderName="";
+  m_particleRadius=0.0;
+
   //Setup if don't read from file
   //Timer setup
   m_simTimeStep=0.01;
   m_elapsedTimeAfterFrame=0.0;
   m_noFrames=0;
+
+  //Initialise total number of frames to zero
+  m_totalNoFrames=0;
 
   //Grid setup
   Eigen::Vector3f gridPos;
@@ -46,8 +54,8 @@ SimulationController::SimulationController()
   m_freezingTemperature=0.0;
 
   //Read in simulation parameters
-  std::string simulationParametersFile="../HoudiniFiles/particles.geo";
-  readSimulationParameters(simulationParametersFile);
+  m_readFileName="../HoudiniFiles/particles.geo";
+  readSimulationParameters();
 
   //Create emitter and particles
   m_emitter=new Emitter();
@@ -123,7 +131,7 @@ void SimulationController::setRenderParameters(ngl::Camera *_camera, std::string
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void SimulationController::readSimulationParameters(std::string _fileName)
+void SimulationController::readSimulationParameters()
 {
   /// @brief Sets all simulation parameters from geo file
 
@@ -148,7 +156,7 @@ void SimulationController::readSimulationParameters(std::string _fileName)
   std::string freezeTemp="FreezingTemperature";
 
   //Need to read in each value from file
-  ReadGeo* file=new ReadGeo(_fileName);
+  ReadGeo* file=new ReadGeo(m_readFileName);
 
   m_simTimeStep=file->getSimulationParameter_Float(simStep);
   m_totalNoFrames=file->getSimulationParameter_Float(totNoFrames);
@@ -177,8 +185,6 @@ void SimulationController::readSimulationParameters(std::string _fileName)
 
 void SimulationController::setupParticles()
 {
-  std::string particleFileName="../HoudiniFiles/particles.geo";
-
   //Set up vectors to contain positions, mass, phase and temperature
   std::string mass="mass";
   std::string phase="phase";
@@ -190,7 +196,7 @@ void SimulationController::setupParticles()
   std::vector<float> temperatureList;
 
   //Read in the data from file
-  ReadGeo* file=new ReadGeo(particleFileName);
+  ReadGeo* file=new ReadGeo(m_readFileName);
 
   file->getPointPositions(m_noParticles, &positionList);
   file->getPointParameter_Float(mass, &massList);
@@ -212,15 +218,21 @@ void SimulationController::update()
 {
   /// @brief Steps the simulation. This controls the interlink between the particles and the grid
 
+  //Determine if first step
+  bool isFirstStep=false;
+  if (m_noFrames==0 && m_elapsedTimeAfterFrame==0)
+  {
+    isFirstStep=true;
+  }
+
   //Update elastic/plastic
 
+  //Update grid which includes
   //Calculate interpolation weights
-
   //Transfer data from particles to grid
-
-  //Update grid to calculate new velocity and temperature
-
+  //Calculate new velocity and temperature
   //Transfer data back to particles
+  m_grid->update(m_simTimeStep, m_emitter, isFirstStep);
 
   //Update particles
 

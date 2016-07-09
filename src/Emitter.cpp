@@ -8,8 +8,23 @@ Emitter::Emitter()
 {
   /// @brief Initiates values for emitter. However, actual values and particles must be set up using separate functions
 
+  //Initialise all values to zero
   m_noParticles=0;
+
+  m_lameMuConstant=0.0;
+  m_lameLambdaConstant=0.0;
+  m_hardnessCoefficient=0.0;
+  m_compressionLimit=0.0;
+  m_stretchLimit=0.0;
+  m_heatCapacitySolid=0.0;
+  m_heatCapacityFluid=0.0;
+  m_heatConductivitySolid=0.0;
+  m_heatConductivityFluid=0.0;
   m_latentHeat=0.0;
+  m_freezingTemperature=0.0;
+
+  m_particleShaderName="";
+  m_particleRadius=0.0;
 
 }
 
@@ -35,6 +50,8 @@ Emitter::~Emitter()
 
   //Clear vector
   m_particles.clear();
+
+  std::cout<<"Deleting emitter\n";
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -66,6 +83,7 @@ void Emitter::setStrainConstants(float _lameMuConstant, float _lameLambdaConstan
   m_lameLambdaConstant=_lameLambdaConstant;
   m_compressionLimit=_compressionLim;
   m_stretchLimit=_stretchLim;
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------

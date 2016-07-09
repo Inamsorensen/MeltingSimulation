@@ -22,6 +22,9 @@ Grid::Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
   m_noCells=_noCells;
   m_cellSize=m_gridSize/((float)m_noCells);
 
+  //Initialise time step to zero
+  m_dt=0.0;
+
   m_cellCentres.reserve(pow(m_noCells,3));
   m_cellFacesX.reserve(pow(m_noCells,3));
   m_cellFacesY.reserve(pow(m_noCells,3));
@@ -177,11 +180,28 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep)
   ---------------------------------------------------------------------------------------------------------------
   */
 
+  //Set m_dt=_dt
   m_dt=_dt;
 
+  //Clear InterpolationData for each grid cell so all empty before start adding particles
   clearCellData();
 
+  //findParticleInCell - need to find out which particles are in which cells and their respective interp weight
   findParticleInCell(_emitter);
+
+  //Transfer particle data to grid
+  transferParticleData(_emitter);
+
+  //If first step calculate particle density during this loop as well
+  if (_isFirstStep)
+  {
+    calcInitialParticleVolumes(_emitter);
+  }
+
+  //Classify cells
+
+  //Calculate force
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -197,46 +217,74 @@ void Grid::clearCellData()
   --------------------------------------------------------------------------------------------------------------
   */
 
-  for (int i=0; i<pow(m_noCells,3); i++)
+  for (int cellIndex=0; cellIndex<pow(m_noCells,3); cellIndex++)
   {
     //Loop over all particles in cell
-    int sizeOfInterpDataCentre=m_cellCentres[i]->m_interpolationData.size();
-    int sizeOfInterpDataX=m_cellFacesX[i]->m_interpolationData.size();
-    int sizeOfInterpDataY=m_cellFacesY[i]->m_interpolationData.size();
-    int sizeOfInterpDataZ=m_cellFacesZ[i]->m_interpolationData.size();
+    int noParticles_CellCentre=m_cellCentres[cellIndex]->m_interpolationData.size();
+    int noParticles_CellFaceX=m_cellFacesX[cellIndex]->m_interpolationData.size();
+    int noParticles_CellFaceY=m_cellFacesY[cellIndex]->m_interpolationData.size();
+    int noParticles_CellFaceZ=m_cellFacesZ[cellIndex]->m_interpolationData.size();
 
-    if (sizeOfInterpDataCentre==sizeOfInterpDataX==sizeOfInterpDataY==sizeOfInterpDataZ)
+    if (noParticles_CellCentre==noParticles_CellFaceX==noParticles_CellFaceY==noParticles_CellFaceZ)
     {
-      for (int j=0; j<sizeOfInterpDataCentre; j++)
+      for (int particleIterator=0; particleIterator<noParticles_CellCentre; particleIterator++)
       {
-        delete m_cellCentres[i]->m_interpolationData[j];
-        delete m_cellFacesX[i]->m_interpolationData[j];
-        delete m_cellFacesY[i]->m_interpolationData[j];
-        delete m_cellFacesZ[i]->m_interpolationData[j];
+        delete m_cellCentres[cellIndex]->m_interpolationData[particleIterator];
+        delete m_cellFacesX[cellIndex]->m_interpolationData[particleIterator];
+        delete m_cellFacesY[cellIndex]->m_interpolationData[particleIterator];
+        delete m_cellFacesZ[cellIndex]->m_interpolationData[particleIterator];
       }
     }
     else
     {
-      for (int j=0; j<sizeOfInterpDataCentre; j++)
+      for (int particleIterator=0; particleIterator<noParticles_CellCentre; particleIterator++)
       {
-        delete m_cellCentres[i]->m_interpolationData[j];
+        delete m_cellCentres[cellIndex]->m_interpolationData[particleIterator];
       }
 
-      for (int j=0; j<sizeOfInterpDataX; j++)
+      for (int particleIterator=0; particleIterator<noParticles_CellFaceX; particleIterator++)
       {
-        delete m_cellFacesX[i]->m_interpolationData[j];
+        delete m_cellFacesX[cellIndex]->m_interpolationData[particleIterator];
       }
 
-      for (int j=0; j<sizeOfInterpDataY; j++)
+      for (int particleIterator=0; particleIterator<noParticles_CellFaceY; particleIterator++)
       {
-        delete m_cellFacesY[i]->m_interpolationData[j];
+        delete m_cellFacesY[cellIndex]->m_interpolationData[particleIterator];
       }
 
-      for (int j=0; j<sizeOfInterpDataZ; j++)
+      for (int particleIterator=0; particleIterator<noParticles_CellFaceZ; particleIterator++)
       {
-        delete m_cellFacesZ[i]->m_interpolationData[j];
+        delete m_cellFacesZ[cellIndex]->m_interpolationData[particleIterator];
       }
     }
+
+    //Reset cell centre values to zero
+    m_cellCentres[cellIndex]->m_mass=0.0;
+    m_cellCentres[cellIndex]->m_detDeformationGrad=0.0;
+    m_cellCentres[cellIndex]->m_detDeformationGradElastic=0.0;
+    m_cellCentres[cellIndex]->m_detDeformationGradPlastic=0.0;
+    m_cellCentres[cellIndex]->m_heatCapacity=0.0;
+    m_cellCentres[cellIndex]->m_temperature=0.0;
+    m_cellCentres[cellIndex]->m_lameLambdaInverse=0.0;
+
+    //Reset cell face X values to zero
+    m_cellFacesX[cellIndex]->m_mass=0.0;
+    m_cellFacesX[cellIndex]->m_deviatoricForce=0.0;
+    m_cellFacesX[cellIndex]->m_velocity=0.0;
+    m_cellFacesX[cellIndex]->m_heatConductivity=0.0;
+
+    //Reset cell face Y values to zero
+    m_cellFacesY[cellIndex]->m_mass=0.0;
+    m_cellFacesY[cellIndex]->m_deviatoricForce=0.0;
+    m_cellFacesY[cellIndex]->m_velocity=0.0;
+    m_cellFacesY[cellIndex]->m_heatConductivity=0.0;
+
+    //Reset cell face Z values to zero
+    m_cellFacesZ[cellIndex]->m_mass=0.0;
+    m_cellFacesZ[cellIndex]->m_deviatoricForce=0.0;
+    m_cellFacesZ[cellIndex]->m_velocity=0.0;
+    m_cellFacesZ[cellIndex]->m_heatConductivity=0.0;
+
   }
 }
 
@@ -597,16 +645,15 @@ void Grid::calcInterpolationWeights(Particle* _particle, int _i, int _j, int _k)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::transferParticleData(bool _isFirstStep)
+void Grid::transferParticleData(Emitter* _emitter)
 {
   /* Outline
   -----------------------------------------------------------------------------------------------------
-  Loop over all cells - Parallelise here
-  Could potentially set this so loop over all faces and centres, ie. use more threads
+  Loop done in update - could be moved to here and remove cellIndex input
 
     Check that m_InterpolationData is not empty - If it is, set everything to zero?
 
-    For each particle in the list calculate all variables
+    For each particle in the list calculate all variables, i for cell faces i={x,y,z} and c for cell centre
       m_i
       v_i
       kappa_i
@@ -618,15 +665,219 @@ void Grid::transferParticleData(bool _isFirstStep)
       lambda^-1
       JP_c
 
-
-     If first step in simulation, add to particle density
-
-  If first step in simulation, loop over particles
-    Calculate V_p
-
-
   -----------------------------------------------------------------------------------------------------
   */
+
+  for (int cellIndex=0; cellIndex<pow(m_noCells, 3); cellIndex++)
+  {
+    //Face X
+    //Check that non-empty, ie. that it has particles in it
+    int noParticles_CellFaceX=m_cellFacesX[cellIndex]->m_interpolationData.size();
+    if (noParticles_CellFaceX!=0)
+    {
+      for (int particleIterator=0; particleIterator<noParticles_CellFaceX; particleIterator++)
+      {
+        //Get interpolation weight
+        float weight=m_cellFacesX[cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
+
+        //Get particle data
+        float mass=0.0;
+        Eigen::Vector3f velocity;
+        Phase phase=Phase::Solid;
+        m_cellFacesX[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellFace(&mass, &velocity, &phase);
+        float velocityX=velocity(0);
+
+        //Add to cell face data
+        m_cellFacesX[cellIndex]->m_mass+=(weight*mass);
+        m_cellFacesX[cellIndex]->m_velocity+=((weight*mass)*velocityX);
+
+        //Find heat conductivity depending on phase
+        float heatConductivity=0.0;
+        if (phase==Phase::Solid)
+        {
+          heatConductivity=_emitter->m_heatConductivitySolid;
+        }
+        else
+        {
+          heatConductivity=_emitter->m_heatConductivityFluid;
+        }
+        m_cellFacesX[cellIndex]->m_heatConductivity+=((weight*mass)*heatConductivity);
+
+      }
+
+      //Multiply data by 1/m_{i}
+      m_cellFacesX[cellIndex]->m_velocity*=(1.0/m_cellFacesX[cellIndex]->m_mass);
+      m_cellFacesX[cellIndex]->m_heatConductivity*=(1.0/m_cellFacesX[cellIndex]->m_mass);
+
+    }
+
+    //Face Y
+    int noParticles_CellFaceY=m_cellFacesY[cellIndex]->m_interpolationData.size();
+    if (noParticles_CellFaceY!=0)
+    {
+      for (int particleIterator=0; particleIterator<noParticles_CellFaceY; particleIterator++)
+      {
+        //Get interpolation weight
+        float weight=m_cellFacesY[cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
+
+        //Get particle data
+        float mass=0.0;
+        Eigen::Vector3f velocity;
+        Phase phase=Phase::Solid;
+        m_cellFacesY[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellFace(&mass, &velocity, &phase);
+        float velocityY=velocity(1);
+
+        //Add to cell face data
+        m_cellFacesY[cellIndex]->m_mass+=(weight*mass);
+        m_cellFacesY[cellIndex]->m_velocity+=((weight*mass)*velocityY);
+
+        //Find heat conductivity depending on phase
+        float heatConductivity=0.0;
+        if (phase==Phase::Solid)
+        {
+          heatConductivity=_emitter->m_heatConductivitySolid;
+        }
+        else
+        {
+          heatConductivity=_emitter->m_heatConductivityFluid;
+        }
+        m_cellFacesY[cellIndex]->m_heatConductivity+=((weight*mass)*heatConductivity);
+
+      }
+
+      //Multiply data by 1/m_{i}
+      m_cellFacesY[cellIndex]->m_velocity*=(1.0/m_cellFacesY[cellIndex]->m_mass);
+      m_cellFacesY[cellIndex]->m_heatConductivity*=(1.0/m_cellFacesY[cellIndex]->m_mass);
+
+    }
+
+    //Face Z
+    int noParticles_CellFaceZ=m_cellFacesZ[cellIndex]->m_interpolationData.size();
+    if (noParticles_CellFaceZ!=0)
+    {
+      for (int particleIterator=0; particleIterator<noParticles_CellFaceZ; particleIterator++)
+      {
+        //Get interpolation weight
+        float weight=m_cellFacesZ[cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
+
+        //Get particle data
+        float mass=0.0;
+        Eigen::Vector3f velocity;
+        Phase phase=Phase::Solid;
+        m_cellFacesZ[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellFace(&mass, &velocity, &phase);
+        float velocityZ=velocity(2);
+
+        //Add to cell face data
+        m_cellFacesZ[cellIndex]->m_mass+=(weight*mass);
+        m_cellFacesZ[cellIndex]->m_velocity+=((weight*mass)*velocityZ);
+
+        //Find heat conductivity depending on phase
+        float heatConductivity=0.0;
+        if (phase==Phase::Solid)
+        {
+          heatConductivity=_emitter->m_heatConductivitySolid;
+        }
+        else
+        {
+          heatConductivity=_emitter->m_heatConductivityFluid;
+        }
+        m_cellFacesZ[cellIndex]->m_heatConductivity+=((weight*mass)*heatConductivity);
+
+      }
+
+      //Multiply data by 1/m_{i}
+      m_cellFacesZ[cellIndex]->m_velocity*=(1.0/m_cellFacesZ[cellIndex]->m_mass);
+      m_cellFacesZ[cellIndex]->m_heatConductivity*=(1.0/m_cellFacesZ[cellIndex]->m_mass);
+
+    }
+
+    //Cell centre
+    int noParticles_CellCentre=m_cellCentres[cellIndex]->m_interpolationData.size();
+    if (noParticles_CellCentre!=0)
+    {
+      for (int particleIterator=0; particleIterator<noParticles_CellCentre; particleIterator++)
+      {
+        //Get interpolation weight
+        float weight=m_cellCentres[cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
+
+        //Get particle data
+        float mass=0.0;
+        float detDeformGrad=0.0;
+        float detDeformGradElast=0.0;
+        Phase phase=Phase::Solid;
+        float temperature=0.0;
+        float lameLambdaInverse=0.0;
+        m_cellCentres[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellCentre(&mass, &detDeformGrad, &detDeformGradElast, &phase, &temperature, &lameLambdaInverse);
+
+        //Add to cell centre data
+        m_cellCentres[cellIndex]->m_mass+=(weight*mass);
+        m_cellCentres[cellIndex]->m_detDeformationGrad+=((weight*mass)*detDeformGrad);
+        m_cellCentres[cellIndex]->m_detDeformationGradElastic+=((weight*mass)*detDeformGradElast);
+        m_cellCentres[cellIndex]->m_temperature+=((weight*mass)*temperature);
+        m_cellCentres[cellIndex]->m_lameLambdaInverse+=((weight*mass)*lameLambdaInverse);
+
+        //Get heat capacity depending on phase
+        float heatCapacity=0.0;
+        if (phase==Phase::Solid)
+        {
+          heatCapacity=_emitter->m_heatCapacitySolid;
+        }
+        else
+        {
+          heatCapacity=_emitter->m_heatCapacityFluid;
+        }
+        m_cellCentres[cellIndex]->m_heatCapacity+=((weight*mass)*heatCapacity);
+
+      }
+
+      //Multiply data by 1/m_{c}
+      m_cellCentres[cellIndex]->m_detDeformationGrad*=(1.0/m_cellCentres[cellIndex]->m_mass);
+      m_cellCentres[cellIndex]->m_detDeformationGradElastic*=(1.0/m_cellCentres[cellIndex]->m_mass);
+      m_cellCentres[cellIndex]->m_heatCapacity*=(1.0/m_cellCentres[cellIndex]->m_mass);
+      m_cellCentres[cellIndex]->m_temperature*=(1.0/m_cellCentres[cellIndex]->m_mass);
+      m_cellCentres[cellIndex]->m_lameLambdaInverse*=(1.0/m_cellCentres[cellIndex]->m_mass);
+
+      //Calculate detDeformationGrad_Plastic, ie. J_{Pc}=J_{c}/J_{Ec}
+      m_cellCentres[cellIndex]->m_detDeformationGradPlastic=m_cellCentres[cellIndex]->m_detDeformationGrad;
+      m_cellCentres[cellIndex]->m_detDeformationGradPlastic*=(1.0/m_cellCentres[cellIndex]->m_detDeformationGradElastic);
+    }
+  }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void Grid::calcInitialParticleVolumes(Emitter *_emitter)
+{
+  for (int cellIndex=0; cellIndex<pow(m_noCells, 3); cellIndex++)
+  {
+    //Cell volume
+    float cellVolume=pow(m_cellSize,3);
+
+    //Add grid cells contribution to particle density
+    int noParticles_CellCentre=m_cellCentres[cellIndex]->m_interpolationData.size();
+
+    //Get cell centre mass
+    float mass=m_cellCentres[cellIndex]->m_mass;
+
+    for (int particleIterator=0; particleIterator<noParticles_CellCentre; particleIterator++)
+    {
+      //Get cubicBSpline weight for cell centre i and particle particleIterator
+      float weight=m_cellCentres[cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
+
+      //Add density from this cell to particle
+      float density=(weight*mass)/cellVolume;
+      m_cellCentres[cellIndex]->m_interpolationData[particleIterator]->m_particle->addParticleDensity(density);
+//      std::cout<<"test\n";
+    }
+  }
+
+  //Calculate particle volume
+  int noParticles=_emitter->getNoParticles();
+  std::vector<Particle*>* particleListPtr=_emitter->getParticlesList();
+  for (int particleIterator=0; particleIterator<noParticles; particleIterator++)
+  {
+    particleListPtr->at(particleIterator)->calcInitialVolume();
+  }
 }
 
 //----------------------------------------------------------------------------------------------------------------------

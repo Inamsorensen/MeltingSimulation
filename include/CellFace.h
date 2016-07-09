@@ -46,9 +46,9 @@ struct CellFace
   //----------------------------------------------------------------------------------------------------------------------
   float m_velocity;
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Heat capacity for cell. Used in calculating temperature of cell
+  /// @brief Heat conductivity for cell. Used in calculating temperature of cell
   //----------------------------------------------------------------------------------------------------------------------
-  float m_heatCapacity;
+  float m_heatConductivity;
 };
 
 #endif // CELLFACE
