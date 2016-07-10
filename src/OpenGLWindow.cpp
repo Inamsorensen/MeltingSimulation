@@ -172,25 +172,40 @@ void OpenGLWindow::paintGL()
   ngl::Mat4 M;
   ngl::Transformation modelMatrix_BoundingBox;
 
+  //Get grid information for bounding box
   ngl::Vec3 gridPosition;
   Eigen::Vector3f gridPos_Eigen=m_simulationController->getGridPosition();
   gridPosition.m_x=gridPos_Eigen(0);
   gridPosition.m_y=gridPos_Eigen(1);
   gridPosition.m_z=gridPos_Eigen(2);
-  modelMatrix_BoundingBox.setPosition(gridPosition.m_x, gridPosition.m_y, gridPosition.m_z);
   float gridSize=m_simulationController->getGridSize();
+
+  //Make bounding box slightly bigger than grid so no "flashing" when cells are visualised as well
+  float incrementGrid=0.002;
+  gridPosition-=ngl::Vec3(incrementGrid, incrementGrid, incrementGrid);
+  gridSize+=incrementGrid*2.0;
+
+  //Set bounding box transformation matrix
+  modelMatrix_BoundingBox.setPosition(gridPosition.m_x, gridPosition.m_y, gridPosition.m_z);
   modelMatrix_BoundingBox.setScale(gridSize, gridSize, gridSize);
 
+  //Get and set MVP
   M=modelMatrix_BoundingBox.getMatrix()*m_transformationScene;
   MVP=M*m_camera.getVPMatrix();
-
   shaderLib->setShaderParamFromMat4("MVP", MVP);
+
+  //Set colour
+  ngl::Vec3 colour(0.0,0.0,0.0);
+  shaderLib->setRegisteredUniformVec3("colour", colour);
 
   m_vao->bind();
   m_vao->draw();
   m_vao->unbind();
 
 
+
+  //Visualise grid
+  visualiseGrid();
 
   //Draw particles
   m_simulationController->render(m_transformationScene);
@@ -261,26 +276,88 @@ void OpenGLWindow::buildVAO()
                          0,0,1
                         };
 
-//Colour of each vertex
-   GLfloat colours[] = {1,0,0,
-                        1,0,0,
-                        1,0,0,
-                        1,0,0,
-                        1,0,0,
-                        1,0,0,
-                        1,0,0,
-                        1,0,0
-                       };
-
 
 //Feed data into the VAO
    m_vao->setIndexedData(24*sizeof(GLfloat),vertices[0],sizeof(indices),&indices[0],GL_UNSIGNED_BYTE,GL_STATIC_DRAW);
    m_vao->setVertexAttributePointer(0,3,GL_FLOAT,0,0);
-   m_vao->setIndexedData(24*sizeof(GLfloat),colours[0],sizeof(indices),&indices[0],GL_UNSIGNED_BYTE,GL_STATIC_DRAW);
-   m_vao->setVertexAttributePointer(1,3,GL_FLOAT,0,0);
    m_vao->setNumIndices(sizeof(indices));
    m_vao->unbind();
 
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+
+void OpenGLWindow::visualiseGrid()
+{
+  //Draw bounding box
+  ngl::ShaderLib* shaderLib=ngl::ShaderLib::instance();
+  shaderLib->use("Colour");
+
+  //Get grid information
+  int noCells=m_simulationController->getNoGridCells();
+  Eigen::Vector3f gridPosition=m_simulationController->getGridPosition();
+  float gridSize=m_simulationController->getGridSize();
+  float cellSize=gridSize/((float)noCells);
+
+  //Loop over grid cells
+  for (int kIndex=0; kIndex<noCells; kIndex++)
+  {
+    for (int jIndex=0; jIndex<noCells; jIndex++)
+    {
+      for (int iIndex=0; iIndex<noCells; iIndex++)
+      {
+        ngl::Mat4 MVP;
+        ngl::Mat4 M;
+        ngl::Transformation modelMatrix_Cell;
+
+        //Calculate cell position
+        ngl::Vec3 cellPosition;
+        cellPosition.m_x=gridPosition(0) + (iIndex*cellSize);
+        cellPosition.m_y=gridPosition(1) + (jIndex*cellSize);
+        cellPosition.m_z=gridPosition(2) + (kIndex*cellSize);
+
+        //Make cells slightly smaller than they should be for ease of visualisation
+        cellPosition+=ngl::Vec3(0.01, 0.01, 0.01);
+        float smallerCellSize=cellSize-0.02;
+
+        //Set position and size
+        modelMatrix_Cell.setPosition(cellPosition.m_x, cellPosition.m_y, cellPosition.m_z);
+        modelMatrix_Cell.setScale(smallerCellSize, smallerCellSize, smallerCellSize);
+
+        //Get and set MVP
+        M=modelMatrix_Cell.getMatrix()*m_transformationScene;
+        MVP=M*m_camera.getVPMatrix();
+        shaderLib->setShaderParamFromMat4("MVP", MVP);
+
+        //Get cell state for visualisation
+        int cellIndex=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex, noCells);
+        State cellState=m_simulationController->getGridCellState(cellIndex);
+
+        //Set colours for state
+        ngl::Vec3 colourColliding(1.0, 0.0, 0.0);
+        ngl::Vec3 colourInterior(0.0, 1.0, 0.0);
+        ngl::Vec3 colourEmpty(0.0, 0.0, 1.0);
+
+        if (cellState==State::Colliding)
+        {
+          shaderLib->setRegisteredUniformVec3("colour", colourColliding);
+        }
+        else if (cellState==State::Interior)
+        {
+          shaderLib->setRegisteredUniformVec3("colour", colourInterior);
+        }
+        else if (cellState==State::Empty)
+        {
+          shaderLib->setRegisteredUniformVec3("colour", colourEmpty);
+        }
+
+        //Draw
+        m_vao->bind();
+        m_vao->draw();
+        m_vao->unbind();
+      }
+    }
+  }
 }
 
 //---------------------------------------------------------------------------------------------------------------------

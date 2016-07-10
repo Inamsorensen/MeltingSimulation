@@ -199,6 +199,7 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep)
   }
 
   //Classify cells
+  classifyCells();
 
   //Calculate force
 
@@ -266,24 +267,28 @@ void Grid::clearCellData()
     m_cellCentres[cellIndex]->m_heatCapacity=0.0;
     m_cellCentres[cellIndex]->m_temperature=0.0;
     m_cellCentres[cellIndex]->m_lameLambdaInverse=0.0;
+    m_cellCentres[cellIndex]->m_state=State::Colliding;
 
     //Reset cell face X values to zero
     m_cellFacesX[cellIndex]->m_mass=0.0;
     m_cellFacesX[cellIndex]->m_deviatoricForce=0.0;
     m_cellFacesX[cellIndex]->m_velocity=0.0;
     m_cellFacesX[cellIndex]->m_heatConductivity=0.0;
+    m_cellFacesX[cellIndex]->m_state=State::Interior;
 
     //Reset cell face Y values to zero
     m_cellFacesY[cellIndex]->m_mass=0.0;
     m_cellFacesY[cellIndex]->m_deviatoricForce=0.0;
     m_cellFacesY[cellIndex]->m_velocity=0.0;
     m_cellFacesY[cellIndex]->m_heatConductivity=0.0;
+    m_cellFacesY[cellIndex]->m_state=State::Interior;
 
     //Reset cell face Z values to zero
     m_cellFacesZ[cellIndex]->m_mass=0.0;
     m_cellFacesZ[cellIndex]->m_deviatoricForce=0.0;
     m_cellFacesZ[cellIndex]->m_velocity=0.0;
     m_cellFacesZ[cellIndex]->m_heatConductivity=0.0;
+    m_cellFacesZ[cellIndex]->m_state=State::Interior;
 
   }
 }
@@ -898,8 +903,189 @@ void Grid::classifyCells()
     If colliding, also need to set temperature. Also need to set temp for empty
 
 
+    TODO: Set temp for colliding and empty cells (empty then at least for first step)
+          Find way to set heating elements
+
   ----------------------------------------------------------------------------------------------------------------------
   */
+
+  //Loop over cell faces - This loop could be made smaller when just checking the outer cells.
+  //But this is possibly easier to thread
+  for (int cellIndex=0; cellIndex<(pow(m_noCells, 3)); cellIndex++)
+  {
+    //Find cell index. Will be same for the other faces
+    int iIndex=m_cellFacesX[cellIndex]->m_iIndex;
+    int jIndex=m_cellFacesX[cellIndex]->m_jIndex;
+    int kIndex=m_cellFacesX[cellIndex]->m_kIndex;
+
+    //This checks whether cell faces belong to outer cells. To set collision cells to be the outer rim of cells
+    if (iIndex==0 || iIndex==(m_noCells-1) || jIndex==0 || jIndex==(m_noCells-1) || kIndex==0 || kIndex==(m_noCells-1) )
+    {
+      //Set faces to colliding
+      m_cellFacesX[cellIndex]->m_state=State::Colliding;
+      m_cellFacesY[cellIndex]->m_state=State::Colliding;
+      m_cellFacesZ[cellIndex]->m_state=State::Colliding;
+    }
+
+    //Also need to set cell faces adjacent to the outer cells to colliding. This must be done separately for each cell
+    if (iIndex==1)
+    {
+      m_cellFacesX[cellIndex]->m_state=State::Colliding;
+    }
+    if (jIndex==1)
+    {
+      m_cellFacesY[cellIndex]->m_state=State::Colliding;
+    }
+    if (kIndex==1)
+    {
+      m_cellFacesZ[cellIndex]->m_state=State::Colliding;
+    }
+  }
+
+  //Loop over all cells again to check which cell centres are collding
+  //Seems inefficient.
+  for (int cellIndex=0; cellIndex<(pow(m_noCells, 3)); cellIndex++)
+  {
+    //Find cell index.
+    int iIndex=m_cellCentres[cellIndex]->m_iIndex;
+    int jIndex=m_cellCentres[cellIndex]->m_jIndex;
+    int kIndex=m_cellCentres[cellIndex]->m_kIndex;
+
+    //Face X
+    //Check if lower x face colliding
+    if (m_cellFacesX[cellIndex]->m_state!=State::Colliding)
+    {
+      //Check whether empty or not
+      int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+
+      if (noParticlesInCell!=0)
+      {
+        m_cellCentres[cellIndex]->m_state=State::Interior;
+      }
+      else
+      {
+        m_cellCentres[cellIndex]->m_state=State::Empty;
+      }
+
+      //Go to next cellIndex
+      continue;
+    }
+
+    //Check upper x face as well
+    if (iIndex<(m_noCells-1))
+    {
+      //Get index of cell with X face next to current cell
+      int neighbourFaceIndex=MathFunctions::getVectorIndex(iIndex+1, jIndex, kIndex, m_noCells);
+
+      if (m_cellFacesX[neighbourFaceIndex]->m_state!=State::Colliding)
+      {
+        //Check whether empty or not
+        int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+
+        if (noParticlesInCell!=0)
+        {
+          m_cellCentres[cellIndex]->m_state=State::Interior;
+        }
+        else
+        {
+          m_cellCentres[cellIndex]->m_state=State::Empty;
+        }
+
+        //Go to next cellIndex
+        continue;
+      }
+    }
+
+    //Face Y
+    //Check if lower x face colliding
+    if (m_cellFacesY[cellIndex]->m_state!=State::Colliding)
+    {
+      //Check whether empty or not
+      int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+
+      if (noParticlesInCell!=0)
+      {
+        m_cellCentres[cellIndex]->m_state=State::Interior;
+      }
+      else
+      {
+        m_cellCentres[cellIndex]->m_state=State::Empty;
+      }
+
+      //Go to next cellIndex
+      continue;
+    }
+
+    //Check upper x face as well
+    if (jIndex<(m_noCells-1))
+    {
+      //Get index of cell with Y face next to current cell
+      int neighbourFaceIndex=MathFunctions::getVectorIndex(iIndex, jIndex+1, kIndex, m_noCells);
+
+      if (m_cellFacesY[neighbourFaceIndex]->m_state!=State::Colliding)
+      {
+        //Check whether empty or not
+        int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+
+        if (noParticlesInCell!=0)
+        {
+          m_cellCentres[cellIndex]->m_state=State::Interior;
+        }
+        else
+        {
+          m_cellCentres[cellIndex]->m_state=State::Empty;
+        }
+
+        //Go to next cellIndex
+        continue;
+      }
+    }
+
+    //Face Z
+    //Check if lower x face colliding
+    if (m_cellFacesZ[cellIndex]->m_state!=State::Colliding)
+    {
+      //Check whether empty or not
+      int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+
+      if (noParticlesInCell!=0)
+      {
+        m_cellCentres[cellIndex]->m_state=State::Interior;
+      }
+      else
+      {
+        m_cellCentres[cellIndex]->m_state=State::Empty;
+      }
+
+      //Go to next cellIndex
+      continue;
+    }
+
+    //Check upper x face as well
+    if (kIndex<(m_noCells-1))
+    {
+      //Get index of cell with Z face next to current cell
+      int neighbourFaceIndex=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex+1, m_noCells);
+
+      if (m_cellFacesZ[neighbourFaceIndex]->m_state!=State::Colliding)
+      {
+        //Check whether empty or not
+        int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+
+        if (noParticlesInCell!=0)
+        {
+          m_cellCentres[cellIndex]->m_state=State::Interior;
+        }
+        else
+        {
+          m_cellCentres[cellIndex]->m_state=State::Empty;
+        }
+
+        //Go to next cellIndex
+        continue;
+      }
+    }
+  }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -909,7 +1095,7 @@ void Grid::setBoundaryVelocity()
   /* Outline
   ---------------------------------------------------------------------------------------------------------------------
   Loop over all cells
-    Set velocity to zero at colliding cell faces
+    Set velocity to zero at colliding cell faces, ie cell faces adjacent to collinding cells
 
   ---------------------------------------------------------------------------------------------------------------------
   */

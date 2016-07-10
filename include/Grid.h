@@ -47,6 +47,7 @@ public:
   /// @brief Destructor
   //----------------------------------------------------------------------------------------------------------------------
   ~Grid();
+
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Find no of particles in each grid cell. Takes particle in emitter and checks positions against grid cells
   /// Returns vector containing the number of particles in each cell.
@@ -60,6 +61,11 @@ public:
   /// temperature calculations
   //----------------------------------------------------------------------------------------------------------------------
   void update(float _dt, Emitter *_emitter, bool _isFirstStep);
+
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get cell state for visualisation
+  //----------------------------------------------------------------------------------------------------------------------
+  inline State getCellState(int _cellIndex) const {return m_cellCentres[_cellIndex]->m_state;}
 
 
 private:
