@@ -331,25 +331,44 @@ void OpenGLWindow::visualiseGrid()
 
         //Get cell state for visualisation
         int cellIndex=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex, noCells);
+
         State cellState=m_simulationController->getGridCellState(cellIndex);
 
-        //Set colours for state
-        ngl::Vec3 colourColliding(1.0, 0.0, 0.0);
-        ngl::Vec3 colourInterior(0.0, 1.0, 0.0);
-        ngl::Vec3 colourEmpty(0.0, 0.0, 1.0);
+        float cellTemperature=m_simulationController->getGridCellTemperature(cellIndex)-273.0;
+        float ambientTemp=m_simulationController->getAmbientTemperature();
+        float heatSourceTemp=m_simulationController->getHeatSourceTemperature();
+
+        //Set colours for visualisation
+        ngl::Vec3 colourRed(1.0, 0.0, 0.0);
+        ngl::Vec3 colourGreen(0.0, 1.0, 0.0);
+        ngl::Vec3 colourBlue(0.0, 0.0, 1.0);
 
         if (cellState==State::Colliding)
         {
-          shaderLib->setRegisteredUniformVec3("colour", colourColliding);
+          shaderLib->setRegisteredUniformVec3("colour", colourRed);
         }
         else if (cellState==State::Interior)
         {
-          shaderLib->setRegisteredUniformVec3("colour", colourInterior);
+          shaderLib->setRegisteredUniformVec3("colour", colourGreen);
         }
         else if (cellState==State::Empty)
         {
-          shaderLib->setRegisteredUniformVec3("colour", colourEmpty);
+          shaderLib->setRegisteredUniformVec3("colour", colourBlue);
         }
+
+//        //Visualise cell temperatures
+//        if (cellTemperature==heatSourceTemp)
+//        {
+//          shaderLib->setRegisteredUniformVec3("colour", colourRed);
+//        }
+//        else if (cellTemperature==ambientTemp)
+//        {
+//          shaderLib->setRegisteredUniformVec3("colour", colourGreen);
+//        }
+//        else
+//        {
+//          shaderLib->setRegisteredUniformVec3("colour", colourBlue);
+//        }
 
         //Draw
         m_vao->bind();

@@ -72,6 +72,7 @@ SimulationController::SimulationController()
   staggeredGridPosition(1)+=halfCellSize;
   staggeredGridPosition(2)+=halfCellSize;
   m_grid=Grid::createGrid(staggeredGridPosition, m_gridSize, m_noCells);
+  m_grid->setSurroundingTemperatures(m_ambientTemperature, m_heatSourceTemperature);
 
 
   //Test min no particle in non-empty cells
@@ -155,6 +156,9 @@ void SimulationController::readSimulationParameters()
   std::string latentHeat="LatentHeat";
   std::string freezeTemp="FreezingTemperature";
 
+  std::string ambientTemp="ambientTemperature";
+  std::string heatSourceTemp="heatSourceTemperature";
+
   //Need to read in each value from file
   ReadGeo* file=new ReadGeo(m_readFileName);
 
@@ -176,6 +180,9 @@ void SimulationController::readSimulationParameters()
   m_heatConductivityFluid=file->getSimulationParameter_Float(heatCondFluid);
   m_latentHeat=file->getSimulationParameter_Float(latentHeat);
   m_freezingTemperature=file->getSimulationParameter_Float(freezeTemp);
+
+  m_ambientTemperature=file->getSimulationParameter_Float(ambientTemp);
+  m_heatSourceTemperature=file->getSimulationParameter_Float(heatSourceTemp);
 
   delete file;
 
@@ -233,6 +240,10 @@ void SimulationController::update()
   //Calculate new velocity and temperature
   //Transfer data back to particles
   m_grid->update(m_simTimeStep, m_emitter, isFirstStep);
+
+//  isFirstStep=false;
+//  m_grid->update(m_simTimeStep, m_emitter, isFirstStep);
+//  m_grid->update(m_simTimeStep, m_emitter, isFirstStep);
 
   //Update particles
 

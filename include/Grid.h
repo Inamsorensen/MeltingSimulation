@@ -49,6 +49,12 @@ public:
   ~Grid();
 
   //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Set surrounding temperatures; ambient temp and heat source temp.
+  /// Reads in temperatures in celsius and sets them to kelvin for calculations
+  //----------------------------------------------------------------------------------------------------------------------
+  void setSurroundingTemperatures(float _ambientTemp, float _heatSourceTemp);
+
+  //----------------------------------------------------------------------------------------------------------------------
   /// @brief Find no of particles in each grid cell. Takes particle in emitter and checks positions against grid cells
   /// Returns vector containing the number of particles in each cell.
   /// @param [in] _emitter is used to get the list of particles to check for
@@ -66,6 +72,10 @@ public:
   /// @brief Get cell state for visualisation
   //----------------------------------------------------------------------------------------------------------------------
   inline State getCellState(int _cellIndex) const {return m_cellCentres[_cellIndex]->m_state;}
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get cell temperature for visualisation
+  //----------------------------------------------------------------------------------------------------------------------
+  inline float getCellTemperature(int _cellIndex) const {return m_cellCentres[_cellIndex]->m_temperature;}
 
 
 private:
@@ -108,6 +118,15 @@ private:
   /// @brief Simulation time step
   //----------------------------------------------------------------------------------------------------------------------
   float m_dt;
+
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Ambient temperature; temperature of the surrounding air. In Kelvin
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_ambientTemperature;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Heat source temperature. In Kelvin
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_heatSourceTemperature;
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Clear list of InterpolationData
