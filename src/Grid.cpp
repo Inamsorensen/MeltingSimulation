@@ -222,8 +222,6 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep)
   //Set boundary velocity to be used in b
   setBoundaryVelocity();
 
-  std::cout<<"test\n";
-
   //Implicit integration to deviatoric velocity
 
 }
