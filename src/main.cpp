@@ -32,6 +32,53 @@ int main(int argc, char *argv[])
 
   return app.exec();
 
+//  Eigen::SparseMatrix<double> A(2,2);
+//  Eigen::VectorXd b(2);
+//  Eigen::MatrixXf preconditioner;
+//  Eigen::VectorXd x(2);
+//  x.setZero();
+
+//  A.insert(0,0)=1.0;
+//  A.insert(1,0)=2.0;
+//  A.insert(0,1)=2.0;
+//  A.insert(1,1)=3.0;
+
+//  b(0)=1.0;
+//  b(1)=2.0;
+
+//  float shift=0.0;
+//  int maxLoops=100;
+//  float tolerance=0.000000001;
+//  bool show=true;
+////  MathFunctions::MinRes(A, b, x, preconditioner, shift, maxLoops, tolerance, show);
+//  MathFunctions::conjugateGradient(A, b, x, maxLoops, tolerance);
+//  std::cout<<A<<"\n";
+//  std::cout<<b<<"\n";
+//  std::cout<<x<<"\n";
+
+//  Eigen::Matrix3f A;
+//  Eigen::Vector3f b;
+//  Eigen::Vector3f x;
+
+//  A(0,0)=1.0;
+//  A(1,0)=2.0;
+//  A(2,0)=4.0;
+//  A(0,1)=2.0;
+//  A(0,2)=4.0;
+//  A(1,1)=3.0;
+//  A(1,2)=2.0;
+//  A(2,1)=2.0;
+//  A(2,2)=6.0;
+
+//  b(0)=2.0;
+//  b(1)=4.0;
+//  b(2)=6.0;
+
+//  MathFunctions::linearSystemSolve(A, b, x);
+//  std::cout<<A<<"\n";
+//  std::cout<<b<<"\n";
+//  std::cout<<x<<"\n";
+
 
 
   return EXIT_SUCCESS;

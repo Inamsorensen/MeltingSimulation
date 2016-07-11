@@ -77,7 +77,7 @@ struct MathFunctions
   /// @param[out] o_x is the solution
   /// @todo Need to work out how to apply a preconditioner
   //----------------------------------------------------------------------------------------------------------------------
-  static void MinRes(Eigen::MatrixXf* _A, Eigen::VectorXf* _B, Eigen::VectorXf* io_x, Eigen::MatrixXf* _preconditioner, float _shift, float _maxLoops, float _tolerance, bool _show);
+  static void MinRes(const Eigen::MatrixXf &_A, const Eigen::VectorXf &_B, Eigen::VectorXf &io_x, const Eigen::MatrixXf &_preconditioner, float _shift, float _maxLoops, float _tolerance, bool _show);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Solves Ax=B using conjugate gradient method. Only works for square matrix A
   /// @param [in] _A and _B which are a 2 and 1 dimensional matrix respectively.
@@ -85,26 +85,26 @@ struct MathFunctions
   /// @param [in] _x0 is a 1 dimensional vector giving the first guess at the solution
   /// @param[out] o_x is the solution
   //----------------------------------------------------------------------------------------------------------------------
-  static void conjugateGradient(std::vector<float>* _A, std::vector<float>* _B, std::vector<float>* _x0, std::vector<float>* o_x, float _maxLoops, float _minResidual);
+  static void conjugateGradient(const Eigen::SparseMatrix<double> &_A, const Eigen::VectorXd &_B, Eigen::VectorXd &o_x, float _maxLoops, float _minResidual);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Solves Ax=B for all possible matrices A. Will use a method in Eigen that is slow, so only used for small matrices
   /// @param [in] _A and _B which are a 2 and 1 dimensional matrix respectively.
   /// @param[out] o_x is the solution
   //----------------------------------------------------------------------------------------------------------------------
-  static void linearSystemSolve(std::vector<float> *_A, std::vector<float> *_B, std::vector<float> *o_x);
+  static void linearSystemSolve(const Eigen::Matrix3f &_A, const Eigen::Vector3f &_B, Eigen::Vector3f &o_x);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Polar decomposition
   /// @param [in] _decomposeMatrix is the matrix to be polar decomposed
   /// @param [out] o_R is the rotation matrix, o_S is the stretch matrix
   //----------------------------------------------------------------------------------------------------------------------
-  static void polarDecomposition(Eigen::Matrix3f *_decomposeMatrix, Eigen::Matrix3f *o_R, Eigen::Matrix3f *o_S);
+  static void polarDecomposition(const Eigen::Matrix3f &_decomposeMatrix, Eigen::Matrix3f &o_R, Eigen::Matrix3f &o_S);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Singular value decomposition
   /// @param [in] _decomposeMatrix is the matrix to be decomposed
   /// @param [out] o_U and o_V are the left and right singular vectors respectively
   /// @param [out] o_singularValues is a diagonal matrix containing the singular values.
   //----------------------------------------------------------------------------------------------------------------------
-  static void singularValueDecomposition(Eigen::Matrix3f *_decomposeMatrix, Eigen::Matrix3f *o_U, Eigen::Matrix3f *o_singularValues, Eigen::Matrix3f *o_V);
+  static void singularValueDecomposition(const Eigen::Matrix3f &_decomposeMatrix, Eigen::Matrix3f &o_U, Eigen::Matrix3f &o_singularValues, Eigen::Matrix3f &o_V);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculates the central difference gradient
   //----------------------------------------------------------------------------------------------------------------------
@@ -116,7 +116,7 @@ struct MathFunctions
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Find minimum above zero in vector
   //----------------------------------------------------------------------------------------------------------------------
-  static int findMinVectorValue(std::vector<int>* _vectorList);
+  static int findMinVectorValue(const std::vector<int> &_vectorList);
 
 };
 

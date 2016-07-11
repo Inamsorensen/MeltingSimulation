@@ -48,11 +48,11 @@ public:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get particle data for grid cell face
   //----------------------------------------------------------------------------------------------------------------------
-  void getParticleData_CellFace(float *o_mass, Eigen::Vector3f *o_velocity, Phase *o_phase);
+  void getParticleData_CellFace(float &o_mass, Eigen::Vector3f &o_velocity, Phase &o_phase);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get particle data for grid cell centre
   //----------------------------------------------------------------------------------------------------------------------
-  void getParticleData_CellCentre(float *o_mass, float *o_detDeformGrad, float *o_detDeformGradElast, Phase *o_phase, float *o_temp, float *o_lameLambdaInverse);
+  void getParticleData_CellCentre(float &o_mass, float &o_detDeformGrad, float &o_detDeformGradElast, Phase &o_phase, float &o_temp, float &o_lameLambdaInverse);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get particle data for grid cell centre
   //----------------------------------------------------------------------------------------------------------------------

@@ -36,13 +36,13 @@ public:
   /// @brief Reads point positions from file and returns them in positionData
   /// @param [out] Pointer to vector containing position data
   //----------------------------------------------------------------------------------------------------------------------
-  void getPointPositions(int o_noPoints, std::vector<Eigen::Vector3f> *o_positionData);
+  void getPointPositions(int o_noPoints, std::vector<Eigen::Vector3f> &o_positionData);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Reads a point parameter, ie. a different value for each point.
   /// @param [in] _paramName is the name of the parameter to be read
   /// @param [out] o_data is the vector containing the parameter values
   //----------------------------------------------------------------------------------------------------------------------
-  void getPointParameter_Float(std::string _paramName, std::vector<float> *o_data);
+  void getPointParameter_Float(std::string _paramName, std::vector<float> &o_data);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Reads a simulation parameter, ie. one for entire file. In this case a float value
   /// @param [in] _paramName is the name of the parameter to be read

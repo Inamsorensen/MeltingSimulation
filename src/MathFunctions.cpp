@@ -167,49 +167,17 @@ float MathFunctions::calcTightQuadraticStencil_Diff(float _x)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void MathFunctions::conjugateGradient(std::vector<float> *_A, std::vector<float> *_B, std::vector<float> *_x0, std::vector<float> *o_x, float _maxLoops, float _minResidual)
+void MathFunctions::conjugateGradient(const Eigen::SparseMatrix<double> &_A, const Eigen::VectorXd &_B, Eigen::VectorXd &o_x, float _maxLoops, float _minResidual)
 {
   /// @brief Function which uses Conjugate Gradient to solve Ax=b
   /// A has to be symmetric, definite and square.
-  /// @todo Implement so can solve with guess.
-
-  //Find size of the matrices
-  int noRows=_B->size();
-
-  //In case A is not a square matrix
-  int noColumns=_A->size()/noRows;
-
-  //Verify that _A is a square matrix, if not add line(s) of zero to A and b
-  if (noRows!=noColumns)
-  {
-    throw std::invalid_argument("Only works for square matrix A");
-  }
-
-  //Set up matrices to be used by Eigen function
-  Eigen::VectorXd b(noRows);
-  Eigen::VectorXd x(noColumns);
-  Eigen::SparseMatrix<double> A(noRows, noColumns);
-
-
-  //Fill A and b
-  for (int i=0; i<noRows; i++)
-  {
-    b(i)=_B->at(i);
-
-    for (int j=0; j<noColumns; j++)
-    {
-      //Get vector index from i and j
-      int index=j+(i*noColumns);
-
-      A.insert(i,j)=_A->at(index);
-    }
-  }
+  /// @todo Implement so can solve with preconditioner.
 
   //Initialise the Conjugate Gradient solver
   Eigen::ConjugateGradient<Eigen::SparseMatrix<double>> conjGrad;
 
   //Insert A
-  conjGrad.compute(A);
+  conjGrad.compute(_A);
 
   //Set max iterations and min residual
   conjGrad.setMaxIterations(_maxLoops);
@@ -217,84 +185,77 @@ void MathFunctions::conjugateGradient(std::vector<float> *_A, std::vector<float>
 
 
   //Solve
-  x=conjGrad.solve(b);
+  o_x=conjGrad.solve(_B);
 
   //Print out iteration number and error
   std::cout<<"Number of iterations: "<<conjGrad.iterations()<<"\n";
   std::cout<<"Error: "<<conjGrad.error()<<"\n";
 
-  //Put solution x into o_x for the return
-  for (int i=0; i<noColumns; i++)
-  {
-    float value=x(i);
-    o_x->push_back(value);
-  }
-
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void MathFunctions::linearSystemSolve(std::vector<float>* _A, std::vector<float>* _B, std::vector<float>* o_x)
+void MathFunctions::linearSystemSolve(const Eigen::Matrix3f &_A, const Eigen::Vector3f &_B, Eigen::Vector3f &o_x)
 {
   /// @brief Function to solve linear system where there are no restrictions on A
   /// except that it is 3x3 as this method is quite slow.
   /// Uses ColPivHouseholderQR from Eigen library - Accuracy = 3/4 and speed 2/4.
 
-  //Set up Eigen matrices
-  Eigen::Matrix3f A;
-  Eigen::Vector3f b;
+//  //Set up Eigen matrices
+//  Eigen::Matrix3f A;
+//  Eigen::Vector3f b;
 
-  //Check that 3x3 matrix
-  int sizeA=_A->size();
-  int noRows=_B->size();
-  int noColumns=sizeA/noRows;
+//  //Check that 3x3 matrix
+//  int sizeA=_A->size();
+//  int noRows=_B->size();
+//  int noColumns=sizeA/noRows;
 
-  if (noRows!=3 || noColumns!=3)
-  {
-    throw std::invalid_argument("A must be 3x3 and b 3x1 matrices");
-  }
+//  if (noRows!=3 || noColumns!=3)
+//  {
+//    throw std::invalid_argument("A must be 3x3 and b 3x1 matrices");
+//  }
 
-  //Read in values
-  for (int i=0; i<3; i++)
-  {
-    //Fill b
-    b(i)=_B->at(i);
+//  //Read in values
+//  for (int i=0; i<3; i++)
+//  {
+//    //Fill b
+//    b(i)=_B->at(i);
 
-    for (int j=0; j<3; j++)
-    {
-      //Find index for _A vector
-      int index=j+(i*3);
+//    for (int j=0; j<3; j++)
+//    {
+//      //Find index for _A vector
+//      int index=j+(i*3);
 
-      //Fill A
-      A(i,j)=_A->at(index);
-    }
-  }
+//      //Fill A
+//      A(i,j)=_A->at(index);
+//    }
+//  }
 
   //Set up solver
-  Eigen::ColPivHouseholderQR<Eigen::Matrix3f> qrSolver(A);
+  Eigen::ColPivHouseholderQR<Eigen::Matrix3f> qrSolver(_A);
 
-  //Find solution x
-  Eigen::Vector3f x;
-  x=qrSolver.solve(b);
+//  //Find solution x
+//  Eigen::Vector3f x;
+  o_x=qrSolver.solve(_B);
 
 
-  //Read solution into o_x
-  for (int i=0; i<3; i++)
-  {
-    o_x->push_back(x[i]);
-  }
+//  //Read solution into o_x
+//  for (int i=0; i<3; i++)
+//  {
+//    o_x->push_back(x[i]);
+//  }
 
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void MathFunctions::polarDecomposition(Eigen::Matrix3f *_decomposeMatrix, Eigen::Matrix3f *o_R, Eigen::Matrix3f *o_S)
+void MathFunctions::polarDecomposition(const Eigen::Matrix3f &_decomposeMatrix, Eigen::Matrix3f &o_R, Eigen::Matrix3f &o_S)
 {
   /// @brief Calculates polar decomposition using singular value decomposition.
   /// decomposeMatrix=RS, decomposeMatrix=UXV*, R=UV*, S=VXV*
   /// Checks for determinant, as no polar decomposition when determinant is zero
 
-  if (_decomposeMatrix->determinant()!=0.0)
+  if (_decomposeMatrix.determinant()!=0.0)
   {
     //Set up matrices for the singular value decomposition
     Eigen::Matrix3f U;
@@ -302,7 +263,7 @@ void MathFunctions::polarDecomposition(Eigen::Matrix3f *_decomposeMatrix, Eigen:
     Eigen::Matrix3f V;
 
     //Perform singular value decomposition
-    singularValueDecomposition(_decomposeMatrix, &U, &X, &V);
+    singularValueDecomposition(_decomposeMatrix, U, X, V);
 
     //Calculate conjugate transpose of V; V*
     Eigen::Matrix3f V_conj;
@@ -311,10 +272,10 @@ void MathFunctions::polarDecomposition(Eigen::Matrix3f *_decomposeMatrix, Eigen:
     V_conjTrans=V_conj.transpose();
 
     //Calculate R
-    *o_R=U*V_conjTrans;
+    o_R=U*V_conjTrans;
 
     //Calculate S
-    *o_S=V*X*V_conjTrans;
+    o_S=V*X*V_conjTrans;
   }
   else
   {
@@ -325,16 +286,16 @@ void MathFunctions::polarDecomposition(Eigen::Matrix3f *_decomposeMatrix, Eigen:
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void MathFunctions::singularValueDecomposition(Eigen::Matrix3f *_decomposeMatrix, Eigen::Matrix3f *o_U, Eigen::Matrix3f *o_singularValues, Eigen::Matrix3f *o_V)
+void MathFunctions::singularValueDecomposition(const Eigen::Matrix3f &_decomposeMatrix, Eigen::Matrix3f &o_U, Eigen::Matrix3f &o_singularValues, Eigen::Matrix3f &o_V)
 {
   /// @brief Uses Eigen library JacobiSVD. Set up so can only solve for 3x3 matrices.
 
   //Set up singular value decomposition solver
-  Eigen::JacobiSVD<Eigen::Matrix3f> SVD_solver(*_decomposeMatrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
+  Eigen::JacobiSVD<Eigen::Matrix3f> SVD_solver(_decomposeMatrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
 
   //Store U and V
-  *o_U=SVD_solver.matrixU();
-  *o_V=SVD_solver.matrixV();
+  o_U=SVD_solver.matrixU();
+  o_V=SVD_solver.matrixV();
 
   //Calculate singular values
   Eigen::Vector3f singularValueVector=SVD_solver.singularValues();
@@ -358,7 +319,7 @@ void MathFunctions::singularValueDecomposition(Eigen::Matrix3f *_decomposeMatrix
     }
   }
 
-  *o_singularValues=singularValueMatrix;
+  o_singularValues=singularValueMatrix;
 
 }
 
@@ -390,15 +351,15 @@ float MathFunctions::signFunction(float _x)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-int MathFunctions::findMinVectorValue(std::vector<int> *_vectorList)
+int MathFunctions::findMinVectorValue(const std::vector<int> &_vectorList)
 {
-  int vectorSize=_vectorList->size();
+  int vectorSize=_vectorList.size();
 
   int minValue=std::numeric_limits<int>::max();
 
   for (int i=0; i<vectorSize; i++)
   {
-    int testValue=_vectorList->at(i);
+    int testValue=_vectorList.at(i);
     if (testValue<minValue && testValue>0)
     {
       minValue=testValue;

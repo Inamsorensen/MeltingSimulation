@@ -37,7 +37,7 @@ ReadGeo::~ReadGeo()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void ReadGeo::getPointPositions(int o_noPoints, std::vector<Eigen::Vector3f> *o_positionData)
+void ReadGeo::getPointPositions(int o_noPoints, std::vector<Eigen::Vector3f> &o_positionData)
 {
   /// @brief Reads in number of points and position data. Done by searching for certain words in the file and reading the values after it
   /// Also checks that it has found the same number of position data as there are points according to the file
@@ -134,7 +134,7 @@ void ReadGeo::getPointPositions(int o_noPoints, std::vector<Eigen::Vector3f> *o_
         position(0)=x;
         position(1)=y;
         position(2)=z;
-        o_positionData->push_back(position);
+        o_positionData.push_back(position);
 
         //Clear strings for new read in
         xPos.clear();
@@ -161,7 +161,7 @@ void ReadGeo::getPointPositions(int o_noPoints, std::vector<Eigen::Vector3f> *o_
     }
 
   //Check that the data stored in pointPositions is the same as the number of points
-    int positionDataSize=o_positionData->size();
+    int positionDataSize=o_positionData.size();
     std::cout<<"Number of points: "<<o_noPoints<<"\n";
     std::cout<<"Size of position data: "<<positionDataSize<<"\n";
     if (positionDataSize==o_noPoints)
@@ -179,7 +179,7 @@ void ReadGeo::getPointPositions(int o_noPoints, std::vector<Eigen::Vector3f> *o_
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void ReadGeo::getPointParameter_Float(std::string _paramName, std::vector<float> *o_data)
+void ReadGeo::getPointParameter_Float(std::string _paramName, std::vector<float> &o_data)
 {
   /// @brief Read float parameters from file. Return file read to beginning as don't know what order these will be called in.
 
@@ -253,7 +253,7 @@ void ReadGeo::getPointParameter_Float(std::string _paramName, std::vector<float>
       {
         //Set current read to parameter data
         float singleDataValue=std::stof(singleDataString);
-        o_data->push_back(singleDataValue);
+        o_data.push_back(singleDataValue);
 
         //Start reading into next value
         dataNo+=1;
@@ -265,7 +265,7 @@ void ReadGeo::getPointParameter_Float(std::string _paramName, std::vector<float>
       {
         //Set current read to parameter data
         float singleDataValue=std::stof(singleDataString);
-        o_data->push_back(singleDataValue);
+        o_data.push_back(singleDataValue);
 
       }
       //If not [ or ] or , then read into position data
@@ -276,7 +276,7 @@ void ReadGeo::getPointParameter_Float(std::string _paramName, std::vector<float>
     }
 
     //Check that the data stored in o_data is the same size as the number of points
-      int dataSize=o_data->size();
+      int dataSize=o_data.size();
       std::cout<<"Number of points: "<<noPoints<<"\n";
       std::cout<<"Size of data: "<<dataSize<<"\n";
       if (dataSize==noPoints)

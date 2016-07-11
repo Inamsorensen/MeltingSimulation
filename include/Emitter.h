@@ -37,7 +37,7 @@ public:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Generate particles. Can't be done in constructor as requires simulation constants to be read in first.
   //----------------------------------------------------------------------------------------------------------------------
-  void createParticles(int _noParticles, std::vector<Eigen::Vector3f>* _particlePositions, std::vector<float>* _particleMass, std::vector<float>* _particleTemperature, std::vector<float>* _particlePhase);
+  void createParticles(int _noParticles, const std::vector<Eigen::Vector3f> &_particlePositions, const std::vector<float> &_particleMass, const std::vector<float> &_particleTemperature, const std::vector<float> &_particlePhase);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set material constants
   //----------------------------------------------------------------------------------------------------------------------

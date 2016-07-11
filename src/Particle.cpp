@@ -60,26 +60,26 @@ Particle::~Particle()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Particle::getParticleData_CellFace(float *o_mass, Eigen::Vector3f *o_velocity, Phase *o_phase)
+void Particle::getParticleData_CellFace(float &o_mass, Eigen::Vector3f &o_velocity, Phase &o_phase)
 {
   /// @brief Used to collect data that is to be transferred to the grid cell faces
 
-  *o_mass=m_mass;
-  *o_velocity=m_velocity;
-  *o_phase=m_phase;
+  o_mass=m_mass;
+  o_velocity=m_velocity;
+  o_phase=m_phase;
 
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Particle::getParticleData_CellCentre(float *o_mass, float *o_detDeformGrad, float *o_detDeformGradElast, Phase *o_phase, float *o_temp, float *o_lameLambdaInverse)
+void Particle::getParticleData_CellCentre(float &o_mass, float &o_detDeformGrad, float &o_detDeformGradElast, Phase &o_phase, float &o_temp, float &o_lameLambdaInverse)
 {
-  *o_mass=m_mass;
-  *o_detDeformGrad=m_detDeformGrad;
-  *o_detDeformGradElast=m_detDeformGradElastic;
-  *o_phase=m_phase;
-  *o_temp=m_temperature;
-  *o_lameLambdaInverse=(1.0/m_lameLambda);
+  o_mass=m_mass;
+  o_detDeformGrad=m_detDeformGrad;
+  o_detDeformGradElast=m_detDeformGradElastic;
+  o_phase=m_phase;
+  o_temp=m_temperature;
+  o_lameLambdaInverse=(1.0/m_lameLambda);
 
 }
 

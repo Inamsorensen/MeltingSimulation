@@ -56,17 +56,17 @@ Emitter::~Emitter()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Emitter::createParticles(int _noParticles, std::vector<Eigen::Vector3f> *_particlePositions, std::vector<float> *_particleMass, std::vector<float> *_particleTemperature, std::vector<float> *_particlePhase)
+void Emitter::createParticles(int _noParticles, const std::vector<Eigen::Vector3f> &_particlePositions, const std::vector<float> &_particleMass, const std::vector<float> &_particleTemperature, const std::vector<float> &_particlePhase)
 {
   m_noParticles=_noParticles;
 
   //Create particles
   for (int i=0; i<m_noParticles; i++)
   {
-    Eigen::Vector3f position=_particlePositions->at(i);
-    float mass=_particleMass->at(i);
-    float temperature=_particleTemperature->at(i);
-    bool solid=_particlePhase->at(i);
+    Eigen::Vector3f position=_particlePositions.at(i);
+    float mass=_particleMass.at(i);
+    float temperature=_particleTemperature.at(i);
+    bool solid=_particlePhase.at(i);
 
     Particle* particle=new Particle(position, mass, temperature, solid, m_latentHeat, this);
     m_particles.push_back(particle);

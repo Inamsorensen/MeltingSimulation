@@ -61,7 +61,7 @@ public:
   /// @param [out] o_listParticleNo: Stores the number of particles, one number for each cell. If _storeZero=true, then can
   /// access one grid cell using getVectorIndex from MathFunctions
   //----------------------------------------------------------------------------------------------------------------------
-  void findNoParticlesInCells(Emitter* _emitter, std::vector<int> *o_listParticleNo);
+  void findNoParticlesInCells(Emitter* _emitter, std::vector<int> &o_listParticleNo);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Does all calculations for one time step. Updates velocity and temperature through force, pressure and
   /// temperature calculations

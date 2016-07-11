@@ -77,8 +77,8 @@ SimulationController::SimulationController()
 
   //Test min no particle in non-empty cells
   std::vector<int> listParticleNoInCells(pow(m_noCells,3),0);
-  m_grid->findNoParticlesInCells(m_emitter, &listParticleNoInCells);
-  int minNoParticles=MathFunctions::findMinVectorValue(&listParticleNoInCells);
+  m_grid->findNoParticlesInCells(m_emitter, listParticleNoInCells);
+  int minNoParticles=MathFunctions::findMinVectorValue(listParticleNoInCells);
   std::cout<<"The smallest number of particles in a non-empty cell is: "<<minNoParticles<<"\n";
 
 }
@@ -205,16 +205,16 @@ void SimulationController::setupParticles()
   //Read in the data from file
   ReadGeo* file=new ReadGeo(m_readFileName);
 
-  file->getPointPositions(m_noParticles, &positionList);
-  file->getPointParameter_Float(mass, &massList);
-  file->getPointParameter_Float(phase, &phaseList);
-  file->getPointParameter_Float(temperature, &temperatureList);
+  file->getPointPositions(m_noParticles, positionList);
+  file->getPointParameter_Float(mass, massList);
+  file->getPointParameter_Float(phase, phaseList);
+  file->getPointParameter_Float(temperature, temperatureList);
 
   delete file;
 
   //Create emitter by passing in the data
   m_noParticles=positionList.size();
-  m_emitter->createParticles(m_noParticles, &positionList, &massList, &temperatureList, &phaseList);
+  m_emitter->createParticles(m_noParticles, positionList, massList, temperatureList, phaseList);
 
 
 }

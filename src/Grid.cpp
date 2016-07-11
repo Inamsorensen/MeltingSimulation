@@ -678,7 +678,7 @@ void Grid::transferParticleData(Emitter* _emitter)
         float mass=0.0;
         Eigen::Vector3f velocity;
         Phase phase=Phase::Solid;
-        m_cellFacesX[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellFace(&mass, &velocity, &phase);
+        m_cellFacesX[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellFace(mass, velocity, phase);
         float velocityX=velocity(0);
 
         //Add to cell face data
@@ -718,7 +718,7 @@ void Grid::transferParticleData(Emitter* _emitter)
         float mass=0.0;
         Eigen::Vector3f velocity;
         Phase phase=Phase::Solid;
-        m_cellFacesY[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellFace(&mass, &velocity, &phase);
+        m_cellFacesY[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellFace(mass, velocity, phase);
         float velocityY=velocity(1);
 
         //Add to cell face data
@@ -758,7 +758,7 @@ void Grid::transferParticleData(Emitter* _emitter)
         float mass=0.0;
         Eigen::Vector3f velocity;
         Phase phase=Phase::Solid;
-        m_cellFacesZ[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellFace(&mass, &velocity, &phase);
+        m_cellFacesZ[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellFace(mass, velocity, phase);
         float velocityZ=velocity(2);
 
         //Add to cell face data
@@ -801,7 +801,7 @@ void Grid::transferParticleData(Emitter* _emitter)
         Phase phase=Phase::Solid;
         float temperature=0.0;
         float lameLambdaInverse=0.0;
-        m_cellCentres[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellCentre(&mass, &detDeformGrad, &detDeformGradElast, &phase, &temperature, &lameLambdaInverse);
+        m_cellCentres[cellIndex]->m_interpolationData[particleIterator]->m_particle->getParticleData_CellCentre(mass, detDeformGrad, detDeformGradElast, phase, temperature, lameLambdaInverse);
 
         //Add to cell centre data
         m_cellCentres[cellIndex]->m_mass+=(weight*mass);
@@ -1120,9 +1120,9 @@ void Grid::setBoundaryVelocity()
     //Check whether current cell is colliding, if so set all faces to colliding
     if (m_cellCentres[cellIndex]->m_state==State::Colliding)
     {
-      m_cellFacesX[cellIndex]->m_velocity=10.0;
-      m_cellFacesY[cellIndex]->m_velocity=10.0;
-      m_cellFacesZ[cellIndex]->m_velocity=10.0;
+      m_cellFacesX[cellIndex]->m_velocity=0.0;
+      m_cellFacesY[cellIndex]->m_velocity=0.0;
+      m_cellFacesZ[cellIndex]->m_velocity=0.0;
     }
     else
     {
@@ -1138,7 +1138,7 @@ void Grid::setBoundaryVelocity()
         //Set velocity to zero if iIndex=0
         if (iIndex==0)
         {
-          m_cellFacesX[cellIndex]->m_velocity=10.0;
+          m_cellFacesX[cellIndex]->m_velocity=0.0;
         }
         //Else check the cell before it in i direction
         else
@@ -1149,7 +1149,7 @@ void Grid::setBoundaryVelocity()
           //Check if colliding
           if (m_cellCentres[neighbourIndex]->m_state==State::Colliding)
           {
-            m_cellFacesX[cellIndex]->m_velocity=10.0;
+            m_cellFacesX[cellIndex]->m_velocity=0.0;
           }
         }
       }
@@ -1160,7 +1160,7 @@ void Grid::setBoundaryVelocity()
         //Set velocity to zero if jIndex=0
         if (jIndex==0)
         {
-          m_cellFacesY[cellIndex]->m_velocity=10.0;
+          m_cellFacesY[cellIndex]->m_velocity=0.0;
         }
         //Else check the cell before it in j direction
         else
@@ -1171,7 +1171,7 @@ void Grid::setBoundaryVelocity()
           //Check if colliding
           if (m_cellCentres[neighbourIndex]->m_state==State::Colliding)
           {
-            m_cellFacesY[cellIndex]->m_velocity=10.0;
+            m_cellFacesY[cellIndex]->m_velocity=0.0;
           }
         }
       }
@@ -1181,7 +1181,7 @@ void Grid::setBoundaryVelocity()
         //Set velocity to zero if kIndex=0
         if (kIndex==0)
         {
-          m_cellFacesZ[cellIndex]->m_velocity=10.0;
+          m_cellFacesZ[cellIndex]->m_velocity=0.0;
         }
         //Else check the cell before it in k direction
         else
@@ -1192,7 +1192,7 @@ void Grid::setBoundaryVelocity()
           //Check if colliding
           if (m_cellCentres[neighbourIndex]->m_state==State::Colliding)
           {
-            m_cellFacesZ[cellIndex]->m_velocity=10.0;
+            m_cellFacesZ[cellIndex]->m_velocity=0.0;
           }
         }
       }
@@ -1203,7 +1203,7 @@ void Grid::setBoundaryVelocity()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::findNoParticlesInCells(Emitter *_emitter, std::vector<int> *o_listParticleNo)
+void Grid::findNoParticlesInCells(Emitter *_emitter, std::vector<int> &o_listParticleNo)
 {
   /* Outline
   ---------------------------------------------------------------------------------------------------------------------
@@ -1241,7 +1241,7 @@ void Grid::findNoParticlesInCells(Emitter *_emitter, std::vector<int> *o_listPar
     int cellIndex=MathFunctions::getVectorIndex(particleIndex(0), particleIndex(1), particleIndex(2), m_noCells);
 
     //Increase the particle count for that cell
-    o_listParticleNo->at(cellIndex)+=1;
+    o_listParticleNo.at(cellIndex)+=1;
   }
 
 }

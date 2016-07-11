@@ -9,7 +9,7 @@
 #include <iomanip>
 
 
-void MathFunctions::MinRes(Eigen::MatrixXf *_A, Eigen::VectorXf *_B, Eigen::VectorXf *io_x, Eigen::MatrixXf *_preconditioner, float _shift, float _maxLoops, float _tolerance, bool _show)
+void MathFunctions::MinRes(const Eigen::MatrixXf &_A, const Eigen::VectorXf &_B, Eigen::VectorXf &io_x, const Eigen::MatrixXf &_preconditioner, float _shift, float _maxLoops, float _tolerance, bool _show)
 {
   /* Check whether A matrix and preconditioner are symmetric and that A is not singular
   -----------------------------------------------------------------------------------------------
@@ -18,25 +18,28 @@ void MathFunctions::MinRes(Eigen::MatrixXf *_A, Eigen::VectorXf *_B, Eigen::Vect
   */
 
   //Check that matrices are symmetric
-  Eigen::MatrixXf A_transpose=_A->transpose();
+  Eigen::MatrixXf A_transpose=_A.transpose();
 
-  if (A_transpose!=*_A)
+  if (A_transpose!=_A)
   {
     throw std::invalid_argument("A matrix is not symmetric.");
   }
 
-  if (_preconditioner!=nullptr)
-  {
-    Eigen::MatrixXf precond_transpose=_preconditioner->transpose();
+  //Set empty matrix to compare preconditioner to
+  Eigen::MatrixXf emptyMatrix;
 
-    if (precond_transpose!=*_preconditioner)
+  if (_preconditioner!=emptyMatrix)
+  {
+    Eigen::MatrixXf precond_transpose=_preconditioner.transpose();
+
+    if (precond_transpose!=_preconditioner)
     {
       throw std::invalid_argument("Preconditioner is not symmetric.");
     }
   }
 
   //Check that A matrix is not singular, ie. that it has a determinant
-  float detA=_A->determinant();
+  float detA=_A.determinant();
   if (detA==0)
   {
     std::cout<<"A is a singular matrix. The current MINRES might not give the correct solution.\n";
@@ -50,7 +53,7 @@ void MathFunctions::MinRes(Eigen::MatrixXf *_A, Eigen::VectorXf *_B, Eigen::Vect
   */
 
   //Find size of system. Ie. _B->nx1 and _A->nxn where n is systemSize
-  int systemSize=_B->rows();
+  int systemSize=_B.rows();
 
   float minDifference_epsilon=std::numeric_limits<float>::epsilon();
 
@@ -108,11 +111,11 @@ void MathFunctions::MinRes(Eigen::MatrixXf *_A, Eigen::VectorXf *_B, Eigen::Vect
     Eigen::VectorXf r_k_2(systemSize);
     Eigen::VectorXf y(systemSize);
 
-    r_k_2=(*_A)*(*io_x);
-    r_k_2=r_k_2-(_shift*(*io_x));
-    r_k_2=(*_B)-r_k_2;
+    r_k_2=(_A)*(io_x);
+    r_k_2=r_k_2-(_shift*(io_x));
+    r_k_2=(_B)-r_k_2;
 
-    if (_preconditioner!=nullptr)
+    if (_preconditioner!=emptyMatrix)
     {
       /// @todo work out what this does
 //      M->Apply(*r1, *y);
@@ -240,7 +243,7 @@ void MathFunctions::MinRes(Eigen::MatrixXf *_A, Eigen::VectorXf *_B, Eigen::Vect
         float normaliseV=1.0/beta;
         v=normaliseV*y;
 
-        y=(*_A)*v-(_shift*v);
+        y=(_A)*v-(_shift*v);
 
         //Since v0=0, only do this for steps i>0
         if (i>0)
@@ -257,7 +260,7 @@ void MathFunctions::MinRes(Eigen::MatrixXf *_A, Eigen::VectorXf *_B, Eigen::Vect
 
         //Preconditioner
         ///@todo Need to work out what this does
-        if (_preconditioner!=nullptr)
+        if (_preconditioner!=emptyMatrix)
         {
 //          M->Apply(*r2,*y);
         }
@@ -354,7 +357,7 @@ void MathFunctions::MinRes(Eigen::MatrixXf *_A, Eigen::VectorXf *_B, Eigen::Vect
 
         w=denom*(v-(oldeps*w_k_2)-(delta*w_k_1));
 
-        *io_x=*io_x+(phi*w);
+        io_x=io_x+(phi*w);
 
 
         gamma_max=std::max(gamma_max, gamma);
@@ -371,7 +374,7 @@ void MathFunctions::MinRes(Eigen::MatrixXf *_A, Eigen::VectorXf *_B, Eigen::Vect
         //The above was moved further down as don't think any variables changes
 
         Anorm=sqrt(tnorm2);
-        ynorm2=io_x->dot(*io_x);
+        ynorm2=io_x.dot(io_x);
         ynorm=sqrt(ynorm2);
 
         float epsilon_A=Anorm*minDifference_epsilon;
