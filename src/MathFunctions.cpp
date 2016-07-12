@@ -201,49 +201,11 @@ void MathFunctions::linearSystemSolve(const Eigen::Matrix3f &_A, const Eigen::Ve
   /// except that it is 3x3 as this method is quite slow.
   /// Uses ColPivHouseholderQR from Eigen library - Accuracy = 3/4 and speed 2/4.
 
-//  //Set up Eigen matrices
-//  Eigen::Matrix3f A;
-//  Eigen::Vector3f b;
-
-//  //Check that 3x3 matrix
-//  int sizeA=_A->size();
-//  int noRows=_B->size();
-//  int noColumns=sizeA/noRows;
-
-//  if (noRows!=3 || noColumns!=3)
-//  {
-//    throw std::invalid_argument("A must be 3x3 and b 3x1 matrices");
-//  }
-
-//  //Read in values
-//  for (int i=0; i<3; i++)
-//  {
-//    //Fill b
-//    b(i)=_B->at(i);
-
-//    for (int j=0; j<3; j++)
-//    {
-//      //Find index for _A vector
-//      int index=j+(i*3);
-
-//      //Fill A
-//      A(i,j)=_A->at(index);
-//    }
-//  }
-
   //Set up solver
   Eigen::ColPivHouseholderQR<Eigen::Matrix3f> qrSolver(_A);
 
-//  //Find solution x
-//  Eigen::Vector3f x;
+  //Find solution x
   o_x=qrSolver.solve(_B);
-
-
-//  //Read solution into o_x
-//  for (int i=0; i<3; i++)
-//  {
-//    o_x->push_back(x[i]);
-//  }
 
 }
 
@@ -367,6 +329,23 @@ int MathFunctions::findMinVectorValue(const std::vector<int> &_vectorList)
   }
 
   return minValue;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+Eigen::Matrix3f MathFunctions::matrixElementMultiplication(const Eigen::Matrix3f &_A, const Eigen::Matrix3f &_B)
+{
+  //Set return matrix
+  Eigen::Matrix3f result;
+
+  //Loop over all elements in matrix. Set up for 3x3 only, so 3^2 elements
+  for (int i=0; i<9; i++)
+  {
+    result(i)=_A(i)*_B(i);
+  }
+
+  //Return result
+  return result;
 }
 
 //----------------------------------------------------------------------------------------------------------------------

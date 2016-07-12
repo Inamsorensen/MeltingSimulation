@@ -6,9 +6,18 @@
 
 Emitter::Emitter()
 {
-  /// @brief Initiates values for emitter. However, actual values and particles must be set up using separate functions
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Initialise all values to zero
 
-  //Initialise all values to zero
+  Set all of these variables separately using
+    createParticles
+    setStrainConstants
+    setRenderParameters
+
+  ------------------------------------------------------------------------------------------------------
+  */
+
   m_noParticles=0;
 
   m_lameMuConstant=0.0;
@@ -32,7 +41,13 @@ Emitter::Emitter()
 
 Emitter::~Emitter()
 {
-  /// @brief Removes particle pointers
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+
+  Deletes particle pointers
+
+  ------------------------------------------------------------------------------------------------------
+  */
 
   //Check number of particles in vector
   int noParticlesCurrent=m_particles.size();
@@ -58,6 +73,12 @@ Emitter::~Emitter()
 
 void Emitter::createParticles(int _noParticles, const std::vector<Eigen::Vector3f> &_particlePositions, const std::vector<float> &_particleMass, const std::vector<float> &_particleTemperature, const std::vector<float> &_particlePhase)
 {
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Generates particles based on input parameters.
+  ------------------------------------------------------------------------------------------------------
+  */
+
   m_noParticles=_noParticles;
 
   //Create particles
@@ -77,7 +98,11 @@ void Emitter::createParticles(int _noParticles, const std::vector<Eigen::Vector3
 
 void Emitter::setStrainConstants(float _lameMuConstant, float _lameLambdaConstant, float _compressionLim, float _stretchLim)
 {
-  /// @brief Set values to input values
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Sets strain constants from input
+  ------------------------------------------------------------------------------------------------------
+  */
 
   m_lameMuConstant=_lameMuConstant;
   m_lameLambdaConstant=_lameLambdaConstant;
@@ -90,7 +115,11 @@ void Emitter::setStrainConstants(float _lameMuConstant, float _lameLambdaConstan
 
 void Emitter::setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, float _heatCondSolid, float _heatCondFluid, float _latentHeat, float _freezeTemp)
 {
-  /// @brief Set values to input values
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Set temperature constants from input
+  ------------------------------------------------------------------------------------------------------
+  */
 
   m_heatCapacitySolid=_heatCapSolid;
   m_heatCapacityFluid=_heatCapFluid;
@@ -104,8 +133,30 @@ void Emitter::setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, 
 
 void Emitter::setRenderParameters(std::string _shaderName, float _particleRadius)
 {
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Set render parameters from input
+  ------------------------------------------------------------------------------------------------------
+  */
+
   m_particleShaderName=_shaderName;
   m_particleRadius=_particleRadius;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void Emitter::presetParticles()
+{
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Calls particle preset for all particles
+  ------------------------------------------------------------------------------------------------------
+  */
+
+  for (int i=0; i<m_noParticles; ++i)
+  {
+    m_particles[i]->presetParticlesForTimeStep();
+  }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -119,8 +170,11 @@ void Emitter::updateParticles()
 
 void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera)
 {
-  /// @brief Render particles
-  /// Uses a mix of  Eigen and ngl vector+matrices cause need ngl to communicate with shader?
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Render particles contained by emitter
+  ------------------------------------------------------------------------------------------------------
+  */
 
   //Get shader and VAO
   ngl::ShaderLib* shaderLib=ngl::ShaderLib::instance();
@@ -129,7 +183,7 @@ void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera
   //Set shader to use
   shaderLib->use(m_particleShaderName);
 
-  //For each particle, call render
+
   for (int i=0; i<m_noParticles; i++)
   {
     //Get particle position and make into Vec4

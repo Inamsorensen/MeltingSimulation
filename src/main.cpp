@@ -57,8 +57,9 @@ int main(int argc, char *argv[])
 //  std::cout<<x<<"\n";
 
 //  Eigen::Matrix3f A;
-//  Eigen::Vector3f b;
-//  Eigen::Vector3f x;
+//  Eigen::Matrix3f B;
+
+//  A=A.Identity();
 
 //  A(0,0)=1.0;
 //  A(1,0)=2.0;
@@ -70,14 +71,33 @@ int main(int argc, char *argv[])
 //  A(2,1)=2.0;
 //  A(2,2)=6.0;
 
-//  b(0)=2.0;
-//  b(1)=4.0;
-//  b(2)=6.0;
+//  B(0,0)=1.0;
+//  B(1,0)=2.0;
+//  B(2,0)=3.0;
+//  B(0,1)=1.0;
+//  B(0,2)=2.0;
+//  B(1,1)=3.0;
+//  B(1,2)=1.0;
+//  B(2,1)=2.0;
+//  B(2,2)=3.0;
 
-//  MathFunctions::linearSystemSolve(A, b, x);
+//  Eigen::Matrix3f C=MathFunctions::matrixElementMultiplication(A, B);
+
+//  Eigen::Matrix3f C_trans=C.transpose();
+//  Eigen::Matrix3f C_transInv=C_trans.inverse();
+//  Eigen::Matrix3f C_inv=C.inverse();
+//  Eigen::Matrix3f C_invTrans=C_inv.transpose();
+
 //  std::cout<<A<<"\n";
-//  std::cout<<b<<"\n";
-//  std::cout<<x<<"\n";
+//  std::cout<<"----------\n";
+//  std::cout<<B<<"\n";
+//  std::cout<<"----------\n";
+//  std::cout<<C<<"\n";
+//  std::cout<<"----------\n";
+//  std::cout<<C_transInv<<"\n";
+//  std::cout<<"----------\n";
+//  std::cout<<C_invTrans<<"\n";
+//  std::cout<<"----------\n";
 
 
 

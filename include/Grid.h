@@ -120,6 +120,11 @@ private:
   float m_dt;
 
   //----------------------------------------------------------------------------------------------------------------------
+  /// @brief External force on simulation. Set to gravity for now
+  //----------------------------------------------------------------------------------------------------------------------
+  Eigen::Vector3f m_externalForce;
+
+  //----------------------------------------------------------------------------------------------------------------------
   /// @brief Ambient temperature; temperature of the surrounding air. In Kelvin
   //----------------------------------------------------------------------------------------------------------------------
   float m_ambientTemperature;
@@ -135,7 +140,7 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Find which cells have particles in or near them such that interpolation weight will not be zero
   //----------------------------------------------------------------------------------------------------------------------
-  void findParticleInCell(Emitter *_emitter);
+  void findParticleContributionToCell(Emitter *_emitter);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate interpolation weights for transitions Particle-Grid and Grid-Particle
   //----------------------------------------------------------------------------------------------------------------------
@@ -150,25 +155,23 @@ private:
   void calcInitialParticleVolumes(Emitter* _emitter);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Verify whether cell centres and faces are colliding, empty or interior
+  /// @todo Change to switch/case statements instead of if statements
   //----------------------------------------------------------------------------------------------------------------------
   void classifyCells();
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Set boundary velocity. Set as stick on collision, ie. zero velocity for colliding faces
-  //----------------------------------------------------------------------------------------------------------------------
-  void setBoundaryVelocity();
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate force due to deviatoric stress
   //----------------------------------------------------------------------------------------------------------------------
-  void calcDeviatoricForce(Particle *_particle);
+  float calcDeviatoricForce(Particle *_particle, Eigen::Vector3f _eVector, Eigen::Vector3f _weightDiff);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate velocity after external forces and deviatoric stress has been applied
   //----------------------------------------------------------------------------------------------------------------------
   void calcDeviatoricVelocity();
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Set up B in Ax=B for the implicit calculation of velocity.
+  /// @brief Calculate B in Ax=B for the implicit calculation of velocity.
+  /// b_i=v_i + (dt/m_i)*f_i + dt*g*eVector*sumWeight
   //----------------------------------------------------------------------------------------------------------------------
-  void setUpB_DeviatoricVelocity();
+  float calcBComponent_DeviatoricVelocity(float _velocity, float _mass, float _deviatoricForce, float _sumWeight, Eigen::Vector3f _eVector);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set up A in Ax=B for the implicit calculation of velocity
   //----------------------------------------------------------------------------------------------------------------------
@@ -177,6 +180,10 @@ private:
   /// @brief Calculate rotation matrix R in polar decomposition of the deformation gradient: F=RS
   //----------------------------------------------------------------------------------------------------------------------
   void calculate_dR();
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Set boundary velocity. Set as stick on collision, ie. zero velocity for colliding faces
+  //----------------------------------------------------------------------------------------------------------------------
+  void setBoundaryVelocity();
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Project velocity to find velocity which agrees with pressure calculations such that incompressibility can

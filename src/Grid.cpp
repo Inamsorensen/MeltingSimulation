@@ -13,6 +13,18 @@ Grid* Grid::m_instance=nullptr;
 
 Grid::Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
 {
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Sets grid defining variables; origin, size and no cells.
+
+  NB! Grid origin is the position of the centre of the cell at the left lower back corner. This is where
+      (i,j,k)=(0,0,0)
+
+  Sets all other variables to zero. The surrounding temperatures setup is passed in by a separate function
+
+  Create all cell faces and centres, and adds them to their respective lists.
+  ------------------------------------------------------------------------------------------------------
+  */
   /// @brief Sets grid variables defining size of grid and cells, and the grid origin.
   /// Uses this to set up the cell lists
 
@@ -24,6 +36,10 @@ Grid::Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
 
   //Initialise time step to zero
   m_dt=0.0;
+
+  //Set external force to gravity
+  m_externalForce.setZero();
+  m_externalForce(1)=(-9.81);
 
   //Initialise surrounding temperatures to zero
   m_ambientTemperature=0.0;
@@ -78,7 +94,11 @@ Grid::Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
 
 Grid::~Grid()
 {
-  /// @brief Delete lists of cell pointers and instance pointer
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Delete all cell face and centre pointers
+  ------------------------------------------------------------------------------------------------------
+  */
 
   int noCellCentresCurrent=m_cellCentres.size();
   int noCellFacesXCurrent=m_cellFacesX.size();
@@ -131,7 +151,13 @@ Grid::~Grid()
 
 Grid* Grid::createGrid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
 {
-  /// @brief Creates grid from input variables. Only if grid has not already been created.
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Create grid.
+
+  Separate function to call the constructor with input parameters
+  ------------------------------------------------------------------------------------------------------
+  */
 
   if (m_instance==nullptr)
   {
@@ -145,6 +171,14 @@ Grid* Grid::createGrid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
 
 Grid* Grid::getGrid()
 {
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Gets instance of class as singleton.
+
+  Will throw error if grid not created yet as constructor demands input parameters.
+  ------------------------------------------------------------------------------------------------------
+  */
+
   if (m_instance==nullptr)
   {
     throw std::invalid_argument("You need to create the grid first.");
@@ -158,6 +192,17 @@ Grid* Grid::getGrid()
 
 void Grid::setSurroundingTemperatures(float _ambientTemp, float _heatSourceTemp)
 {
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Set surrounding temperatures.
+
+  Input is in Celsius whereas the ones stored are in Kelvin. 1C=273K.
+
+  Currently very simple setup. Could be matched with classification of cells to give more exciting collision
+  objects.
+  ------------------------------------------------------------------------------------------------------
+  */
+
   m_ambientTemperature=_ambientTemp+273.0;
   m_heatSourceTemperature=_heatSourceTemp+273.0;
 }
@@ -200,7 +245,7 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep)
   clearCellData();
 
   //findParticleInCell - need to find out which particles are in which cells and their respective interp weight
-  findParticleInCell(_emitter);
+  findParticleContributionToCell(_emitter);
 
   //Transfer particle data to grid
   transferParticleData(_emitter);
@@ -284,7 +329,7 @@ void Grid::clearCellData()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::findParticleInCell(Emitter* _emitter)
+void Grid::findParticleContributionToCell(Emitter* _emitter)
 {
   /* Outline
   ----------------------------------------------------------------------------------------------------
@@ -293,16 +338,14 @@ void Grid::findParticleInCell(Emitter* _emitter)
      Find position of particle in grid using getParticleGridCell
      This gives vector of i,j,k for cell
 
-     Get neighbours i+-2, j+-2, k+-2. Ie loop over these - NB! watch out so don't check cells outside grid
-     Actually needs to be i-1 and i+3 for faces, hence set -2 and +3 for now
+     Get neighbour cells between i-2 and i+3 and similarly for j and k. +3 because faces defined as lower
+     faces of cell.
 
      Pass in cell i,j,k to calcInterpolationWeights
 
     }
   ------------------------------------------------------------------------------------------------------
   */
-
-  std::vector<Particle*>* particleListPtr=_emitter->getParticlesList();
 
   //To calc position of particle, need origin of grid ege, not centre of first grid cell, as this is how its
   //defined in Houdini/import file
@@ -312,9 +355,9 @@ void Grid::findParticleInCell(Emitter* _emitter)
   gridEdgePosition(1)-=halfCellSize;
   gridEdgePosition(2)-=halfCellSize;
 
-  for (int particleItr=0; particleItr<_emitter->getNoParticles(); particleItr++)
+  for (int particleItr=0; particleItr<_emitter->m_noParticles; particleItr++)
   {
-    Eigen::Vector3f particlePosition=particleListPtr->at(particleItr)->getPosition();
+    Eigen::Vector3f particlePosition=_emitter->m_particles[particleItr]->getPosition();
     Eigen::Vector3i particleIndex=MathFunctions::getParticleGridCell(particlePosition, m_cellSize, gridEdgePosition);
 
     //Loop over i+-2, j+-2, k+-2
@@ -332,7 +375,7 @@ void Grid::findParticleInCell(Emitter* _emitter)
           if (i>=0 && i<=(m_noCells-1) && j>=0 && j<=(m_noCells-1) && k>=0 && k<=(m_noCells-1))
           {
             //Calculate interpolation weight and store particle if unlike zero
-            calcInterpolationWeights(particleListPtr->at(particleItr), i, j, k);
+            calcInterpolationWeights(_emitter->m_particles[particleItr], i, j, k);
           }
         }
       }
@@ -469,9 +512,8 @@ void Grid::calcInterpolationWeights(Particle* _particle, int _i, int _j, int _k)
 
     //Store interpolation data
     m_cellCentres[cellListIndex]->m_interpolationData.push_back(newInterpolationData);
-
-
   }
+
   //FaceX
   if (NFaceX_cubicBS!=0)
   {
@@ -525,6 +567,7 @@ void Grid::calcInterpolationWeights(Particle* _particle, int _i, int _j, int _k)
     //Store interpolation data
     m_cellFacesX[cellListIndex]->m_interpolationData.push_back(newInterpolationData);
   }
+
   //FaceY
   if (NFaceY_cubicBS!=0)
   {
@@ -578,6 +621,7 @@ void Grid::calcInterpolationWeights(Particle* _particle, int _i, int _j, int _k)
     //Store interpolation data
     m_cellFacesY[cellListIndex]->m_interpolationData.push_back(newInterpolationData);
   }
+
   //FaceZ
   if (NFaceZ_cubicBS!=0)
   {
@@ -631,10 +675,6 @@ void Grid::calcInterpolationWeights(Particle* _particle, int _i, int _j, int _k)
     //Store interpolation data
     m_cellFacesZ[cellListIndex]->m_interpolationData.push_back(newInterpolationData);
   }
-
-
-
-
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -861,16 +901,14 @@ void Grid::calcInitialParticleVolumes(Emitter *_emitter)
       //Add density from this cell to particle
       float density=(weight*mass)/cellVolume;
       m_cellCentres[cellIndex]->m_interpolationData[particleIterator]->m_particle->addParticleDensity(density);
-//      std::cout<<"test\n";
     }
   }
 
   //Calculate particle volume
   int noParticles=_emitter->getNoParticles();
-  std::vector<Particle*>* particleListPtr=_emitter->getParticlesList();
   for (int particleIterator=0; particleIterator<noParticles; particleIterator++)
   {
-    particleListPtr->at(particleIterator)->calcInitialVolume();
+    _emitter->m_particles.at(particleIterator)->calcInitialVolume();
   }
 }
 
@@ -892,6 +930,8 @@ void Grid::classifyCells()
       Otherwise - interior
     Set heat source temperature for colliding cells with kIndex==0. Ie. heat source element is the k=0 plane.
     Set ambient temperature to empty cells
+
+  TODO:  Use switch/case instead of if statements
 
   ----------------------------------------------------------------------------------------------------------------------
   */
@@ -929,6 +969,7 @@ void Grid::classifyCells()
     }
   }
 
+  //This step will work for level set collisions as well.
   //Loop over all cells again to check which cell centres are collding
   //Seems inefficient.
   for (int cellIndex=0; cellIndex<(pow(m_noCells, 3)); cellIndex++)
@@ -937,7 +978,6 @@ void Grid::classifyCells()
     int iIndex=m_cellCentres[cellIndex]->m_iIndex;
     int jIndex=m_cellCentres[cellIndex]->m_jIndex;
     int kIndex=m_cellCentres[cellIndex]->m_kIndex;
-
 
     //Face X
     //Check if lower x face colliding
@@ -1221,7 +1261,7 @@ void Grid::findNoParticlesInCells(Emitter *_emitter, std::vector<int> &o_listPar
   //o_listParticleNo=new std::vector<int>(pow(m_noCells,3),0);
 
   //Get particle list
-  std::vector<Particle*>* particleList=_emitter->getParticlesList();
+  //std::vector<Particle*>* particleList=_emitter->getParticlesList();
   int noParticles=_emitter->getNoParticles();
 
   //Calculate position of grid edge as this is origin for particle positions
@@ -1234,7 +1274,7 @@ void Grid::findNoParticlesInCells(Emitter *_emitter, std::vector<int> &o_listPar
   for (int i=0; i<noParticles; i++)
   {
     //Get grid cell index from particle position
-    Eigen::Vector3f particlePosition=particleList->at(i)->getPosition();
+    Eigen::Vector3f particlePosition=_emitter->m_particles[i]->getPosition();
     Eigen::Vector3i particleIndex=MathFunctions::getParticleGridCell(particlePosition, m_cellSize, gridEdgePosition);
 
     //Get vector index of the cell the particle is in
@@ -1247,109 +1287,3 @@ void Grid::findNoParticlesInCells(Emitter *_emitter, std::vector<int> &o_listPar
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-
-//void Grid::TEST_findParticleInCell(Emitter *_emitter)
-//{
-//  std::vector<Particle*>* particleListPtr=_emitter->getParticlesList();
-
-//  for (int particleItr=0; particleItr<_emitter->getNoParticles(); particleItr++)
-//  {
-//    Eigen::Vector3f particlePosition=particleListPtr->at(particleItr)->getPosition();
-//    //Eigen::Vector3i particleIndex=MathFunctions::getParticleGridCell(particlePosition, m_cellSize, m_origin);
-
-//    //Loop over all grid cells
-//    for (int k=0; k<m_noCells; k++)
-//    {
-//      for (int j=0; j<m_noCells; j++)
-//      {
-//        for (int i=0; i<m_noCells; i++)
-//        {
-//          //Cell position
-//          float xPos=(i*m_cellSize)+m_origin(0);
-//          float yPos=(j*m_cellSize)+m_origin(1);
-//          float zPos=(k*m_cellSize)+m_origin(2);
-
-//          //Position vectors for centre and faces
-//          Eigen::Vector3f centreVector(xPos, yPos, zPos);
-
-//          float halfCellSize=m_cellSize/2.0;
-//          Eigen::Vector3f faceXVector(xPos-halfCellSize, yPos, zPos);
-//          Eigen::Vector3f faceYVector(xPos, yPos-halfCellSize, zPos);
-//          Eigen::Vector3f faceZVector(xPos, yPos, zPos-halfCellSize);
-
-//          //Eigen::Vector3f particlePosition=_particle->getPosition();
-
-//          //Calculate posDifference for each face and cell centre
-//          Eigen::Vector3f centrePosDiff=particlePosition-centreVector;
-//          Eigen::Vector3f faceXPosDiff=particlePosition-faceXVector;
-//          Eigen::Vector3f faceYPosDiff=particlePosition-faceYVector;
-//          Eigen::Vector3f faceZPosDiff=particlePosition-faceZVector;
-
-//          //Need to calculate weights for each of these
-//          //Check whether worth calculating all?
-
-//          //Centre
-//          float NxCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(0)/m_cellSize);
-//          float NyCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(1)/m_cellSize);
-//          float NzCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(2)/m_cellSize);
-//          float NCentre_cubicBS=NxCentre_cubicBS*NyCentre_cubicBS*NzCentre_cubicBS;
-
-//          //FaceX
-//          float NxFaceX_cubicBS=MathFunctions::calcCubicBSpline(faceXPosDiff(0)/m_cellSize);
-//          float NyFaceX_cubicBS=MathFunctions::calcCubicBSpline(faceXPosDiff(1)/m_cellSize);
-//          float NzFaceX_cubicBS=MathFunctions::calcCubicBSpline(faceXPosDiff(2)/m_cellSize);
-//          float NFaceX_cubicBS=NxFaceX_cubicBS*NyFaceX_cubicBS*NzFaceX_cubicBS;
-
-//          //FaceY
-//          float NxFaceY_cubicBS=MathFunctions::calcCubicBSpline(faceYPosDiff(0)/m_cellSize);
-//          float NyFaceY_cubicBS=MathFunctions::calcCubicBSpline(faceYPosDiff(1)/m_cellSize);
-//          float NzFaceY_cubicBS=MathFunctions::calcCubicBSpline(faceYPosDiff(2)/m_cellSize);
-//          float NFaceY_cubicBS=NxFaceY_cubicBS*NyFaceY_cubicBS*NzFaceY_cubicBS;
-
-//          //FaceZ
-//          float NxFaceZ_cubicBS=MathFunctions::calcCubicBSpline(faceZPosDiff(0)/m_cellSize);
-//          float NyFaceZ_cubicBS=MathFunctions::calcCubicBSpline(faceZPosDiff(1)/m_cellSize);
-//          float NzFaceZ_cubicBS=MathFunctions::calcCubicBSpline(faceZPosDiff(2)/m_cellSize);
-//          float NFaceZ_cubicBS=NxFaceZ_cubicBS*NyFaceZ_cubicBS*NzFaceZ_cubicBS;
-
-//          //Check whether worth keep going, ie. if cubicBS are non-zero
-//          //NB! Might need to check if smaller than smallest value difference
-
-//          int cellListIndex=MathFunctions::getVectorIndex(i, j, k, m_noCells);
-
-//          if (NCentre_cubicBS!=0)
-//          {
-//            InterpolationData* newInterpData=new InterpolationData;
-//            newInterpData->m_particle=particleListPtr->at(particleItr);
-//            newInterpData->m_cubicBSpline=NCentre_cubicBS;
-//            m_cellCentres[cellListIndex]->m_interpolationData.push_back(newInterpData);
-//          }
-
-//          if (NFaceX_cubicBS!=0)
-//          {
-//            InterpolationData* newInterpData=new InterpolationData;
-//            newInterpData->m_particle=particleListPtr->at(particleItr);
-//            newInterpData->m_cubicBSpline=NFaceX_cubicBS;
-//            m_cellFacesX[cellListIndex]->m_interpolationData.push_back(newInterpData);
-//          }
-
-//          if (NFaceY_cubicBS!=0)
-//          {
-//            InterpolationData* newInterpData=new InterpolationData;
-//            newInterpData->m_particle=particleListPtr->at(particleItr);
-//            newInterpData->m_cubicBSpline=NFaceY_cubicBS;
-//            m_cellFacesY[cellListIndex]->m_interpolationData.push_back(newInterpData);
-//          }
-
-//          if (NFaceZ_cubicBS!=0)
-//          {
-//            InterpolationData* newInterpData=new InterpolationData;
-//            newInterpData->m_particle=particleListPtr->at(particleItr);
-//            newInterpData->m_cubicBSpline=NFaceZ_cubicBS;
-//            m_cellFacesZ[cellListIndex]->m_interpolationData.push_back(newInterpData);
-//          }
-//        }
-//      }
-//    }
-//  }
-//}

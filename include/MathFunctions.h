@@ -117,6 +117,11 @@ struct MathFunctions
   /// @brief Find minimum above zero in vector
   //----------------------------------------------------------------------------------------------------------------------
   static int findMinVectorValue(const std::vector<int> &_vectorList);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief A:B - Multiply every element in A with every element in B
+  /// NB! For 3x3 matrices only
+  //----------------------------------------------------------------------------------------------------------------------
+  static Eigen::Matrix3f matrixElementMultiplication(const Eigen::Matrix3f &_A, const Eigen::Matrix3f &_B);
 
 };
 

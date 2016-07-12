@@ -233,6 +233,7 @@ void SimulationController::update()
   }
 
   //Update elastic/plastic
+  m_emitter->presetParticles();
 
   //Update grid which includes
   //Calculate interpolation weights
@@ -241,9 +242,6 @@ void SimulationController::update()
   //Transfer data back to particles
   m_grid->update(m_simTimeStep, m_emitter, isFirstStep);
 
-//  isFirstStep=false;
-//  m_grid->update(m_simTimeStep, m_emitter, isFirstStep);
-//  m_grid->update(m_simTimeStep, m_emitter, isFirstStep);
 
   //Update particles
 
