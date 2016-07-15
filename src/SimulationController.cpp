@@ -137,7 +137,7 @@ void SimulationController::setRenderParameters(ngl::Camera *_camera, std::string
   m_shaderName=_shaderName;
 
   //Particle size
-  m_particleRadius=0.1;
+  m_particleRadius=0.2;
 
   m_emitter->setRenderParameters(m_shaderName, m_particleRadius);
 

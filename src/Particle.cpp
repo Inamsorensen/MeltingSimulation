@@ -258,6 +258,17 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
   m_temperature=_tempContribBeta*m_previousTemperature;
   m_velocityGradient=m_velocityGradient.setZero();
 
+
+  //For now, update elastic deformation gradient if liquid, here
+  if (m_phase==Phase::Liquid)
+  {
+    m_detDeformGradElastic=m_deformationElastic.determinant();
+    float fluidCorrection=pow(m_detDeformGradElastic,(1.0/m_dimension));
+    m_deformationElastic=m_deformationElastic.Identity();
+    m_deformationElastic*=fluidCorrection;
+  }
+
+
   //Apply plasticity contribution
   applyPlasticity();
 
