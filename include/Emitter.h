@@ -41,8 +41,12 @@ public:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set material constants
   //----------------------------------------------------------------------------------------------------------------------
-  void setStrainConstants(float _lameMuConstant, float _lameLambdaConstant, float _compressionLim, float _stretchLim);
+  void setStrainConstants(float _lameMuConstant, float _lameLambdaConstant, float _compressionLim, float _stretchLim, float _hardnessCoefficient);
   void setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, float _heatCondSolid, float _heatCondFluid, float _latentHeat, float _freezeTemp);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Set collision object
+  //----------------------------------------------------------------------------------------------------------------------
+  void setCollisionObject(float _xMin, float _xMax, float _yMin, float _yMax, float _zMin, float _zMax);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set render parameters
   //----------------------------------------------------------------------------------------------------------------------
@@ -77,6 +81,22 @@ public:
 //  //----------------------------------------------------------------------------------------------------------------------
 //  inline std::vector<Particle*>* getParticlesList() {return &m_particles;}
   //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get freezing temperature
+  //----------------------------------------------------------------------------------------------------------------------
+  inline float getFreezingTemperature() const {return m_freezingTemperature;}
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get freezing temperature buffer
+  //----------------------------------------------------------------------------------------------------------------------
+  inline float getFreezingTemperatureBuffer() const {return m_freezingTemperatureBuffer;}
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get heat capacity for fluid
+  //----------------------------------------------------------------------------------------------------------------------
+  inline float getHeatCapacityFluid() const {return m_heatCapacityFluid;}
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get heat capacity for solid
+  //----------------------------------------------------------------------------------------------------------------------
+  inline float getHeatCapacitySolid() const {return m_heatCapacitySolid;}
+  //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get latent heat
   //----------------------------------------------------------------------------------------------------------------------
   inline float getLatentHeat() const {return m_latentHeat;}
@@ -85,11 +105,11 @@ public:
   /// @brief Preset particles for first time step. Applies plasticity and makes corrections to all deformation gradient
   /// dependent variables accordingly
   //----------------------------------------------------------------------------------------------------------------------
-  void presetParticles();
+  void presetParticles(float _velocityContribAlpha, float _tempContribBeta);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Update particles.
   //----------------------------------------------------------------------------------------------------------------------
-  void updateParticles();
+  void updateParticles(float _dt);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Render particles
   /// @param [in] _modelMatrixCamera gives the scene transformations that also need to be applied to particle positions
@@ -146,6 +166,10 @@ protected:
   /// @brief Freezing or melting temperature of material being simulated
   //----------------------------------------------------------------------------------------------------------------------
   float m_freezingTemperature;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Freezing point buffer in case temperature doesn't hit freezing temperature exactly
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_freezingTemperatureBuffer;
 
 private:
   //----------------------------------------------------------------------------------------------------------------------
@@ -156,6 +180,16 @@ private:
   /// @brief List of particles contained by emitter
   //----------------------------------------------------------------------------------------------------------------------
   std::vector<Particle*> m_particles;
+
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Collision object boundaries
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_xMin;
+  float m_xMax;
+  float m_yMin;
+  float m_yMax;
+  float m_zMin;
+  float m_zMax;
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Shader name used to set which shader to use when rendering particles

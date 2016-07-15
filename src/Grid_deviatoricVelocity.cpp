@@ -115,26 +115,35 @@ void Grid::calcDeviatoricVelocity()
   Store results
     Loop over grid cells again to store
 
+
+  TODO: Set boundary velocities to go into b
+
   ----------------------------------------------------------------------------------------------------------------
-  */
+  */  
 
   //Set e_{a(i)} vectors
   Eigen::Vector3f e_x(1.0, 0.0, 0.0);
   Eigen::Vector3f e_y(0.0, 1.0, 0.0);
   Eigen::Vector3f e_z(0.0, 0.0, 1.0);
 
+  //Calc total number of cells
+  int totNoCells=pow(m_noCells,3);
+
+  //Set up A and b storage
+  Eigen::MatrixXf A_X(totNoCells, totNoCells);
+  Eigen::VectorXf b_X(totNoCells);
+  Eigen::MatrixXf A_Y(totNoCells, totNoCells);
+  Eigen::VectorXf b_Y(totNoCells);
+  Eigen::MatrixXf A_Z(totNoCells, totNoCells);
+  Eigen::VectorXf b_Z(totNoCells);
+
   for (int cellIndex=0; cellIndex<(pow(m_noCells, 3)); cellIndex++)
   {
-    //Calc total number of cells
-    int totNoCells=pow(m_noCells,3);
+    //Store velocities as step n before update them
+    m_cellFacesX[cellIndex]->m_previousVelocity=m_cellFacesX[cellIndex]->m_velocity;
+    m_cellFacesY[cellIndex]->m_previousVelocity=m_cellFacesY[cellIndex]->m_velocity;
+    m_cellFacesZ[cellIndex]->m_previousVelocity=m_cellFacesZ[cellIndex]->m_velocity;
 
-    //Set up A and b storage
-    Eigen::MatrixXf A_X(totNoCells, totNoCells);
-    Eigen::VectorXf b_X(totNoCells);
-    Eigen::MatrixXf A_Y(totNoCells, totNoCells);
-    Eigen::VectorXf b_Y(totNoCells);
-    Eigen::MatrixXf A_Z(totNoCells, totNoCells);
-    Eigen::VectorXf b_Z(totNoCells);
 
     //Loop over particles in each face of grid cell
     //Calculate force addition and weight addition
@@ -221,23 +230,44 @@ void Grid::calcDeviatoricVelocity()
       weightSumZ+=weight;
     }
 
+    //Set b components to zero. Will be zero if face has no particles affecting it
+    float bComponentX=0.0;
+    float bComponentY=0.0;
+    float bComponentZ=0.0;
 
-    //Calculate b components for each of the faces
-    float velocityX=m_cellFacesX[cellIndex]->m_velocity;
-    float massX=m_cellFacesX[cellIndex]->m_mass;
-    float velocityY=m_cellFacesY[cellIndex]->m_velocity;
-    float massY=m_cellFacesY[cellIndex]->m_mass;
-    float velocityZ=m_cellFacesZ[cellIndex]->m_velocity;
-    float massZ=m_cellFacesZ[cellIndex]->m_mass;
+    //Verify that cell face isn't empty, otherwise divide by zero mass
+    if (noParticles_FaceX!=0)
+    {
+      //Calculate b components for each of the faces
+      float velocityX=m_cellFacesX[cellIndex]->m_velocity;
+      float massX=m_cellFacesX[cellIndex]->m_mass;
 
-    float bComponentX=calcBComponent_DeviatoricVelocity(velocityX, massX, forceSumX, weightSumX, e_x);
-    float bComponentY=calcBComponent_DeviatoricVelocity(velocityY, massY, forceSumY, weightSumY, e_y);
-    float bComponentZ=calcBComponent_DeviatoricVelocity(velocityZ, massZ, forceSumZ, weightSumZ, e_z);
+      bComponentX=calcBComponent_DeviatoricVelocity(velocityX, massX, forceSumX, weightSumX, e_x);
+    }
+
+    if (noParticles_FaceY!=0)
+    {
+      float velocityY=m_cellFacesY[cellIndex]->m_velocity;
+      float massY=m_cellFacesY[cellIndex]->m_mass;
+
+      bComponentY=calcBComponent_DeviatoricVelocity(velocityY, massY, forceSumY, weightSumY, e_y);
+    }
+
+    if (noParticles_FaceZ!=0)
+    {
+      float velocityZ=m_cellFacesZ[cellIndex]->m_velocity;
+      float massZ=m_cellFacesZ[cellIndex]->m_mass;
+
+      bComponentZ=calcBComponent_DeviatoricVelocity(velocityZ, massZ, forceSumZ, weightSumZ, e_z);
+    }
 
     //Insert into b vector
     b_X(cellIndex)=bComponentX;
     b_Y(cellIndex)=bComponentY;
     b_Z(cellIndex)=bComponentZ;
+
+    //For now, explicitly update velocity. JUST FOR TESTING
+    explicitUpdateVelocity(cellIndex, bComponentX, bComponentY, bComponentZ);
 
   }
 
@@ -321,6 +351,15 @@ void Grid::calculate_dR()
 
   ------------------------------------------------------------------------------------------------------------
   */
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void Grid::explicitUpdateVelocity(int _cellIndex, float _velocityX, float _velocityY, float _velocityZ)
+{
+  m_cellFacesX[_cellIndex]->m_velocity=_velocityX;
+  m_cellFacesY[_cellIndex]->m_velocity=_velocityY;
+  m_cellFacesZ[_cellIndex]->m_velocity=_velocityZ;
 }
 
 //----------------------------------------------------------------------------------------------------------------------

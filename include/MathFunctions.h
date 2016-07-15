@@ -49,21 +49,25 @@ struct MathFunctions
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Returns value of differentiated cubic B-spline
   /// @param [in] Position in a single direction, x
+  /// @todo Doesn't make sure that weight is positive. Is this important?
   //----------------------------------------------------------------------------------------------------------------------
   static float calcCubicBSpline_Diff(float _x);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Returns value of integrated cubic B-spline
   /// @param [in] Position in a single direction, x
+  /// @todo Needs to be set up
   //----------------------------------------------------------------------------------------------------------------------
   static float calcCubicBSpline_Integ(float _x);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Returns value of tight quadratic stencil
   /// @param [in] Position in a single direction, x
+  /// @todo Doesn't make sure that weight is positive. Is this important?
   //----------------------------------------------------------------------------------------------------------------------
   static float calcTightQuadraticStencil(float _x);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Returns value of differentiated tight quadratic stencil
   /// @param [in] Position in a single direction, x
+  /// @todo Doesn't make sure that weight is positive. Is this important?
   //----------------------------------------------------------------------------------------------------------------------
   static float calcTightQuadraticStencil_Diff(float _x);
   //----------------------------------------------------------------------------------------------------------------------

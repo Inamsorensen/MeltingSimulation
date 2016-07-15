@@ -6,6 +6,8 @@ void Grid::calcTemperature()
 {
   /* Outline
   ----------------------------------------------------------------------------------------------------------------
+  Store current temp as previous
+
   Set up A and B and T
 
   Set B
@@ -19,6 +21,12 @@ void Grid::calcTemperature()
   Store result
   ----------------------------------------------------------------------------------------------------------------
   */
+
+  for (int cellIndex=0; cellIndex<pow(m_noCells,3); cellIndex++)
+  {
+    //Store current temp as previous
+    m_cellCentres[cellIndex]->m_previousTemperature=m_cellCentres[cellIndex]->m_temperature;
+  }
 }
 
 //----------------------------------------------------------------------------------------------------------------------

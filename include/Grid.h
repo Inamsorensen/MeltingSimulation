@@ -66,7 +66,7 @@ public:
   /// @brief Does all calculations for one time step. Updates velocity and temperature through force, pressure and
   /// temperature calculations
   //----------------------------------------------------------------------------------------------------------------------
-  void update(float _dt, Emitter *_emitter, bool _isFirstStep);
+  void update(float _dt, Emitter *_emitter, bool _isFirstStep, float _velocityContribAlpha, float _temperatureContribBeta);
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get cell state for visualisation
@@ -165,6 +165,7 @@ private:
   float calcDeviatoricForce(Particle *_particle, Eigen::Vector3f _eVector, Eigen::Vector3f _weightDiff);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate velocity after external forces and deviatoric stress has been applied
+  /// @todo Set boundary velocities
   //----------------------------------------------------------------------------------------------------------------------
   void calcDeviatoricVelocity();
   //----------------------------------------------------------------------------------------------------------------------
@@ -176,6 +177,10 @@ private:
   /// @brief Set up A in Ax=B for the implicit calculation of velocity
   //----------------------------------------------------------------------------------------------------------------------
   void setUpA_DeviatoricVelocity();
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Explicitly update velocity. v_new=bcomponent
+  //----------------------------------------------------------------------------------------------------------------------
+  void explicitUpdateVelocity(int _cellIndex, float _velocityX, float _velocityY, float _velocityZ);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate rotation matrix R in polar decomposition of the deformation gradient: F=RS
   //----------------------------------------------------------------------------------------------------------------------
@@ -228,15 +233,8 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Update particle data from grid
   //----------------------------------------------------------------------------------------------------------------------
-  void updateParticleFromGrid();
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Update particle velocity and velocity gradient
-  //----------------------------------------------------------------------------------------------------------------------
-  void updateParticleVelocity();
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Update particle temperature and check phase transition
-  //----------------------------------------------------------------------------------------------------------------------
-  void updateParticleTemperature();
+  void updateParticleFromGrid(float _velocityContribAlpha, float _tempContribBeta);
+
 
 };
 

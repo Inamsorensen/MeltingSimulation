@@ -53,13 +53,18 @@ SimulationController::SimulationController()
   m_latentHeat=1.0;
   m_freezingTemperature=0.0;
 
+  //Set PIC FLIP contribution constants
+  m_velocityContributionAlpha=0.95;
+  m_temperatureContributionBeta=0.95;
+
+
   //Read in simulation parameters
   m_readFileName="../HoudiniFiles/particles.geo";
   readSimulationParameters();
 
   //Create emitter and particles
   m_emitter=new Emitter();
-  m_emitter->setStrainConstants(m_lameMuConstant, m_lameLambdaConstant, m_compressionLimit, m_stretchLimit);
+  m_emitter->setStrainConstants(m_lameMuConstant, m_lameLambdaConstant, m_compressionLimit, m_stretchLimit, m_hardnessCoefficient);
   m_emitter->setTemperatureConstants(m_heatCapacitySolid, m_heatCapacityFluid, m_heatConductivitySolid, m_heatConductivityFluid, m_latentHeat, m_freezingTemperature);
   setupParticles();
 
@@ -74,6 +79,14 @@ SimulationController::SimulationController()
   m_grid=Grid::createGrid(staggeredGridPosition, m_gridSize, m_noCells);
   m_grid->setSurroundingTemperatures(m_ambientTemperature, m_heatSourceTemperature);
 
+  //Set grid as collision object for emitter
+  float xMin=m_gridPosition(0);
+  float yMin=m_gridPosition(1);
+  float zMin=m_gridPosition(2);
+  float xMax=xMin+m_gridSize;
+  float yMax=yMin+m_gridSize;
+  float zMax=zMin+m_gridSize;
+  m_emitter->setCollisionObject(xMin, xMax, yMin, yMax, zMin, zMax);
 
   //Test min no particle in non-empty cells
   std::vector<int> listParticleNoInCells(pow(m_noCells,3),0);
@@ -148,6 +161,7 @@ void SimulationController::readSimulationParameters()
   std::string lameLambda="LameLambda";
   std::string compLimit="CompressionLimit";
   std::string stretchLimit="StretchLimit";
+  std::string hardnessCoeff="HardnessCoefficient";
 
   std::string heatCapSolid="HeatCapacitySolid";
   std::string heatCapFluid="HeatCapacityFluid";
@@ -173,6 +187,7 @@ void SimulationController::readSimulationParameters()
   m_lameLambdaConstant=file->getSimulationParameter_Float(lameLambda);
   m_compressionLimit=file->getSimulationParameter_Float(compLimit);
   m_stretchLimit=file->getSimulationParameter_Float(stretchLimit);
+  m_hardnessCoefficient=file->getSimulationParameter_Float(hardnessCoeff);
 
   m_heatCapacitySolid=file->getSimulationParameter_Float(heatCapSolid);
   m_heatCapacityFluid=file->getSimulationParameter_Float(heatCapFluid);
@@ -233,17 +248,18 @@ void SimulationController::update()
   }
 
   //Update elastic/plastic
-  m_emitter->presetParticles();
+  m_emitter->presetParticles(m_velocityContributionAlpha, m_temperatureContributionBeta);
 
   //Update grid which includes
   //Calculate interpolation weights
   //Transfer data from particles to grid
   //Calculate new velocity and temperature
   //Transfer data back to particles
-  m_grid->update(m_simTimeStep, m_emitter, isFirstStep);
+  m_grid->update(m_simTimeStep, m_emitter, isFirstStep, m_velocityContributionAlpha, m_temperatureContributionBeta);
 
 
   //Update particles
+  m_emitter->updateParticles(m_simTimeStep);
 
 }
 

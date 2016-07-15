@@ -129,7 +129,8 @@ float MathFunctions::calcTightQuadraticStencil(float _x)
   else if (absX>=0.5 && absX<1.5)
   {
     result=0.5*(pow(_x,2));
-    result-=((3.0/2.0)*_x);
+//    result-=((3.0/2.0)*_x);
+    result-=((3.0/2.0)*absX);
     result+=(9.0/8.0);
   }
 
@@ -151,6 +152,8 @@ float MathFunctions::calcTightQuadraticStencil_Diff(float _x)
   float result=0.0;
   float absX=std::abs(_x);
 
+  float signX=MathFunctions::signFunction(_x);
+
   if (absX<0.5)
   {
     result=(-2.0*_x);
@@ -159,7 +162,8 @@ float MathFunctions::calcTightQuadraticStencil_Diff(float _x)
   else if (absX>=0.5 && absX<1.5)
   {
     result=_x;
-    result-=(3.0/2.0);
+//    result-=(3.0/2.0);
+    result-=((3.0/2.0)*signX);
   }
 
   return result;

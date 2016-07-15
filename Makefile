@@ -1202,6 +1202,8 @@ obj/Particle.o: src/Particle.cpp include/Particle.h \
 		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
 		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h \
 		/home/i7435906/NGL/include/ngl/Mat3.h \
+		include/MathFunctions.h \
+		include/omp.h \
 		include/Emitter.h \
 		/home/i7435906/NGL/include/ngl/Mat4.h \
 		/home/i7435906/NGL/include/ngl/Camera.h \

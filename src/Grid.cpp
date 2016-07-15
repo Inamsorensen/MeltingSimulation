@@ -209,7 +209,7 @@ void Grid::setSurroundingTemperatures(float _ambientTemp, float _heatSourceTemp)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep)
+void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep, float _velocityContribAlpha, float _temperatureContribBeta)
 {
   /* Outline
   ---------------------------------------------------------------------------------------------------------------------
@@ -260,14 +260,19 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep)
   classifyCells();
 
 
-  //Calculate force
+  //Calculate deviatoric force and velocity update from it
+  calcDeviatoricVelocity();
 
-  //Calculate b
-
-  //Set boundary velocity to be used in b
+  //Set boundary velocities here for now
   setBoundaryVelocity();
 
-  //Implicit integration to deviatoric velocity
+  //Project velocity
+
+  //Calculate new temperature
+  calcTemperature();
+
+  //Update particle values from grid
+  updateParticleFromGrid(_velocityContribAlpha, _temperatureContribBeta);
 
 }
 
@@ -290,7 +295,7 @@ void Grid::clearCellData()
     m_cellCentres[cellIndex]->m_interpolationData.clear();
     m_cellFacesX[cellIndex]->m_interpolationData.clear();
     m_cellFacesY[cellIndex]->m_interpolationData.clear();
-    m_cellFacesZ[cellIndex]->m_interpolationData.clear();
+    m_cellFacesZ[cellIndex]->m_interpolationData.clear();    
 
     //Reset cell centre values to zero
     m_cellCentres[cellIndex]->m_mass=0.0;

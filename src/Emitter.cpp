@@ -31,6 +31,14 @@ Emitter::Emitter()
   m_heatConductivityFluid=0.0;
   m_latentHeat=0.0;
   m_freezingTemperature=0.0;
+  m_freezingTemperatureBuffer=2.0;
+
+  m_xMin=0.0;
+  m_xMax=0.0;
+  m_yMin=0.0;
+  m_yMax=0.0;
+  m_zMin=0.0;
+  m_zMax=0.0;
 
   m_particleShaderName="";
   m_particleRadius=0.0;
@@ -86,7 +94,7 @@ void Emitter::createParticles(int _noParticles, const std::vector<Eigen::Vector3
   {
     Eigen::Vector3f position=_particlePositions.at(i);
     float mass=_particleMass.at(i);
-    float temperature=_particleTemperature.at(i);
+    float temperature=_particleTemperature.at(i)+273.0;  //Add 273 as temperature in Kelvin whereas read in is in Celsius
     bool solid=_particlePhase.at(i);
 
     Particle* particle=new Particle(position, mass, temperature, solid, m_latentHeat, this);
@@ -96,7 +104,7 @@ void Emitter::createParticles(int _noParticles, const std::vector<Eigen::Vector3
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Emitter::setStrainConstants(float _lameMuConstant, float _lameLambdaConstant, float _compressionLim, float _stretchLim)
+void Emitter::setStrainConstants(float _lameMuConstant, float _lameLambdaConstant, float _compressionLim, float _stretchLim, float _hardnessCoefficient)
 {
   /* Outline
   ------------------------------------------------------------------------------------------------------
@@ -108,6 +116,7 @@ void Emitter::setStrainConstants(float _lameMuConstant, float _lameLambdaConstan
   m_lameLambdaConstant=_lameLambdaConstant;
   m_compressionLimit=_compressionLim;
   m_stretchLimit=_stretchLim;
+  m_hardnessCoefficient=_hardnessCoefficient;
 
 }
 
@@ -126,7 +135,19 @@ void Emitter::setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, 
   m_heatConductivitySolid=_heatCondSolid;
   m_heatConductivityFluid=_heatCondFluid;
   m_latentHeat=_latentHeat;
-  m_freezingTemperature=_freezeTemp;
+  m_freezingTemperature=_freezeTemp+273.0; //Add 273 to go from Celsius to Kelvin
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void Emitter::setCollisionObject(float _xMin, float _xMax, float _yMin, float _yMax, float _zMin, float _zMax)
+{
+  m_xMin=_xMin;
+  m_xMax=_xMax;
+  m_yMin=_yMin;
+  m_yMax=_yMax;
+  m_zMin=_zMin;
+  m_zMax=_zMax;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -145,7 +166,7 @@ void Emitter::setRenderParameters(std::string _shaderName, float _particleRadius
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Emitter::presetParticles()
+void Emitter::presetParticles(float _velocityContribAlpha, float _tempContribBeta)
 {
   /* Outline
   ------------------------------------------------------------------------------------------------------
@@ -155,15 +176,18 @@ void Emitter::presetParticles()
 
   for (int i=0; i<m_noParticles; ++i)
   {
-    m_particles[i]->presetParticlesForTimeStep();
+    m_particles[i]->presetParticlesForTimeStep(_velocityContribAlpha, _tempContribBeta);
   }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Emitter::updateParticles()
+void Emitter::updateParticles(float _dt)
 {
-  //Probably need to have more than one of these functions to say what's being updated. Also need transfer of data
+  for (int i=0; i<m_noParticles; i++)
+  {
+    m_particles[i]->update(_dt, m_xMin, m_xMax, m_yMin, m_yMax, m_zMin, m_zMax);
+  }
 }
 
 //----------------------------------------------------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <algorithm>
+#include <cmath>
 
 #include "MathFunctions.h"
 #include "Emitter.h"
@@ -27,6 +28,7 @@ Particle::Particle(Eigen::Vector3f _position, float _mass, float _temperature, b
   m_position=_position;
   m_mass=_mass;
   m_temperature=_temperature;
+  m_previousTemperature=_temperature;
   m_emitter=_emitter;
 
 
@@ -34,6 +36,8 @@ Particle::Particle(Eigen::Vector3f _position, float _mass, float _temperature, b
   m_velocity.setZero();
   m_initialDensity=0.0;
   m_initialVolume=0.0;
+  m_previousVelocity.setZero();
+  m_velocityGradient=m_velocityGradient.Identity();
 
   //Initialise matrices to identity matrix
   m_deformationElastic=m_deformationElastic.Identity();
@@ -41,6 +45,28 @@ Particle::Particle(Eigen::Vector3f _position, float _mass, float _temperature, b
   m_deformationElastic_Deviatoric=m_deformationElastic_Deviatoric.Identity();
   m_R_deformationElastic_Deviatoric=m_R_deformationElastic_Deviatoric.Identity();
   m_S_deformationElastic_Deviatoric=m_S_deformationElastic_Deviatoric.Identity();
+
+//  //NB!!!!!!!!!!!!!!!!!!!!!
+//  //FOR TESTING APPLY PLASTICITY CALC ONLY
+//  m_deformationElastic(0,0)=1.0;
+//  m_deformationElastic(0,1)=2.0;
+//  m_deformationElastic(0,2)=0.0;
+//  m_deformationElastic(1,0)=2.0;
+//  m_deformationElastic(1,1)=3.0;
+//  m_deformationElastic(1,2)=3.0;
+//  m_deformationElastic(2,0)=2.0;
+//  m_deformationElastic(2,1)=2.0;
+//  m_deformationElastic(2,2)=1.0;
+
+//  m_deformationPlastic(0,0)=1.0;
+//  m_deformationPlastic(0,1)=2.0;
+//  m_deformationPlastic(0,2)=0.0;
+//  m_deformationPlastic(1,0)=1.0;
+//  m_deformationPlastic(1,1)=2.0;
+//  m_deformationPlastic(1,2)=3.0;
+//  m_deformationPlastic(2,0)=1.0;
+//  m_deformationPlastic(2,1)=2.0;
+//  m_deformationPlastic(2,2)=3.0;
 
   //Set these to ones so don't divide by zero
   m_detDeformGrad=1.0;
@@ -88,7 +114,7 @@ void Particle::getParticleData_CellFace(float &o_mass, Eigen::Vector3f &o_veloci
   */
 
   o_mass=m_mass;
-  o_velocity=m_velocity;
+  o_velocity=m_previousVelocity;
   o_phase=m_phase;
 
 }
@@ -109,7 +135,7 @@ void Particle::getParticleData_CellCentre(float &o_mass, float &o_detDeformGrad,
   o_detDeformGrad=m_detDeformGrad;
   o_detDeformGradElast=m_detDeformGradElastic;
   o_phase=m_phase;
-  o_temp=m_temperature;
+  o_temp=m_previousTemperature;
   o_lameLambdaInverse=(1.0/m_lameLambda);
 
 }
@@ -206,7 +232,7 @@ Eigen::Matrix3f Particle::getZ_DeformEDevDiff(const Eigen::Matrix3f &_Z)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Particle::presetParticlesForTimeStep()
+void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _tempContribBeta)
 {
   /* Outline
   ------------------------------------------------------------------------------------------------------
@@ -223,6 +249,14 @@ void Particle::presetParticlesForTimeStep()
   Calculate deviatoric elastic matrices + polar decomposition
   ------------------------------------------------------------------------------------------------------
   */
+
+  //Store old velocity and temperature.
+  m_previousVelocity=m_velocity;
+  m_previousTemperature=m_temperature;
+  //Reset current velocity and temperature to alpha*vn and beta*Tn from FLIP update
+  m_velocity=_velocityContribAlpha*m_previousVelocity;
+  m_temperature=_tempContribBeta*m_previousTemperature;
+  m_velocityGradient=m_velocityGradient.setZero();
 
   //Apply plasticity contribution
   applyPlasticity();
@@ -280,7 +314,7 @@ void Particle::presetParticlesForTimeStep()
 
   if (m_phase==Phase::Liquid)
   {
-    m_lameMu=0.0;
+    m_lameMu=0.0; /// Unsure about this or whether I should just set FE=JE^(1/d)I?
   }
   else
   {
@@ -300,9 +334,30 @@ void Particle::presetParticlesForTimeStep()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Particle::update(float _dt)
+void Particle::update(float _dt, float _xMin, float _xMax, float _yMin, float _yMax, float _zMin, float _zMax)
 {
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Velocity and temperature is automatically updated from the grid
 
+  Need to update deformation gradient
+
+  Need to apply phase transitions. Ie. if temperature is above freezing temp but phase is solid and vice versa, then
+  need transition stage
+
+  Resolve collision between particles and surrounding objects
+
+  Update particle positions
+  ------------------------------------------------------------------------------------------------------
+  */
+
+  updateDeformationGradient(_dt);
+
+  applyPhaseTransition();
+
+  collisionResolve(_xMin, _xMax, _yMin, _yMax, _zMin, _zMax);
+
+  updatePosition(_dt);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -371,14 +426,19 @@ void Particle::applyPlasticity()
   m_deformationPlastic=tempMatrix2*deformationGradient;
 
 
-  //Verify that new deformation gradient is the same as the one before applying plasticity
-  Eigen::Matrix3f newDeformationGradient=m_deformationElastic*m_deformationPlastic;
+//  //Verify that new deformation gradient is the same as the one before applying plasticity
+//  Eigen::Matrix3f newDeformationGradient=m_deformationElastic*m_deformationPlastic;
 
-  //Check if new deformation gradient is the same as the one calculated at the beginning
-  //Even when correct there is a difference probably due to floating point error.
-//  if (newDeformationGradient!=deformationGradient)
+//  //Check if new deformation gradient is the same as the one calculated at the beginning
+//  //Even when correct there is a difference probably due to floating point error.
+//  float tolerance=1.0*(pow(10,(-5.0)));
+//  for (int i=0; i<9; ++i)
 //  {
-//    throw std::invalid_argument("New deformation gradient not the same as the old.");
+//    float difference=std::abs(deformationGradient(i)-newDeformationGradient(i));
+//    if (difference>tolerance)
+//    {
+//      throw std::invalid_argument("New deformation gradient not the same as the old.");
+//    }
 //  }
 
 
@@ -386,30 +446,154 @@ void Particle::applyPlasticity()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Particle::updateVelocity()
+void Particle::updateDeformationGradient(float _dt)
 {
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  FE^{n+1}=R(dt*velGrad)FE^{n}
+
+  velGrad (velocity gradient) is updated automatically by grid
+
+  Need to determine R(dt*velGrad). Done in for loop to ensure that det(FE^{n+1})>0
+  R(M)=I+M if det(I+M)>0 otherwise R(M)=R(M/2)^2
+  ------------------------------------------------------------------------------------------------------
+  */
+
+  //Set first M and determinant
+  Eigen::Matrix3f M_matrix=_dt*m_velocityGradient;
+
+  //Identity matrix
+  Eigen::Matrix3f I_matrix;
+  I_matrix=I_matrix.Identity();
+
+  //Determinant
+  Eigen::Matrix3f determinantMatrix=I_matrix+M_matrix;
+  float determinant=determinantMatrix.determinant();
+
+  //Power count
+  int power=1;
+
+  while (determinant<0)
+  {
+    //Divide M by 2
+    M_matrix*=(1.0/2.0);
+
+    //Calculate new determinant
+    determinantMatrix=I_matrix+M_matrix;
+    determinant=determinantMatrix.determinant();
+
+    //Increase power
+    power*=2; ///Not sure if this is how the power increases
+  }
+
+  //Multiply I+M the number of times given by the power
+  Eigen::Matrix3f R_of_M=I_matrix;
+  for (int i=0; i<power; i++)
+  {
+    R_of_M*=determinantMatrix;
+  }
+
+  //Find new deformation gradient
+  m_deformationElastic=R_of_M*m_deformationElastic;
 
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Particle::updatePosition()
+void Particle::applyPhaseTransition()
 {
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Get freezing temperature and latent heat and heat capacity
+
+  Check if mismatch between new temperature and transition heat
+    If T^{n+1}>T_freeze && L_p<L_trans
+    if T^{n+1}<T_freeze && L_p>0
+
+    If there is, increase transition heat by c*m*deltaT. And set temperature to freeze temp
+
+    Check that L_p has not gone under 0 or over L_trans, if so clamp it
+  ------------------------------------------------------------------------------------------------------
+  */
+
+  //Get freezing temperature
+  float freezeTemp=m_emitter->getFreezingTemperature();
+
+  //Get latent heat
+  float latentHeat=m_emitter->getLatentHeat();
+
+  //Get heat capacity
+  float heatCapacity;
+  if (m_phase==Phase::Liquid)
+  {
+    heatCapacity=m_emitter->getHeatCapacityFluid();
+  }
+  else
+  {
+    heatCapacity=m_emitter->getHeatCapacitySolid();
+  }
+
+  //Get freezing temp buffer
+  float freezeTempBuffer=m_emitter->getFreezingTemperatureBuffer();
+
+  if (m_previousTemperature<=(freezeTemp+freezeTempBuffer) && m_previousTemperature>=(freezeTemp-freezeTempBuffer))
+  {
+    //Increment transition heat
+    float deltaT=m_temperature-m_previousTemperature;
+    float heatIncrement=(heatCapacity*m_mass)*deltaT;
+    m_transitionHeat+=heatIncrement;
+
+    //Clamp transition heat
+    m_transitionHeat=std::max<float>(m_transitionHeat, 0.0);
+    m_transitionHeat=std::min<float>(m_transitionHeat, latentHeat);
+
+    //Check if phase has changed
+    if (m_transitionHeat==latentHeat)
+    {
+      m_phase=Phase::Liquid;
+    }
+    else if (m_transitionHeat==0.0)
+    {
+      m_phase=Phase::Solid;
+    }
+    else
+    {
+      //If transition heat has not been filled or emptied entirely, then no change in temperature
+      m_temperature=freezeTemp;
+    }
+  }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void Particle::collisionResolve(float _xMin, float _xMax, float _yMin, float _yMax, float _zMin, float _zMax)
+{
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Check position of particle against all faces of bounding box
+  ------------------------------------------------------------------------------------------------------
+  */
+
+  if (m_position(0)<=_xMin || m_position(0)>=_xMax || m_position(1)<=_yMin || m_position(1)>=_yMax || m_position(2)<=_zMin || m_position(2)>=_zMax)
+  {
+    m_velocity.setZero();
+  }
+
 
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Particle::updateTemperature()
+void Particle::updatePosition(float _dt)
 {
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+  Update position using
+  p^{n+1}=p^{n}+v*dt
+  ------------------------------------------------------------------------------------------------------
+  */
 
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-
-void Particle::updateDeformationGradient()
-{
-
+  m_position+=(_dt*m_velocity);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
