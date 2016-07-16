@@ -366,7 +366,7 @@ void Particle::update(float _dt, float _xMin, float _xMax, float _yMin, float _y
 
   applyPhaseTransition();
 
-  collisionResolve(_xMin, _xMax, _yMin, _yMax, _zMin, _zMax);
+  collisionResolve(_dt, _xMin, _xMax, _yMin, _yMax, _zMin, _zMax);
 
   updatePosition(_dt);
 }
@@ -577,7 +577,7 @@ void Particle::applyPhaseTransition()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Particle::collisionResolve(float _xMin, float _xMax, float _yMin, float _yMax, float _zMin, float _zMax)
+void Particle::collisionResolve(float _dt, float _xMin, float _xMax, float _yMin, float _yMax, float _zMin, float _zMax)
 {
   /* Outline
   ------------------------------------------------------------------------------------------------------
@@ -585,7 +585,10 @@ void Particle::collisionResolve(float _xMin, float _xMax, float _yMin, float _yM
   ------------------------------------------------------------------------------------------------------
   */
 
-  if (m_position(0)<=_xMin || m_position(0)>=_xMax || m_position(1)<=_yMin || m_position(1)>=_yMax || m_position(2)<=_zMin || m_position(2)>=_zMax)
+  //Calculate possible new position
+  Eigen::Vector3f possibleNewPosition=m_position+(_dt*m_velocity);
+
+  if (possibleNewPosition(0)<=_xMin || possibleNewPosition(0)>=_xMax || possibleNewPosition(1)<=_yMin || possibleNewPosition(1)>=_yMax || possibleNewPosition(2)<=_zMin || possibleNewPosition(2)>=_zMax)
   {
     m_velocity.setZero();
   }

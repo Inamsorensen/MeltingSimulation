@@ -234,7 +234,7 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Resolve collisions. Sets sticking velocity to all particles colliding with surrounding objects
   //----------------------------------------------------------------------------------------------------------------------
-  void collisionResolve(float _xMin, float _xMax, float _yMin, float _yMax, float _zMin, float _zMax);
+  void collisionResolve(float _dt, float _xMin, float _xMax, float _yMin, float _yMax, float _zMin, float _zMax);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Updates position
   //----------------------------------------------------------------------------------------------------------------------

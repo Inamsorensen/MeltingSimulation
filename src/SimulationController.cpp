@@ -27,12 +27,12 @@ SimulationController::SimulationController()
   m_totalNoFrames=0;
 
   //Grid setup
-  Eigen::Vector3f gridPos;
-  gridPos(0)=-0.5;
-  gridPos(1)=-0.5;
-  gridPos(2)=-0.5;
-  m_gridPosition=gridPos;
-  m_gridSize=1.0;
+  Eigen::Vector3f boundingBoxPos;
+  boundingBoxPos(0)=-0.5;
+  boundingBoxPos(1)=-0.5;
+  boundingBoxPos(2)=-0.5;
+  m_boundingBoxPosition=boundingBoxPos;
+  m_boundingBoxSize=1.0;
   m_noCells=16;
 
   //Particle setup
@@ -69,23 +69,16 @@ SimulationController::SimulationController()
   setupParticles();
 
   //Create grid
-  //Need to stagger grid as Houdini setup has origin in lower back corner, but MAC staggered
-  //has origin in the middle of the cell in the lower back corner
-  float halfCellSize=(1.0/2.0)*(m_gridSize/((float)m_noCells));
-  Eigen::Vector3f staggeredGridPosition=m_gridPosition;
-  staggeredGridPosition(0)+=halfCellSize;
-  staggeredGridPosition(1)+=halfCellSize;
-  staggeredGridPosition(2)+=halfCellSize;
-  m_grid=Grid::createGrid(staggeredGridPosition, m_gridSize, m_noCells);
+  m_grid=Grid::createGrid(m_boundingBoxPosition, m_boundingBoxSize, m_noCells);
   m_grid->setSurroundingTemperatures(m_ambientTemperature, m_heatSourceTemperature);
 
   //Set grid as collision object for emitter
-  float xMin=m_gridPosition(0);
-  float yMin=m_gridPosition(1);
-  float zMin=m_gridPosition(2);
-  float xMax=xMin+m_gridSize;
-  float yMax=yMin+m_gridSize;
-  float zMax=zMin+m_gridSize;
+  float xMin=m_boundingBoxPosition(0);
+  float yMin=m_boundingBoxPosition(1);
+  float zMin=m_boundingBoxPosition(2);
+  float xMax=xMin+m_boundingBoxSize;
+  float yMax=yMin+m_boundingBoxSize;
+  float zMax=zMin+m_boundingBoxSize;
   m_emitter->setCollisionObject(xMin, xMax, yMin, yMax, zMin, zMax);
 
   //Test min no particle in non-empty cells
@@ -153,8 +146,8 @@ void SimulationController::readSimulationParameters()
   std::string simStep="timeStep";
   std::string totNoFrames="totalNoFrames";
 
-  std::string gridPos="gridOrigin";
-  std::string gridSize="gridSize";
+  std::string boundingBoxPos="gridOrigin";
+  std::string boundingBoxSize="gridSize";
   std::string noCells="noGridCells";
 
   std::string lameMu="LameMu";
@@ -179,8 +172,8 @@ void SimulationController::readSimulationParameters()
   m_simTimeStep=file->getSimulationParameter_Float(simStep);
   m_totalNoFrames=file->getSimulationParameter_Float(totNoFrames);
 
-  m_gridPosition=file->getSimulationParameter_Vec3(gridPos);
-  m_gridSize=file->getSimulationParameter_Float(gridSize);
+  m_boundingBoxPosition=file->getSimulationParameter_Vec3(boundingBoxPos);
+  m_boundingBoxSize=file->getSimulationParameter_Float(boundingBoxSize);
   m_noCells=file->getSimulationParameter_Float(noCells);
 
   m_lameMuConstant=file->getSimulationParameter_Float(lameMu);

@@ -173,21 +173,21 @@ void OpenGLWindow::paintGL()
   ngl::Transformation modelMatrix_BoundingBox;
 
   //Get grid information for bounding box
-  ngl::Vec3 gridPosition;
-  Eigen::Vector3f gridPos_Eigen=m_simulationController->getGridPosition();
-  gridPosition.m_x=gridPos_Eigen(0);
-  gridPosition.m_y=gridPos_Eigen(1);
-  gridPosition.m_z=gridPos_Eigen(2);
-  float gridSize=m_simulationController->getGridSize();
+  ngl::Vec3 boundingBoxPosition;
+  Eigen::Vector3f bBoxPos_Eigen=m_simulationController->getBoundingBoxPosition();
+  boundingBoxPosition.m_x=bBoxPos_Eigen(0);
+  boundingBoxPosition.m_y=bBoxPos_Eigen(1);
+  boundingBoxPosition.m_z=bBoxPos_Eigen(2);
+  float boundingBoxSize=m_simulationController->getBoundingBoxSize();
 
   //Make bounding box slightly bigger than grid so no "flashing" when cells are visualised as well
   float incrementGrid=0.002;
-  gridPosition-=ngl::Vec3(incrementGrid, incrementGrid, incrementGrid);
-  gridSize+=incrementGrid*2.0;
+  boundingBoxPosition-=ngl::Vec3(incrementGrid, incrementGrid, incrementGrid);
+  boundingBoxSize+=incrementGrid*2.0;
 
   //Set bounding box transformation matrix
-  modelMatrix_BoundingBox.setPosition(gridPosition.m_x, gridPosition.m_y, gridPosition.m_z);
-  modelMatrix_BoundingBox.setScale(gridSize, gridSize, gridSize);
+  modelMatrix_BoundingBox.setPosition(boundingBoxPosition.m_x, boundingBoxPosition.m_y, boundingBoxPosition.m_z);
+  modelMatrix_BoundingBox.setScale(boundingBoxSize, boundingBoxSize, boundingBoxSize);
 
   //Get and set MVP
   M=modelMatrix_BoundingBox.getMatrix()*m_transformationScene;
@@ -205,7 +205,7 @@ void OpenGLWindow::paintGL()
 
 
   //Visualise grid
-  visualiseGrid();
+//  visualiseGrid();
 
   //Draw particles
   m_simulationController->render(m_transformationScene);
@@ -296,8 +296,7 @@ void OpenGLWindow::visualiseGrid()
   //Get grid information
   int noCells=m_simulationController->getNoGridCells();
   Eigen::Vector3f gridPosition=m_simulationController->getGridPosition();
-  float gridSize=m_simulationController->getGridSize();
-  float cellSize=gridSize/((float)noCells);
+  float gridCellSize=m_simulationController->getGridCellSize();
 
   //Loop over grid cells
   for (int kIndex=0; kIndex<noCells; kIndex++)
@@ -312,13 +311,13 @@ void OpenGLWindow::visualiseGrid()
 
         //Calculate cell position
         ngl::Vec3 cellPosition;
-        cellPosition.m_x=gridPosition(0) + (iIndex*cellSize);
-        cellPosition.m_y=gridPosition(1) + (jIndex*cellSize);
-        cellPosition.m_z=gridPosition(2) + (kIndex*cellSize);
+        cellPosition.m_x=gridPosition(0) + (iIndex*gridCellSize);
+        cellPosition.m_y=gridPosition(1) + (jIndex*gridCellSize);
+        cellPosition.m_z=gridPosition(2) + (kIndex*gridCellSize);
 
         //Make cells slightly smaller than they should be for ease of visualisation
         cellPosition+=ngl::Vec3(0.01, 0.01, 0.01);
-        float smallerCellSize=cellSize-0.02;
+        float smallerCellSize=gridCellSize-0.02;
 
         //Set position and size
         modelMatrix_Cell.setPosition(cellPosition.m_x, cellPosition.m_y, cellPosition.m_z);

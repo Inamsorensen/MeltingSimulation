@@ -11,7 +11,7 @@ Grid* Grid::m_instance=nullptr;
 
 //----------------------------------------------------------------------------------------------------------------------
 
-Grid::Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
+Grid::Grid(Eigen::Vector3f _originEdge, float _boundingBoxSize, int _noCells)
 {
   /* Outline
   ------------------------------------------------------------------------------------------------------
@@ -29,10 +29,22 @@ Grid::Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
   /// Uses this to set up the cell lists
 
   //Set up grid variables
-  m_origin=_origin;
-  m_gridSize=_gridSize;
   m_noCells=_noCells;
-  m_cellSize=m_gridSize/((float)m_noCells);
+  //The grid will have a single layer of cells surrounding the bounding box to ensure collisions
+  //Hence cell size is boundingBoxSize/(noCells-2)
+  m_cellSize=_boundingBoxSize/((float)(m_noCells-2));
+
+  //The grid size is then the bounding box size + 2*cellSize
+  m_gridSize=_boundingBoxSize+(2.0*m_cellSize);
+
+  //Need to stagger grid as Houdini setup has origin in lower back corner, but MAC staggered
+  //has origin in the middle of the cell just below the lower back corner
+  float halfCellSize=(1.0/2.0)*m_cellSize;
+  Eigen::Vector3f staggeredGridPosition=_originEdge;
+  staggeredGridPosition(0)-=halfCellSize;
+  staggeredGridPosition(1)-=halfCellSize;
+  staggeredGridPosition(2)-=halfCellSize;
+  m_origin=staggeredGridPosition;
 
   //Initialise time step to zero
   m_dt=0.0;
@@ -149,7 +161,7 @@ Grid::~Grid()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-Grid* Grid::createGrid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
+Grid* Grid::createGrid(Eigen::Vector3f _originEdge, float _boundingBoxSize, int _noCells)
 {
   /* Outline
   ------------------------------------------------------------------------------------------------------
@@ -161,7 +173,7 @@ Grid* Grid::createGrid(Eigen::Vector3f _origin, float _gridSize, int _noCells)
 
   if (m_instance==nullptr)
   {
-    m_instance=new Grid(_origin, _gridSize, _noCells);
+    m_instance=new Grid(_originEdge, _boundingBoxSize, _noCells);
   }
 
   return m_instance;
@@ -190,6 +202,19 @@ Grid* Grid::getGrid()
 
 //----------------------------------------------------------------------------------------------------------------------
 
+Eigen::Vector3f Grid::getGridCornerPosition()
+{
+  Eigen::Vector3f gridCornerPos=m_origin;
+  float halfCellSize=m_cellSize/2.0;
+  gridCornerPos(0)-=halfCellSize;
+  gridCornerPos(1)-=halfCellSize;
+  gridCornerPos(2)-=halfCellSize;
+
+  return gridCornerPos;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
 void Grid::setSurroundingTemperatures(float _ambientTemp, float _heatSourceTemp)
 {
   /* Outline
@@ -205,6 +230,7 @@ void Grid::setSurroundingTemperatures(float _ambientTemp, float _heatSourceTemp)
 
   m_ambientTemperature=_ambientTemp+273.0;
   m_heatSourceTemperature=_heatSourceTemp+273.0;
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -352,7 +378,7 @@ void Grid::findParticleContributionToCell(Emitter* _emitter)
   ------------------------------------------------------------------------------------------------------
   */
 
-  //To calc position of particle, need origin of grid ege, not centre of first grid cell, as this is how its
+  //To calc position of particle, need origin of grid edge, not centre of first grid cell, as this is how its
   //defined in Houdini/import file
   float halfCellSize=m_cellSize/2.0;
   Eigen::Vector3f gridEdgePosition=m_origin;

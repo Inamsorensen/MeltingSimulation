@@ -38,7 +38,7 @@ public:
   /// @param [in] _gridSize is the size of one lenght of the grid. Grid is always cubic, so same lenght in all directions
   /// @param [in] _noCells is the number of grid cells in one direction. Same number in all directions
   //----------------------------------------------------------------------------------------------------------------------
-  static Grid* createGrid(Eigen::Vector3f _origin, float _gridSize, int _noCells);
+  static Grid* createGrid(Eigen::Vector3f _originEdge, float _boundingBoxSize, int _noCells);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get instance of grid
   //----------------------------------------------------------------------------------------------------------------------
@@ -47,6 +47,16 @@ public:
   /// @brief Destructor
   //----------------------------------------------------------------------------------------------------------------------
   ~Grid();
+
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get grid position. Different from bounding box as single layer of cells around bounding box for collision
+  /// Returns position of lower back corner of grid, not the staggered position
+  //----------------------------------------------------------------------------------------------------------------------
+  Eigen::Vector3f getGridCornerPosition();
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get cell size
+  //----------------------------------------------------------------------------------------------------------------------
+  float getGridCellSize(){return m_cellSize;}
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set surrounding temperatures; ambient temp and heat source temp.
@@ -82,7 +92,7 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Constructor. Private for a singleton
   //----------------------------------------------------------------------------------------------------------------------
-  Grid(Eigen::Vector3f _origin, float _gridSize, int _noCells);
+  Grid(Eigen::Vector3f _originEdge, float _boundingBoxSize, int _noCells);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Instance pointer
   //----------------------------------------------------------------------------------------------------------------------
@@ -174,17 +184,21 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   float calcBComponent_DeviatoricVelocity(float _velocity, float _mass, float _deviatoricForce, float _sumWeight, Eigen::Vector3f _eVector);
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Set up A in Ax=B for the implicit calculation of velocity
+  /// @brief Calculates component of A matrix for Ax=b. In this case have (I+A)x=b where I will not be included in the A component
   //----------------------------------------------------------------------------------------------------------------------
-  void setUpA_DeviatoricVelocity();
+  float calcAComponent_DeviatoricVelocity(Particle* _particle, Eigen::Vector3f _weight_i_diff, Eigen::Vector3f _weight_j_diff, Eigen::Vector3f _eVector);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Explicitly update velocity. v_new=bcomponent
   //----------------------------------------------------------------------------------------------------------------------
   void explicitUpdateVelocity(int _cellIndex, float _velocityX, float _velocityY, float _velocityZ);
   //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Implicitly update velocity.
+  //----------------------------------------------------------------------------------------------------------------------
+  void implicitUpdateVelocity();
+  //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate rotation matrix R in polar decomposition of the deformation gradient: F=RS
   //----------------------------------------------------------------------------------------------------------------------
-  void calculate_dR();
+  Eigen::Matrix3f calculate_dR(const Eigen::Matrix3f &_deltaDeformElastic_Deviatoric, const Eigen::Matrix3f &_R_deformElastic_Deviatoric, const Eigen::Matrix3f &_S_deformElastic_Deviatoric);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set boundary velocity. Set as stick on collision, ie. zero velocity for colliding faces
   //----------------------------------------------------------------------------------------------------------------------

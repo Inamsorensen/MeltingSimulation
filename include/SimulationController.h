@@ -39,13 +39,22 @@ public:
   void setRenderParameters(ngl::Camera* _camera, std::string _shaderName);
 
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Get the position of the grid
+  /// @brief Get the position of the bounding box
   //----------------------------------------------------------------------------------------------------------------------
-  inline Eigen::Vector3f getGridPosition(){return m_gridPosition;}
+  inline Eigen::Vector3f getBoundingBoxPosition(){return m_boundingBoxPosition;}
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Get grid size
+  /// @brief Get bounding box size
   //----------------------------------------------------------------------------------------------------------------------
-  inline float getGridSize(){return m_gridSize;}
+  inline float getBoundingBoxSize(){return m_boundingBoxSize;}
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get the position of the grid. Different to bounding box because of single layer of cells surrounding the
+  /// bounding box.
+  //----------------------------------------------------------------------------------------------------------------------
+  inline Eigen::Vector3f getGridPosition(){return m_grid->getGridCornerPosition();}
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get grid cell size
+  //----------------------------------------------------------------------------------------------------------------------
+  inline float getGridCellSize(){return m_grid->getGridCellSize();}
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get number of grid cells
   //----------------------------------------------------------------------------------------------------------------------
@@ -130,11 +139,11 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Sets position of origin of grid, set as bottom, left, back corner of grid.
   //----------------------------------------------------------------------------------------------------------------------
-  Eigen::Vector3f m_gridPosition;
+  Eigen::Vector3f m_boundingBoxPosition;
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Size of one side of grid. Grid is always cubic, ie. equal length for all sides.
   //----------------------------------------------------------------------------------------------------------------------
-  float m_gridSize;
+  float m_boundingBoxSize;
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Number of grid cells along one side. Again same number of cells along all sides.
   //----------------------------------------------------------------------------------------------------------------------
