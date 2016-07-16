@@ -300,7 +300,7 @@ float Grid::calcBComponent_DeviatoricVelocity(float _velocity, float _mass, floa
 
 //----------------------------------------------------------------------------------------------------------------------
 
-float Grid::calcAComponent_DeviatoricVelocity(Particle *_particle, Eigen::Vector3f _weight_i_diff, Eigen::Vector3f _weight_j_diff, Eigen::Vector3f _eVector)
+float Grid::calcAComponent_DeviatoricVelocity(Particle *_particle, Eigen::Vector3f _weight_i_diff, Eigen::Vector3f _weight_j_diff, Eigen::Vector3f _eVector, float _mass_i)
 {
   /* Outline
   --------------------------------------------------------------------------------------------------------------
@@ -308,7 +308,7 @@ float Grid::calcAComponent_DeviatoricVelocity(Particle *_particle, Eigen::Vector
 
     calculate Z
 
-    calculate dF=B:Z
+    calculate deltaJF=B:Z
 
     calculate_dR();
 
@@ -325,7 +325,100 @@ float Grid::calcAComponent_DeviatoricVelocity(Particle *_particle, Eigen::Vector
   --------------------------------------------------------------------------------------------------------------
   */
 
+  //Set up storage for different parts
+  Eigen::Matrix3f part1;
+  Eigen::Matrix3f part2;
+  Eigen::Matrix3f part3;
+  Eigen::Matrix3f part4;
+
+  //Get parameters from particle
+  Eigen::Matrix3f deformationGradElastic=_particle->getDeformationElastic();
+  Eigen::Matrix3f deformationElastic_Deviatoric=_particle->getDeformationElastic_Deviatoric();
+  Eigen::Matrix3f R_deformElastic_Deviatoric=_particle->getR_deformationElastic_Deviatoric();
+  Eigen::Matrix3f S_deformElastic_Deviatoric=_particle->getS_deformationElastic_Deviatoric();
+  float lameMu=_particle->getLameMu();
+  float dimension=_particle->getDimension();
+  float detDeformElastic=_particle->getDetDeformationElastic();
+
+  Eigen::Matrix3f deformElastic_trans=deformationGradElastic.transpose();
+  Eigen::Matrix3f deformElastic_trans_inverse=deformElastic_trans.inverse();
+
   //Calculate Z
+  Eigen::Matrix3f Z_matrix;
+  Z_matrix(0,0)=_eVector(0)*_weight_j_diff(0);
+  Z_matrix(0,1)=_eVector(0)*_weight_j_diff(1);
+  Z_matrix(0,2)=_eVector(0)*_weight_j_diff(2);
+  Z_matrix(1,0)=_eVector(1)*_weight_j_diff(0);
+  Z_matrix(1,1)=_eVector(1)*_weight_j_diff(1);
+  Z_matrix(1,2)=_eVector(1)*_weight_j_diff(2);
+  Z_matrix(0,0)=_eVector(2)*_weight_j_diff(0);
+  Z_matrix(2,1)=_eVector(2)*_weight_j_diff(1);
+  Z_matrix(2,1)=_eVector(2)*_weight_j_diff(2);
+
+  Z_matrix=(Z_matrix*deformationGradElastic);
+
+  Eigen::Matrix3f Z_matrix_trans=Z_matrix.transpose();
+
+
+  //Calculate deltaJF=B:Z_matrix
+  Eigen::Matrix3f deltaJF=_particle->getDeformEDevDiff_Z(Z_matrix);
+
+  //Calculate first part of differential
+  //Calculate deltaR
+  Eigen::Matrix3f deltaR=calculate_dR(deltaJF, R_deformElastic_Deviatoric, S_deformElastic_Deviatoric);
+
+  //Calculate d2YdF2
+  Eigen::Matrix3f d2YdF2=(2.0*lameMu*deltaJF)-(2.0*lameMu*deltaR);
+
+  //Find part 1 of differential
+  part1=_particle->getZ_DeformEDevDiff(d2YdF2);
+
+
+  //Calculate dYdF which is used in part 2,3,4
+  Eigen::Matrix3f dYdFE=(2.0*lameMu)*(deformationElastic_Deviatoric-R_deformElastic_Deviatoric);
+
+
+  //Calculate part 2
+  Eigen::Matrix3f part2_1=MathFunctions::matrixElementMultiplication(deformElastic_trans_inverse, Z_matrix);
+  Eigen::Matrix3f part2_2=_particle->getZ_DeformEDevDiff(dYdFE);
+  part2=part2_1*part2_2;
+  part2*=(-1.0/dimension);
+
+  //Calculate part 3
+  part3=MathFunctions::matrixElementMultiplication(dYdFE, Z_matrix);
+  part3=part3*deformElastic_trans_inverse;
+  float Ja=pow(detDeformElastic, (-1.0/dimension));
+  part3*=((-1.0/dimension)*Ja);
+
+  //Calculate part 4
+  part4=MathFunctions::matrixElementMultiplication(dYdFE, deformationGradElastic);
+  part4=part4*deformElastic_trans_inverse;
+  part4=part4*Z_matrix_trans;
+  part4=part4*deformElastic_trans_inverse;
+  part4*=((-1.0/dimension)*Ja);
+  part4*=(-1.0);
+
+
+  //Add all parts to find C_hat:Z
+  Eigen::Matrix3f Ap_matrix=(part1+part2+part3+part4);
+
+
+  //Multiply Ap matrix with other particle dependent variables
+  Eigen::Matrix3f Ap_deformElastTrans=Ap_matrix*deformElastic_trans;
+
+  Eigen::Vector3f Ap_deformElastTrans_weightDiff=Ap_deformElastTrans*_weight_i_diff;
+
+  float Acomponent=_eVector.dot(Ap_deformElastTrans_weightDiff);
+
+  Acomponent*=_particle->getVolume();
+
+  //Multiply by deltaT^2/2*mass_i
+  Acomponent*=((pow(m_dt,2.0))/(2.0*_mass_i));
+
+  //Return result
+  return Acomponent;
+
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -490,7 +583,8 @@ void Grid::implicitUpdateVelocity()
             Eigen::Vector3f cubicBSplineDiff_i=m_cellFacesX[cellIndex_i]->m_interpolationData[particleIterator_i]->m_cubicBSpline_Diff;
             Eigen::Vector3f cubicBSplineDiff_j=m_cellFacesX[cellIndex_j]->m_interpolationData[particleIterator_j]->m_cubicBSpline_Diff;
 
-            float Acomponent=calcAComponent_DeviatoricVelocity(particleX_i, cubicBSplineDiff_i, cubicBSplineDiff_j, e_x);
+            float mass_faceX_i=m_cellFacesX[cellIndex_i]->m_mass;
+            float Acomponent=calcAComponent_DeviatoricVelocity(particleX_i, cubicBSplineDiff_i, cubicBSplineDiff_j, e_x, mass_faceX_i);
 
             A_X(cellIndex_i, cellIndex_j)+=Acomponent;
           }
@@ -513,7 +607,8 @@ void Grid::implicitUpdateVelocity()
             Eigen::Vector3f cubicBSplineDiff_i=m_cellFacesY[cellIndex_i]->m_interpolationData[particleIterator_i]->m_cubicBSpline_Diff;
             Eigen::Vector3f cubicBSplineDiff_j=m_cellFacesY[cellIndex_j]->m_interpolationData[particleIterator_j]->m_cubicBSpline_Diff;
 
-            float Acomponent=calcAComponent_DeviatoricVelocity(particleY_i, cubicBSplineDiff_i, cubicBSplineDiff_j, e_y);
+            float mass_faceY_i=m_cellFacesY[cellIndex_i]->m_mass;
+            float Acomponent=calcAComponent_DeviatoricVelocity(particleY_i, cubicBSplineDiff_i, cubicBSplineDiff_j, e_y, mass_faceY_i);
 
             A_Y(cellIndex_i, cellIndex_j)+=Acomponent;
           }
@@ -536,7 +631,8 @@ void Grid::implicitUpdateVelocity()
             Eigen::Vector3f cubicBSplineDiff_i=m_cellFacesZ[cellIndex_i]->m_interpolationData[particleIterator_i]->m_cubicBSpline_Diff;
             Eigen::Vector3f cubicBSplineDiff_j=m_cellFacesZ[cellIndex_j]->m_interpolationData[particleIterator_j]->m_cubicBSpline_Diff;
 
-            float Acomponent=calcAComponent_DeviatoricVelocity(particleZ_i, cubicBSplineDiff_i, cubicBSplineDiff_j, e_z);
+            float mass_faceZ_i=m_cellFacesZ[cellIndex_i]->m_mass;
+            float Acomponent=calcAComponent_DeviatoricVelocity(particleZ_i, cubicBSplineDiff_i, cubicBSplineDiff_j, e_z, mass_faceZ_i);
 
             A_Z(cellIndex_i, cellIndex_j)+=Acomponent;
           }

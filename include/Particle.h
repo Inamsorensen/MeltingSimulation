@@ -72,6 +72,14 @@ public:
   inline float getLameMu(){return m_lameMu;}
 
   //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get dimension, used to calculate deviatoric forces and velocity
+  //----------------------------------------------------------------------------------------------------------------------
+  inline float getDimension(){return ((float)m_dimension);}
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get determinant of elastic deformation gradient det(FE)
+  //----------------------------------------------------------------------------------------------------------------------
+  inline float getDetDeformationElastic(){return m_detDeformGradElastic;}
+  //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get elastic deformation gradient, FE
   //----------------------------------------------------------------------------------------------------------------------
   inline Eigen::Matrix3f getDeformationElastic(){return m_deformationElastic;}

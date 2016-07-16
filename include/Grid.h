@@ -186,7 +186,7 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculates component of A matrix for Ax=b. In this case have (I+A)x=b where I will not be included in the A component
   //----------------------------------------------------------------------------------------------------------------------
-  float calcAComponent_DeviatoricVelocity(Particle* _particle, Eigen::Vector3f _weight_i_diff, Eigen::Vector3f _weight_j_diff, Eigen::Vector3f _eVector);
+  float calcAComponent_DeviatoricVelocity(Particle* _particle, Eigen::Vector3f _weight_i_diff, Eigen::Vector3f _weight_j_diff, Eigen::Vector3f _eVector, float _mass_i);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Explicitly update velocity. v_new=bcomponent
   //----------------------------------------------------------------------------------------------------------------------
