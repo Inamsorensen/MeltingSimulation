@@ -72,7 +72,7 @@ void OpenGLWindow::initializeGL()
   glEnable(GL_MULTISAMPLE);
 
   //Camera setup
-  ngl::Vec3 from(0,0,3);
+  ngl::Vec3 from(0,0,4);
   ngl::Vec3 to(0,0,0);
   ngl::Vec3 up(0,1,0);
   m_camera.set(from,to,up);

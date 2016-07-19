@@ -50,6 +50,9 @@ INCLUDEPATH +=./include
 INCLUDEPATH +=/usr/local/include/eigen3/Eigen/
 #INCLUDEPATH +=/usr/lib/gcc/x86_64-redhat-linux/4.8.2/include
 
+LIBS+= -fopenmp
+
+QMAKE_CXXFLAGS+= -fopenmp
 
 # where our exe is going to live (root of project)
 DESTDIR=./

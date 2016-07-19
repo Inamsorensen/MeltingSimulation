@@ -134,8 +134,13 @@ void Grid::calcDeviatoricVelocity()
   Eigen::VectorXf b_Y(totNoCells);
   Eigen::VectorXf b_Z(totNoCells);
 
-  for (int cellIndex=0; cellIndex<(pow(m_noCells, 3)); cellIndex++)
+#pragma omp parallel for
+  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
   {
+    //Test parallel
+//    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
+
+
     //Store velocities as step n before update them
     m_cellFacesX[cellIndex]->m_previousVelocity=m_cellFacesX[cellIndex]->m_velocity;
     m_cellFacesY[cellIndex]->m_previousVelocity=m_cellFacesY[cellIndex]->m_velocity;
@@ -268,6 +273,8 @@ void Grid::calcDeviatoricVelocity()
 
   }
 
+//  implicitUpdateVelocity(b_X, b_Y, b_Z);
+
 
 }
 
@@ -280,6 +287,9 @@ float Grid::calcBComponent_DeviatoricVelocity(float _velocity, float _mass, floa
   b_{i}=v_{i}^{n} + (dt/m_{i})*f_{i} + dt*g_{i}*sum_p(w_{ip})
   --------------------------------------------------------------------------------------------------------------
   */
+
+  //Test parallel
+//  printf("B component is calculated by thread %d\n", omp_get_thread_num());
 
   //Set result to return
   float result;
@@ -351,9 +361,9 @@ float Grid::calcAComponent_DeviatoricVelocity(Particle *_particle, Eigen::Vector
   Z_matrix(1,0)=_eVector(1)*_weight_j_diff(0);
   Z_matrix(1,1)=_eVector(1)*_weight_j_diff(1);
   Z_matrix(1,2)=_eVector(1)*_weight_j_diff(2);
-  Z_matrix(0,0)=_eVector(2)*_weight_j_diff(0);
+  Z_matrix(2,0)=_eVector(2)*_weight_j_diff(0);
   Z_matrix(2,1)=_eVector(2)*_weight_j_diff(1);
-  Z_matrix(2,1)=_eVector(2)*_weight_j_diff(2);
+  Z_matrix(2,2)=_eVector(2)*_weight_j_diff(2);
 
   Z_matrix=(Z_matrix*deformationGradElastic);
 
@@ -368,7 +378,7 @@ float Grid::calcAComponent_DeviatoricVelocity(Particle *_particle, Eigen::Vector
   Eigen::Matrix3f deltaR=calculate_dR(deltaJF, R_deformElastic_Deviatoric, S_deformElastic_Deviatoric);
 
   //Calculate d2YdF2
-  Eigen::Matrix3f d2YdF2=(2.0*lameMu*deltaJF)-(2.0*lameMu*deltaR);
+  Eigen::Matrix3f d2YdF2=(2.0*lameMu)*(deltaJF-deltaR);
 
   //Find part 1 of differential
   part1=_particle->getZ_DeformEDevDiff(d2YdF2);
@@ -534,7 +544,7 @@ void Grid::explicitUpdateVelocity(int _cellIndex, float _velocityX, float _veloc
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::implicitUpdateVelocity()
+void Grid::implicitUpdateVelocity(const Eigen::VectorXf &_bVector_X, const Eigen::VectorXf &_bVector_Y, const Eigen::VectorXf &_bVector_Z)
 {
   //Set up face normals
   Eigen::Vector3f e_x(1.0, 0.0, 0.0);
@@ -550,17 +560,27 @@ void Grid::implicitUpdateVelocity()
   A_Y.setZero();
   A_Z.setZero();
 
+//  printf("Nested parallelism is %s\n", omp_get_nested() ? "supported" : "not supported");
 
-  for (int cellIndex_i=0; cellIndex_i<pow(m_noCells,3); cellIndex_i++)
+  omp_set_nested(1);
+#pragma omp parallel for
+  for (int cellIndex_i=0; cellIndex_i<totNoCells; cellIndex_i++)
   {
+    //Test parallel
+//    printf("Thread %d executes outer parallel region\n", omp_get_thread_num());
+
     //Calculate number of particles in faces of cellIndex_j
     int noParticles_FaceX_i=m_cellFacesX[cellIndex_i]->m_interpolationData.size();
     int noParticles_FaceY_i=m_cellFacesY[cellIndex_i]->m_interpolationData.size();
     int noParticles_FaceZ_i=m_cellFacesZ[cellIndex_i]->m_interpolationData.size();
 
     //Loop over cells again to calculate A components
-    for (int cellIndex_j=0; cellIndex_j<pow(m_noCells,3); cellIndex_j++)
+#pragma omp parallel for
+    for (int cellIndex_j=0; cellIndex_j<totNoCells; cellIndex_j++)
     {
+      //Test parallel
+//      printf("Thread %d executes inner parallel region\n", omp_get_thread_num());
+
       //Calculate number of particles in faces of cellIndex_j
       int noParticles_FaceX_j=m_cellFacesX[cellIndex_j]->m_interpolationData.size();
       int noParticles_FaceY_j=m_cellFacesY[cellIndex_j]->m_interpolationData.size();
@@ -639,6 +659,36 @@ void Grid::implicitUpdateVelocity()
         }
       }
     }
+  }
+
+  omp_set_nested(0);
+  
+  //Call MINRES to calculate new velocity values
+  Eigen::VectorXf solution_X(totNoCells);
+  solution_X.setZero();
+  Eigen::VectorXf solution_Y(totNoCells);
+  solution_Y.setZero();
+  Eigen::VectorXf solution_Z(totNoCells);
+  solution_Z.setZero();
+  Eigen::MatrixXf emptyPreconditioner;
+  float shift=(-1.0);
+  float tolerance=0.0000001;
+  int maxNoLoops=20;
+
+//  Eigen::MatrixXf A_X_trans=A_X.transpose();
+//  Eigen::MatrixXf test=A_X-A_X_trans;
+
+  MathFunctions::MinRes(A_X, _bVector_X, solution_X, emptyPreconditioner, shift, maxNoLoops, tolerance, false);
+  MathFunctions::MinRes(A_Y, _bVector_Y, solution_Y, emptyPreconditioner, shift, maxNoLoops, tolerance, false);
+  MathFunctions::MinRes(A_Z, _bVector_Z, solution_Z, emptyPreconditioner, shift, maxNoLoops, tolerance, false);
+
+
+  //Read in solutions
+  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
+  {
+    m_cellFacesX[cellIndex]->m_velocity=solution_X[cellIndex];
+    m_cellFacesY[cellIndex]->m_velocity=solution_Y[cellIndex];
+    m_cellFacesZ[cellIndex]->m_velocity=solution_Z[cellIndex];
   }
 
 }

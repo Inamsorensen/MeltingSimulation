@@ -119,7 +119,7 @@ Grid::~Grid()
 
   if (noCellCentresCurrent!=0 && noCellFacesXCurrent!=0 && noCellFacesYCurrent!=0 && noCellFacesZCurrent!=0)
   {
-    if (noCellCentresCurrent==noCellFacesXCurrent==noCellFacesYCurrent==noCellFacesZCurrent)
+    if ((noCellCentresCurrent==noCellFacesXCurrent) && (noCellCentresCurrent==noCellFacesYCurrent) && (noCellCentresCurrent==noCellFacesZCurrent))
     {
       for (int i=0; i<noCellCentresCurrent; i++)
       {
@@ -315,8 +315,13 @@ void Grid::clearCellData()
   --------------------------------------------------------------------------------------------------------------
   */
 
-  for (int cellIndex=0; cellIndex<pow(m_noCells,3); cellIndex++)
+  int totNoCells=pow(m_noCells,3);
+#pragma omp parallel for
+  for(int cellIndex=0; cellIndex<totNoCells; cellIndex++)
   {
+//    //Test parallel
+//    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
+
     //Clear list of interpolation data including particle pointers.
     m_cellCentres[cellIndex]->m_interpolationData.clear();
     m_cellFacesX[cellIndex]->m_interpolationData.clear();
@@ -386,7 +391,9 @@ void Grid::findParticleContributionToCell(Emitter* _emitter)
   gridEdgePosition(1)-=halfCellSize;
   gridEdgePosition(2)-=halfCellSize;
 
-  for (int particleItr=0; particleItr<_emitter->m_noParticles; particleItr++)
+  int totNoParticles=_emitter->m_noParticles;
+//#pragma omp parallel for
+  for (int particleItr=0; particleItr<totNoParticles; particleItr++)
   {
     Eigen::Vector3f particlePosition=_emitter->m_particles[particleItr]->getPosition();
     Eigen::Vector3i particleIndex=MathFunctions::getParticleGridCell(particlePosition, m_cellSize, gridEdgePosition);
@@ -733,8 +740,13 @@ void Grid::transferParticleData(Emitter* _emitter)
   -----------------------------------------------------------------------------------------------------
   */
 
-  for (int cellIndex=0; cellIndex<pow(m_noCells, 3); cellIndex++)
+  int totNoCells=pow(m_noCells,3);
+#pragma omp parallel for
+  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
   {
+//    //Test parallel
+//    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
+
     //Face X
     //Check that non-empty, ie. that it has particles in it
     int noParticles_CellFaceX=m_cellFacesX[cellIndex]->m_interpolationData.size();
@@ -913,8 +925,13 @@ void Grid::transferParticleData(Emitter* _emitter)
 
 void Grid::calcInitialParticleVolumes(Emitter *_emitter)
 {
-  for (int cellIndex=0; cellIndex<pow(m_noCells, 3); cellIndex++)
+  int totNoCells=pow(m_noCells,3);
+#pragma omp parallel for
+  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
   {
+    //Test parallel
+//    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
+
     //Cell volume
     float cellVolume=pow(m_cellSize,3);
 
@@ -969,8 +986,13 @@ void Grid::classifyCells()
 
   //Loop over cell faces - This loop could be made smaller when just checking the outer cells.
   //But this is possibly easier to thread
-  for (int cellIndex=0; cellIndex<(pow(m_noCells, 3)); cellIndex++)
+  int totNoCells=pow(m_noCells,3);
+#pragma omp parallel for
+  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
   {
+    //Test parallel
+//    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
+
     //Find cell index. Will be same for the other faces
     int iIndex=m_cellFacesX[cellIndex]->m_iIndex;
     int jIndex=m_cellFacesX[cellIndex]->m_jIndex;
@@ -1003,8 +1025,12 @@ void Grid::classifyCells()
   //This step will work for level set collisions as well.
   //Loop over all cells again to check which cell centres are collding
   //Seems inefficient.
-  for (int cellIndex=0; cellIndex<(pow(m_noCells, 3)); cellIndex++)
+#pragma omp parallel for
+  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
   {
+    //Test parallel
+//    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
+
     //Find cell index.
     int iIndex=m_cellCentres[cellIndex]->m_iIndex;
     int jIndex=m_cellCentres[cellIndex]->m_jIndex;
@@ -1186,8 +1212,13 @@ void Grid::setBoundaryVelocity()
   ---------------------------------------------------------------------------------------------------------------------
   */
 
-  for (int cellIndex=0; cellIndex<(pow(m_noCells,3)); cellIndex++)
+  int totNoCells=pow(m_noCells,3);
+#pragma omp parallel for
+  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
   {
+    //Test parallel
+//    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
+
     //Check whether current cell is colliding, if so set all faces to colliding
     if (m_cellCentres[cellIndex]->m_state==State::Colliding)
     {

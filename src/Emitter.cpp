@@ -174,6 +174,7 @@ void Emitter::presetParticles(float _velocityContribAlpha, float _tempContribBet
   ------------------------------------------------------------------------------------------------------
   */
 
+#pragma omp parallel for
   for (int i=0; i<m_noParticles; ++i)
   {
     m_particles[i]->presetParticlesForTimeStep(_velocityContribAlpha, _tempContribBeta);
@@ -184,6 +185,7 @@ void Emitter::presetParticles(float _velocityContribAlpha, float _tempContribBet
 
 void Emitter::updateParticles(float _dt)
 {
+#pragma omp parallel for
   for (int i=0; i<m_noParticles; i++)
   {
     m_particles[i]->update(_dt, m_xMin, m_xMax, m_yMin, m_yMax, m_zMin, m_zMax);

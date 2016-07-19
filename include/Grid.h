@@ -1,6 +1,8 @@
 #ifndef GRID
 #define GRID
 
+#include <omp.h>
+
 #include <vector>
 
 #include <eigen3/Eigen/Core>
@@ -194,7 +196,7 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Implicitly update velocity.
   //----------------------------------------------------------------------------------------------------------------------
-  void implicitUpdateVelocity();
+  void implicitUpdateVelocity(const Eigen::VectorXf &_bVector_X, const Eigen::VectorXf &_bVector_Y, const Eigen::VectorXf &_bVector_Z);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate rotation matrix R in polar decomposition of the deformation gradient: F=RS
   //----------------------------------------------------------------------------------------------------------------------

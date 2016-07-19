@@ -60,8 +60,8 @@ void MathFunctions::MinRes(const Eigen::MatrixXf &_A, const Eigen::VectorXf &_B,
     std::vector<std::string> msg(11);
     msg[0]  = " beta1 = 0.  The exact solution is  x = 0 ";
     msg[1]  = " A solution to Ax = b was found, given tol ";
-    msg[2]  = " A least-squares solution was found, given tol ";
-    msg[3]  = " Reasonable accuracy achieved, given eps ";
+    msg[2]  = " A least-squares solution was found, given tol "; //Singular solution
+    msg[3]  = " Reasonable accuracy achieved, given eps "; //Need second one for singular
     msg[4]  = " x has converged to an eigenvector ";
     msg[5]  = " acond has exceeded 0.1/eps ";
     msg[6]  = " The iteration limit was reached ";
@@ -111,13 +111,15 @@ void MathFunctions::MinRes(const Eigen::MatrixXf &_A, const Eigen::VectorXf &_B,
     Eigen::VectorXf r_k_2(systemSize);
     Eigen::VectorXf y(systemSize);
 
+    ///As long as io_x is zero this is the same as setting r2=b and beta1=norm(b)
+
     r_k_2=(_A)*(io_x);
     r_k_2=r_k_2-(_shift*(io_x));
     r_k_2=(_B)-r_k_2;
 
     if (_preconditioner!=emptyMatrix)
     {
-      /// @todo work out what this does
+      /// @todo work out what this does. Think has to solve system My=r1
 //      M->Apply(*r1, *y);
     }
     else
@@ -149,8 +151,6 @@ void MathFunctions::MinRes(const Eigen::MatrixXf &_A, const Eigen::VectorXf &_B,
         beta_1 = std::sqrt(beta_1);
       }
     }
-
-    /// @todo According to original code, need symmetry checks for A and preconditioner
 
 
     /* Initialise quantities for calculation
@@ -323,7 +323,7 @@ void MathFunctions::MinRes(const Eigen::MatrixXf &_A, const Eigen::VectorXf &_B,
         delta=cosinus*delta_bar + sinus*alpha;
         gamma_bar=sinus*delta_bar - cosinus*alpha;
         epsilon=sinus*beta;
-        delta_bar=-cosinus*beta;
+        delta_bar=(-cosinus*beta);
 
         //Compute Arnorm ||Ar_{k-1}||
         float root=sqrt(gamma_bar*gamma_bar + delta_bar*delta_bar);
