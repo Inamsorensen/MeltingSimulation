@@ -276,12 +276,12 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
   m_detDeformGradPlastic=m_deformationPlastic.determinant();
 
   //For test set determinant to absolute value. Determinant should always be positive
-  ///NB!!!!!!!! Not sure I can do this is reality
-  if (m_detDeformGradPlastic<0)
-  {
-    std::cout<<"Determinant of F_{P} is negative. Setting it to positive.\n";
-    m_detDeformGradPlastic=std::abs(m_detDeformGradPlastic);
-  }
+//  ///NB!!!!!!!! Not sure I can do this is reality
+//  if (m_detDeformGradPlastic<0)
+//  {
+//    std::cout<<"Determinant of F_{P} is negative. Setting it to positive.\n";
+//    m_detDeformGradPlastic=std::abs(m_detDeformGradPlastic);
+//  }
 
   float dimensionInv=1.0/((float)m_dimension);
 
@@ -297,23 +297,23 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
   m_detDeformGradElastic=m_deformationElastic.determinant();
   m_detDeformGradPlastic=m_deformationPlastic.determinant();
 
-  //For test set determinant to absolute value. Determinant should always be positive
-  ///NB!!!!!!!! Not sure I can do this is reality
-  if (m_detDeformGrad<0)
-  {
-    std::cout<<"Determinant of F is negative. Setting it to positive.\n";
-    m_detDeformGrad=std::abs(m_detDeformGrad);
-  }
-  if (m_detDeformGradElastic<0)
-  {
-    std::cout<<"Determinant of F_{E} is negative. Setting it to positive.\n";
-    m_detDeformGradElastic=std::abs(m_detDeformGradElastic);
-  }
-  if (m_detDeformGradPlastic<0)
-  {
-    std::cout<<"Determinant of F_{P} is negative. Setting it to positive.\n";
-    m_detDeformGradPlastic=std::abs(m_detDeformGradPlastic);
-  }
+//  //For test set determinant to absolute value. Determinant should always be positive
+//  ///NB!!!!!!!! Not sure I can do this is reality
+//  if (m_detDeformGrad<0)
+//  {
+//    std::cout<<"Determinant of F is negative. Setting it to positive.\n";
+//    m_detDeformGrad=std::abs(m_detDeformGrad);
+//  }
+//  if (m_detDeformGradElastic<0)
+//  {
+//    std::cout<<"Determinant of F_{E} is negative. Setting it to positive.\n";
+//    m_detDeformGradElastic=std::abs(m_detDeformGradElastic);
+//  }
+//  if (m_detDeformGradPlastic<0)
+//  {
+//    std::cout<<"Determinant of F_{P} is negative. Setting it to positive.\n";
+//    m_detDeformGradPlastic=std::abs(m_detDeformGradPlastic);
+//  }
 
 
   //Calculate new lame coefficients
@@ -325,7 +325,7 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
 
   if (m_phase==Phase::Liquid)
   {
-    m_lameMu=0.0; /// Unsure about this or whether I should just set FE=JE^(1/d)I?
+    m_lameMu=0.0; /// Unsure about this or whether I should just set FE=JE^(1/d)I? -> Should do both I believe
   }
   else
   {
@@ -482,30 +482,61 @@ void Particle::updateDeformationGradient(float _dt)
   float determinant=determinantMatrix.determinant();
 
   //Power count
-  int power=1;
+  int powerCount=1;
 
-  while (determinant<0)
+  //Denominator
+  float denom=(float(powerCount));
+
+  //Stop loop
+  bool stopLoop=false;
+
+  if (determinant>0)
   {
-    //Divide M by 2
-    M_matrix*=(1.0/2.0);
+    stopLoop=true;
+  }
+
+  while (!stopLoop)
+  {
+    //Increase power count
+    powerCount+=1;
+
+    //Calculate denominator for exponential series, ie. powerCount!
+    denom*=(float(powerCount));
+
+    //Calculate next component in exponential series
+    Eigen::Matrix3f nextComponent=I_matrix;
+    nextComponent*=(1.0/denom);
+
+    for (int i=0; i<powerCount; i++)
+    {
+      nextComponent*=M_matrix;
+    }
 
     //Calculate new determinant
-    determinantMatrix=I_matrix+M_matrix;
+    determinantMatrix+=nextComponent;
     determinant=determinantMatrix.determinant();
 
-    //Increase power
-    power*=2; ///Not sure if this is how the power increases
+    //Check if determinant is positive
+    if (determinant>0)
+    {
+      stopLoop=true;
+    }
   }
 
-  //Multiply I+M the number of times given by the power
-  Eigen::Matrix3f R_of_M=I_matrix;
-  for (int i=0; i<power; i++)
-  {
-    R_of_M*=determinantMatrix;
-  }
+//  if (power>1)
+//  {
+//    std::cout<<"test\n";
+//  }
+
+//  //Multiply I+M the number of times given by the power
+//  Eigen::Matrix3f R_of_M=I_matrix;
+//  for (int i=0; i<power; i++)
+//  {
+//    R_of_M*=determinantMatrix;
+//  }
 
   //Find new deformation gradient
-  m_deformationElastic=R_of_M*m_deformationElastic;
+  m_deformationElastic=determinantMatrix*m_deformationElastic;
 
 }
 

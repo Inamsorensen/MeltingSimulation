@@ -24,7 +24,7 @@ void Grid::projectVelocity()
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::setUpB_projectVelocity()
+float Grid::calcBComponent_projectVelocity(int _cellIndex)
 {
   /* Outline
   ----------------------------------------------------------------------------------------------------------------
@@ -41,11 +41,44 @@ void Grid::setUpB_projectVelocity()
 
   ----------------------------------------------------------------------------------------------------------------
   */
+
+    //Calculate constant
+    float detDeformationGradElastic=m_cellCentres[_cellIndex]->m_detDeformationGradElastic;
+    float constant=(detDeformationGradElastic-1.0);
+    constant*=(1.0/m_dt*detDeformationGradElastic);
+    constant*=(-1.0);
+
+    //Get indices of current cell
+    int iIndex=m_cellCentres[_cellIndex]->m_iIndex;
+    int jIndex=m_cellCentres[_cellIndex]->m_jIndex;
+    int kIndex=m_cellCentres[_cellIndex]->m_kIndex;
+
+    //Get index of i+1,j,k and i,j+1,k and i,j,k+1
+    int index_i1jk=MathFunctions::getVectorIndex(iIndex+1, jIndex, kIndex, m_noCells);
+    int index_ij1k=MathFunctions::getVectorIndex(iIndex, jIndex+1, kIndex, m_noCells);
+    int index_ijk1=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex+1, m_noCells);
+
+    //Get face velocities for all faces surrounding cell centre
+    float velocityX_forward=m_cellFacesX[index_i1jk]->m_velocity;
+    float velocityX_backward=m_cellFacesX[_cellIndex]->m_velocity;
+    float velocityY_forward=m_cellFacesY[index_ij1k]->m_velocity;
+    float velocityY_backward=m_cellFacesY[_cellIndex]->m_velocity;
+    float velocityZ_forward=m_cellFacesZ[index_ijk1]->m_velocity;
+    float velocityZ_backward=m_cellFacesZ[_cellIndex]->m_velocity;
+
+    //Calculate central gradient stencil
+    float centralGradient=(1.0/m_cellSize)*((velocityX_forward-velocityX_backward)+(velocityY_forward-velocityY_backward)+(velocityZ_forward-velocityZ_backward));
+
+    //Calculate B component
+    float BComponent=constant-centralGradient;
+
+    return BComponent;
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::setUpA_projectVelocity()
+float Grid::calcAComponent_projectVelocity(int _cellIndex)
 {
   /* Outline
   ----------------------------------------------------------------------------------------------------------------
