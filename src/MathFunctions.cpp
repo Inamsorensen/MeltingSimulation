@@ -99,9 +99,254 @@ float MathFunctions::calcCubicBSpline_Diff(float _x)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-float MathFunctions::calcCubicBSpline_Integ(float _x)
+float MathFunctions::calcCubicBSpline_Integ(int _faceDirection, int _iIndexIncrement, int _jIndexIncrement, int _kIndexIncrement)
 {
+  /*Cubic B Spline Integrated
+  --------------------------------------------------------------------------------------------------
+  integrate(N(x)) = (1/8)*(|x|^4)*sign(x) - (1/3)*(x^3) + (2/3)*x                       if 0<=|x|<1
+                  = -(1/24)*(|x|^4)*sign(x) + (1/3)*(x^3) - (|x|^2)*sign(x) + (4/3)*x   if 1<=|x|<2
+                  = 0                                                                   otherwise
+
+  Gives tabulated results as follows
+  x1=1    x0=0    :  11/24         :  0.458333
+  x1=0.5  x0=0    :  115/384       :  0.299479
+  x1=1    x0=0.5  :  61/384        :  0.158854
+  x1=2    x0=1    :  1/24          :  0.041667
+  x1=1.5  x0=1    :  5/128         :  0.039063
+  x1=2    x0=1.5  :  2.6048*10^-3  :  0.002605
+
+  Which result is used depends on the i,j,k increments and which face is being calculated for
+  --------------------------------------------------------------------------------------------------
+  */
+
   float result=0.0;
+
+  float fullIntegralNear=0.458333;
+  float fullIntegralFar=0.041667;
+  float halfLowerIntegralNear=0.299479;
+  float halfUpperIntegralNear=0.158854;
+  float halfLowerIntegralFar=0.039063;
+  float halfUpperIntegralFar=0.002605;
+
+  float twiceHalfLowerNear=2.0*halfLowerIntegralNear;
+  float acrossNearFar=halfUpperIntegralNear + halfLowerIntegralFar;
+
+
+  float integralX=0.0;
+  float integralY=0.0;
+  float integralZ=0.0;
+
+  //Determine face
+  switch (_faceDirection) {
+  case 0:
+  {
+    switch (_iIndexIncrement)
+    {
+    case 0:
+      integralX=fullIntegralNear;
+      break;
+    case 1:
+      integralX=fullIntegralFar;
+      break;
+    case 2:
+      integralX=0.0;
+      break;
+    case -1:
+      integralX=fullIntegralNear;
+      break;
+    case -2:
+      integralX=fullIntegralFar;
+      break;
+    default:
+      break;
+    }
+
+    switch (_jIndexIncrement)
+    {
+    case 0:
+      integralY=twiceHalfLowerNear;
+      break;
+    case 1:
+      integralY=acrossNearFar;
+      break;
+    case 2:
+      integralY=halfUpperIntegralFar;
+      break;
+    case -1:
+      integralY=acrossNearFar;
+      break;
+    case -2:
+      integralY=halfUpperIntegralFar;
+      break;
+    default:
+      break;
+    }
+
+    switch (_kIndexIncrement)
+    {
+    case 0:
+      integralZ=twiceHalfLowerNear;
+      break;
+    case 1:
+      integralZ=acrossNearFar;
+      break;
+    case 2:
+      integralZ=halfUpperIntegralFar;
+      break;
+    case -1:
+      integralZ=acrossNearFar;
+      break;
+    case -2:
+      integralZ=halfUpperIntegralFar;
+      break;
+    default:
+      break;
+    }
+
+    break;
+  }
+  case 1:
+  {
+    switch (_jIndexIncrement)
+    {
+    case 0:
+      integralY=fullIntegralNear;
+      break;
+    case 1:
+      integralY=fullIntegralFar;
+      break;
+    case 2:
+      integralY=0.0;
+      break;
+    case -1:
+      integralY=fullIntegralNear;
+      break;
+    case -2:
+      integralY=fullIntegralFar;
+      break;
+    default:
+      break;
+    }
+
+    switch (_iIndexIncrement)
+    {
+    case 0:
+      integralX=twiceHalfLowerNear;
+      break;
+    case 1:
+      integralX=acrossNearFar;
+      break;
+    case 2:
+      integralX=halfUpperIntegralFar;
+      break;
+    case -1:
+      integralX=acrossNearFar;
+      break;
+    case -2:
+      integralX=halfUpperIntegralFar;
+      break;
+    default:
+      break;
+    }
+
+    switch (_kIndexIncrement)
+    {
+    case 0:
+      integralZ=twiceHalfLowerNear;
+      break;
+    case 1:
+      integralZ=acrossNearFar;
+      break;
+    case 2:
+      integralZ=halfUpperIntegralFar;
+      break;
+    case -1:
+      integralZ=acrossNearFar;
+      break;
+    case -2:
+      integralZ=halfUpperIntegralFar;
+      break;
+    default:
+      break;
+    }
+
+    break;
+  }
+  case 2:
+  {
+    switch (_kIndexIncrement)
+    {
+    case 0:
+      integralZ=fullIntegralNear;
+      break;
+    case 1:
+      integralZ=fullIntegralFar;
+      break;
+    case 2:
+      integralZ=0.0;
+      break;
+    case -1:
+      integralZ=fullIntegralNear;
+      break;
+    case -2:
+      integralZ=fullIntegralFar;
+      break;
+    default:
+      break;
+    }
+
+    switch (_jIndexIncrement)
+    {
+    case 0:
+      integralY=twiceHalfLowerNear;
+      break;
+    case 1:
+      integralY=acrossNearFar;
+      break;
+    case 2:
+      integralY=halfUpperIntegralFar;
+      break;
+    case -1:
+      integralY=acrossNearFar;
+      break;
+    case -2:
+      integralY=halfUpperIntegralFar;
+      break;
+    default:
+      break;
+    }
+
+    switch (_iIndexIncrement)
+    {
+    case 0:
+      integralX=twiceHalfLowerNear;
+      break;
+    case 1:
+      integralX=acrossNearFar;
+      break;
+    case 2:
+      integralX=halfUpperIntegralFar;
+      break;
+    case -1:
+      integralX=acrossNearFar;
+      break;
+    case -2:
+      integralX=halfUpperIntegralFar;
+      break;
+    default:
+      break;
+    }
+
+    break;
+  }
+  default:
+    break;
+  }
+
+
+  result=integralX*integralY*integralZ;
+
+
   return result;
 }
 
@@ -191,9 +436,9 @@ void MathFunctions::conjugateGradient(const Eigen::SparseMatrix<double> &_A, con
   //Solve
   o_x=conjGrad.solve(_B);
 
-  //Print out iteration number and error
-  std::cout<<"Number of iterations: "<<conjGrad.iterations()<<"\n";
-  std::cout<<"Error: "<<conjGrad.error()<<"\n";
+//  //Print out iteration number and error
+//  std::cout<<"Number of iterations: "<<conjGrad.iterations()<<"\n";
+//  std::cout<<"Error: "<<conjGrad.error()<<"\n";
 
 }
 

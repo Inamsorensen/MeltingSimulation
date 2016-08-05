@@ -28,9 +28,8 @@ void Grid::updateParticleFromGrid(float _velocityContribAlpha, float _tempContri
   Eigen::Vector3f e_y(0.0, 1.0, 0.0);
   Eigen::Vector3f e_z(0.0, 0.0, 1.0);
 
-  int totNoCells=pow(m_noCells,3);
 #pragma omp parallel for
-  for (int cellIndex=0; cellIndex<totNoCells; ++cellIndex)
+  for (int cellIndex=0; cellIndex<m_totNoCells; ++cellIndex)
   {
     //Get velocity and previous velocity of faces
     float velocity_FaceX=m_cellFacesX[cellIndex]->m_velocity;

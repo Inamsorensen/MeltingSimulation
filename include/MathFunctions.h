@@ -53,11 +53,10 @@ struct MathFunctions
   //----------------------------------------------------------------------------------------------------------------------
   static float calcCubicBSpline_Diff(float _x);
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Returns value of integrated cubic B-spline
-  /// @param [in] Position in a single direction, x
-  /// @todo Needs to be set up
+  /// @brief Returns value of integrated cubic B-spline over values x1 and x0
+  /// @param [in] Position to be integrated over in a single direction, x1 and x0
   //----------------------------------------------------------------------------------------------------------------------
-  static float calcCubicBSpline_Integ(float _x);
+  static float calcCubicBSpline_Integ(int _faceDirection, int _iIndexIncrement, int _jIndexIncrement, int _kIndexIncrement);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Returns value of tight quadratic stencil
   /// @param [in] Position in a single direction, x
@@ -73,7 +72,6 @@ struct MathFunctions
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Solves Ax=B using MINRES method written based on Stanford code
   /// @param [in] _A and _B are the matrices in the problem
-  /// @param [in] _x0 is  the first guess at the solution
   /// @param [in] _preconditioner is the preconditioner matrix which must be positive definite. If no preconditioner, pass nullptr
   /// @param [in] _shift is a value other than zero if want to solve (A-shift*I)x=b instead
   /// @param [in] _maxLoops is the max number of loops the method will do

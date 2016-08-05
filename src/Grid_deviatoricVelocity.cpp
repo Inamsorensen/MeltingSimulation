@@ -126,16 +126,13 @@ void Grid::calcDeviatoricVelocity()
   Eigen::Vector3f e_y(0.0, 1.0, 0.0);
   Eigen::Vector3f e_z(0.0, 0.0, 1.0);
 
-  //Calc total number of cells
-  int totNoCells=pow(m_noCells,3);
-
   //Set up A and b storage
-  Eigen::VectorXf b_X(totNoCells);
-  Eigen::VectorXf b_Y(totNoCells);
-  Eigen::VectorXf b_Z(totNoCells);
+  Eigen::VectorXf b_X(m_totNoCells);
+  Eigen::VectorXf b_Y(m_totNoCells);
+  Eigen::VectorXf b_Z(m_totNoCells);
 
 #pragma omp parallel for
-  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
+  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
     //Test parallel
 //    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
@@ -552,10 +549,9 @@ void Grid::implicitUpdateVelocity(const Eigen::VectorXf &_bVector_X, const Eigen
   Eigen::Vector3f e_z(0.0, 0.0, 1.0);
 
   //Set up A storage
-  int totNoCells=pow(m_noCells,3);
-  Eigen::MatrixXf A_X(totNoCells, totNoCells);
-  Eigen::MatrixXf A_Y(totNoCells, totNoCells);
-  Eigen::MatrixXf A_Z(totNoCells, totNoCells);
+  Eigen::MatrixXf A_X(m_totNoCells, m_totNoCells);
+  Eigen::MatrixXf A_Y(m_totNoCells, m_totNoCells);
+  Eigen::MatrixXf A_Z(m_totNoCells, m_totNoCells);
   A_X.setZero();
   A_Y.setZero();
   A_Z.setZero();
@@ -564,7 +560,7 @@ void Grid::implicitUpdateVelocity(const Eigen::VectorXf &_bVector_X, const Eigen
 
   omp_set_nested(1);
 #pragma omp parallel for
-  for (int cellIndex_i=0; cellIndex_i<totNoCells; cellIndex_i++)
+  for (int cellIndex_i=0; cellIndex_i<m_totNoCells; cellIndex_i++)
   {
     //Test parallel
 //    printf("Thread %d executes outer parallel region\n", omp_get_thread_num());
@@ -576,7 +572,7 @@ void Grid::implicitUpdateVelocity(const Eigen::VectorXf &_bVector_X, const Eigen
 
     //Loop over cells again to calculate A components
 #pragma omp parallel for
-    for (int cellIndex_j=0; cellIndex_j<totNoCells; cellIndex_j++)
+    for (int cellIndex_j=0; cellIndex_j<m_totNoCells; cellIndex_j++)
     {
       //Test parallel
 //      printf("Thread %d executes inner parallel region\n", omp_get_thread_num());
@@ -664,11 +660,11 @@ void Grid::implicitUpdateVelocity(const Eigen::VectorXf &_bVector_X, const Eigen
   omp_set_nested(0);
   
   //Call MINRES to calculate new velocity values
-  Eigen::VectorXf solution_X(totNoCells);
+  Eigen::VectorXf solution_X(m_totNoCells);
   solution_X.setZero();
-  Eigen::VectorXf solution_Y(totNoCells);
+  Eigen::VectorXf solution_Y(m_totNoCells);
   solution_Y.setZero();
-  Eigen::VectorXf solution_Z(totNoCells);
+  Eigen::VectorXf solution_Z(m_totNoCells);
   solution_Z.setZero();
   Eigen::MatrixXf emptyPreconditioner;
   float shift=(-1.0);
@@ -684,7 +680,7 @@ void Grid::implicitUpdateVelocity(const Eigen::VectorXf &_bVector_X, const Eigen
 
 
   //Read in solutions
-  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
+  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
     m_cellFacesX[cellIndex]->m_velocity=solution_X[cellIndex];
     m_cellFacesY[cellIndex]->m_velocity=solution_Y[cellIndex];

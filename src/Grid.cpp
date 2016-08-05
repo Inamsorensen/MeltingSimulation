@@ -30,6 +30,7 @@ Grid::Grid(Eigen::Vector3f _originEdge, float _boundingBoxSize, int _noCells)
 
   //Set up grid variables
   m_noCells=_noCells;
+  m_totNoCells=pow(m_noCells,3);
   //The grid will have a single layer of cells surrounding the bounding box to ensure collisions
   //Hence cell size is boundingBoxSize/(noCells-2)
   m_cellSize=_boundingBoxSize/((float)(m_noCells-2));
@@ -293,6 +294,7 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep, float _veloci
   setBoundaryVelocity();
 
   //Project velocity
+  projectVelocity();
 
   //Calculate new temperature
   calcTemperature();
@@ -315,9 +317,8 @@ void Grid::clearCellData()
   --------------------------------------------------------------------------------------------------------------
   */
 
-  int totNoCells=pow(m_noCells,3);
 #pragma omp parallel for
-  for(int cellIndex=0; cellIndex<totNoCells; cellIndex++)
+  for(int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
 //    //Test parallel
 //    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
@@ -740,9 +741,8 @@ void Grid::transferParticleData(Emitter* _emitter)
   -----------------------------------------------------------------------------------------------------
   */
 
-  int totNoCells=pow(m_noCells,3);
 #pragma omp parallel for
-  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
+  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
 //    //Test parallel
 //    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
@@ -925,9 +925,8 @@ void Grid::transferParticleData(Emitter* _emitter)
 
 void Grid::calcInitialParticleVolumes(Emitter *_emitter)
 {
-  int totNoCells=pow(m_noCells,3);
 #pragma omp parallel for
-  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
+  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
     //Test parallel
 //    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
@@ -986,9 +985,8 @@ void Grid::classifyCells()
 
   //Loop over cell faces - This loop could be made smaller when just checking the outer cells.
   //But this is possibly easier to thread
-  int totNoCells=pow(m_noCells,3);
 #pragma omp parallel for
-  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
+  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
     //Test parallel
 //    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
@@ -1026,7 +1024,7 @@ void Grid::classifyCells()
   //Loop over all cells again to check which cell centres are collding
   //Seems inefficient.
 #pragma omp parallel for
-  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
+  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
     //Test parallel
 //    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
@@ -1212,9 +1210,8 @@ void Grid::setBoundaryVelocity()
   ---------------------------------------------------------------------------------------------------------------------
   */
 
-  int totNoCells=pow(m_noCells,3);
 #pragma omp parallel for
-  for (int cellIndex=0; cellIndex<totNoCells; cellIndex++)
+  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
     //Test parallel
 //    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
