@@ -222,16 +222,16 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set up B in Ax=B for Poisson equation which solves for pressure
   //----------------------------------------------------------------------------------------------------------------------
-  float calcBComponent_projectVelocity(int _cellIndex);
+  float calcBComponent_projectVelocity(int _cellIndex, int _iIndex, int _jIndex, int _kIndex);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set up A in Ax=B for Poisson equation which solves for pressure
   //----------------------------------------------------------------------------------------------------------------------
-  void calcAComponent_projectVelocity(int _cellIndex, Eigen::SparseMatrix<double> &o_A);
+  void calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jIndex, int _kIndex, Eigen::SparseMatrix<double> &o_A);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate exact volume of cell at boundaries. If not done, then this volume will be too small, and lead to
   /// errors
   //----------------------------------------------------------------------------------------------------------------------
-  void calcFaceDensities();
+  void calcFaceDensities(int _cellIndex);
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate new temperature values
@@ -240,15 +240,11 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set up B in Ax=B to solve for temperature
   //----------------------------------------------------------------------------------------------------------------------
-  void setUpB_temperature();
+  float calcBComponent_temperature(int _cellIndex);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set up A in Ax=B to solve for temperature
   //----------------------------------------------------------------------------------------------------------------------
-  void setUpA_temperature();
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Set boundary values for temperature. Set using Neumann boundary condition.
-  //----------------------------------------------------------------------------------------------------------------------
-  void setBoundaryTemperature();
+  void calcAComponent_temperature(int _cellIndex, int _iIndex, int _jIndex, int _kIndex, Eigen::SparseMatrix<double> &o_A);
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Update particle data from grid

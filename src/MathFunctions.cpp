@@ -122,9 +122,9 @@ float MathFunctions::calcCubicBSpline_Integ(int _faceDirection, int _iIndexIncre
   float result=0.0;
 
   float fullIntegralNear=0.458333;
-  float fullIntegralFar=0.041667;
   float halfLowerIntegralNear=0.299479;
   float halfUpperIntegralNear=0.158854;
+  float fullIntegralFar=0.041667;
   float halfLowerIntegralFar=0.039063;
   float halfUpperIntegralFar=0.002605;
 
@@ -439,6 +439,7 @@ void MathFunctions::conjugateGradient(const Eigen::SparseMatrix<double> &_A, con
 //  //Print out iteration number and error
 //  std::cout<<"Number of iterations: "<<conjGrad.iterations()<<"\n";
 //  std::cout<<"Error: "<<conjGrad.error()<<"\n";
+
 
 }
 

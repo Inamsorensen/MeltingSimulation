@@ -274,18 +274,24 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep, float _veloci
   //findParticleInCell - need to find out which particles are in which cells and their respective interp weight
   findParticleContributionToCell(_emitter);
 
+  ///Combine data transfer and classification of cells
   //Transfer particle data to grid
   transferParticleData(_emitter);
+
+//  //If first step calculate particle density during this loop as well
+//  if (_isFirstStep)
+//  {
+//    calcInitialParticleVolumes(_emitter);
+//  }
+
+  //Classify cells
+  classifyCells();
 
   //If first step calculate particle density during this loop as well
   if (_isFirstStep)
   {
     calcInitialParticleVolumes(_emitter);
   }
-
-  //Classify cells
-  classifyCells();
-
 
   //Calculate deviatoric force and velocity update from it
   calcDeviatoricVelocity();
@@ -754,7 +760,7 @@ void Grid::transferParticleData(Emitter* _emitter)
     {
       for (int particleIterator=0; particleIterator<noParticles_CellFaceX; particleIterator++)
       {
-        //Get interpolation weight
+        //Get interpolation weight: cubic B spline
         float weight=m_cellFacesX[cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
 
         //Get particle data
@@ -1034,17 +1040,51 @@ void Grid::classifyCells()
     int jIndex=m_cellCentres[cellIndex]->m_jIndex;
     int kIndex=m_cellCentres[cellIndex]->m_kIndex;
 
+    //Get indices of faces in the positive ijk directions
+    int cellIndex_i1jk=MathFunctions::getVectorIndex(iIndex+1, jIndex, kIndex, m_noCells);
+    int cellIndex_ij1k=MathFunctions::getVectorIndex(iIndex, jIndex+1, kIndex, m_noCells);
+    int cellIndex_ijk1=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex+1, m_noCells);
+
     //Face X
     //Check if lower x face colliding
     if (m_cellFacesX[cellIndex]->m_state!=State::Colliding)
     {
       //Check whether empty or not
-      int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_interpolationData.size();
 
-      if (noParticlesInCell!=0)
+      //Get particle number for upper faces of cell, unless outermost cells in grid
+      int noParticlesInCellFaceX1=0;
+      int noParticlesInCellFaceY1=0;
+      int noParticlesInCellFaceZ1=0;
+
+      if (iIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_interpolationData.size();
+      }
+      if (jIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_interpolationData.size();
+      }
+      if (kIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_interpolationData.size();
+      }
+
+      //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+      if (noParticlesInCellCentre!=0
+          && noParticlesInCellFaceX1!=0
+          && noParticlesInCellFaceX_1!=0
+          && noParticlesInCellFaceY1!=0
+          && noParticlesInCellFaceY_1!=0
+          && noParticlesInCellFaceZ1!=0
+          && noParticlesInCellFaceZ_1!=0)
       {
         m_cellCentres[cellIndex]->m_state=State::Interior;
       }
+      //Otherwise the cell is empty
       else
       {
         m_cellCentres[cellIndex]->m_state=State::Empty;
@@ -1059,17 +1099,46 @@ void Grid::classifyCells()
     if (iIndex<(m_noCells-1))
     {
       //Get index of cell with X face next to current cell
-      int neighbourFaceIndex=MathFunctions::getVectorIndex(iIndex+1, jIndex, kIndex, m_noCells);
+//      int neighbourFaceIndex=MathFunctions::getVectorIndex(iIndex+1, jIndex, kIndex, m_noCells);
 
-      if (m_cellFacesX[neighbourFaceIndex]->m_state!=State::Colliding)
+      if (m_cellFacesX[cellIndex_i1jk]->m_state!=State::Colliding)
       {
         //Check whether empty or not
-        int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_interpolationData.size();
 
-        if (noParticlesInCell!=0)
+        //Get particle number for upper faces of cell, unless outermost cells in grid
+        int noParticlesInCellFaceX1=0;
+        int noParticlesInCellFaceY1=0;
+        int noParticlesInCellFaceZ1=0;
+
+        if (iIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_interpolationData.size();
+        }
+        if (jIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_interpolationData.size();
+        }
+        if (kIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_interpolationData.size();
+        }
+
+        //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+        if (noParticlesInCellCentre!=0
+            && noParticlesInCellFaceX1!=0
+            && noParticlesInCellFaceX_1!=0
+            && noParticlesInCellFaceY1!=0
+            && noParticlesInCellFaceY_1!=0
+            && noParticlesInCellFaceZ1!=0
+            && noParticlesInCellFaceZ_1!=0)
         {
           m_cellCentres[cellIndex]->m_state=State::Interior;
         }
+        //Otherwise the cell is empty
         else
         {
           m_cellCentres[cellIndex]->m_state=State::Empty;
@@ -1086,12 +1155,41 @@ void Grid::classifyCells()
     if (m_cellFacesY[cellIndex]->m_state!=State::Colliding)
     {
       //Check whether empty or not
-      int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_interpolationData.size();
 
-      if (noParticlesInCell!=0)
+      //Get particle number for upper faces of cell, unless outermost cells in grid
+      int noParticlesInCellFaceX1=0;
+      int noParticlesInCellFaceY1=0;
+      int noParticlesInCellFaceZ1=0;
+
+      if (iIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_interpolationData.size();
+      }
+      if (jIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_interpolationData.size();
+      }
+      if (kIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_interpolationData.size();
+      }
+
+      //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+      if (noParticlesInCellCentre!=0
+          && noParticlesInCellFaceX1!=0
+          && noParticlesInCellFaceX_1!=0
+          && noParticlesInCellFaceY1!=0
+          && noParticlesInCellFaceY_1!=0
+          && noParticlesInCellFaceZ1!=0
+          && noParticlesInCellFaceZ_1!=0)
       {
         m_cellCentres[cellIndex]->m_state=State::Interior;
       }
+      //Otherwise the cell is empty
       else
       {
         m_cellCentres[cellIndex]->m_state=State::Empty;
@@ -1102,21 +1200,50 @@ void Grid::classifyCells()
       continue;
     }
 
-    //Check upper x face as well
+    //Check upper y face as well
     if (jIndex<(m_noCells-1))
     {
       //Get index of cell with Y face next to current cell
-      int neighbourFaceIndex=MathFunctions::getVectorIndex(iIndex, jIndex+1, kIndex, m_noCells);
+//      int neighbourFaceIndex=MathFunctions::getVectorIndex(iIndex, jIndex+1, kIndex, m_noCells);
 
-      if (m_cellFacesY[neighbourFaceIndex]->m_state!=State::Colliding)
+      if (m_cellFacesY[cellIndex_ij1k]->m_state!=State::Colliding)
       {
         //Check whether empty or not
-        int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_interpolationData.size();
 
-        if (noParticlesInCell!=0)
+        //Get particle number for upper faces of cell, unless outermost cells in grid
+        int noParticlesInCellFaceX1=0;
+        int noParticlesInCellFaceY1=0;
+        int noParticlesInCellFaceZ1=0;
+
+        if (iIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_interpolationData.size();
+        }
+        if (jIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_interpolationData.size();
+        }
+        if (kIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_interpolationData.size();
+        }
+
+        //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+        if (noParticlesInCellCentre!=0
+            && noParticlesInCellFaceX1!=0
+            && noParticlesInCellFaceX_1!=0
+            && noParticlesInCellFaceY1!=0
+            && noParticlesInCellFaceY_1!=0
+            && noParticlesInCellFaceZ1!=0
+            && noParticlesInCellFaceZ_1!=0)
         {
           m_cellCentres[cellIndex]->m_state=State::Interior;
         }
+        //Otherwise the cell is empty
         else
         {
           m_cellCentres[cellIndex]->m_state=State::Empty;
@@ -1133,12 +1260,41 @@ void Grid::classifyCells()
     if (m_cellFacesZ[cellIndex]->m_state!=State::Colliding)
     {
       //Check whether empty or not
-      int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_interpolationData.size();
+      int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_interpolationData.size();
 
-      if (noParticlesInCell!=0)
+      //Get particle number for upper faces of cell, unless outermost cells in grid
+      int noParticlesInCellFaceX1=0;
+      int noParticlesInCellFaceY1=0;
+      int noParticlesInCellFaceZ1=0;
+
+      if (iIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_interpolationData.size();
+      }
+      if (jIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_interpolationData.size();
+      }
+      if (kIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_interpolationData.size();
+      }
+
+      //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+      if (noParticlesInCellCentre!=0
+          && noParticlesInCellFaceX1!=0
+          && noParticlesInCellFaceX_1!=0
+          && noParticlesInCellFaceY1!=0
+          && noParticlesInCellFaceY_1!=0
+          && noParticlesInCellFaceZ1!=0
+          && noParticlesInCellFaceZ_1!=0)
       {
         m_cellCentres[cellIndex]->m_state=State::Interior;
       }
+      //Otherwise the cell is empty
       else
       {
         m_cellCentres[cellIndex]->m_state=State::Empty;
@@ -1153,17 +1309,46 @@ void Grid::classifyCells()
     if (kIndex<(m_noCells-1))
     {
       //Get index of cell with Z face next to current cell
-      int neighbourFaceIndex=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex+1, m_noCells);
+//      int neighbourFaceIndex=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex+1, m_noCells);
 
-      if (m_cellFacesZ[neighbourFaceIndex]->m_state!=State::Colliding)
+      if (m_cellFacesZ[cellIndex_ijk1]->m_state!=State::Colliding)
       {
         //Check whether empty or not
-        int noParticlesInCell=m_cellCentres[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_interpolationData.size();
+        int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_interpolationData.size();
 
-        if (noParticlesInCell!=0)
+        //Get particle number for upper faces of cell, unless outermost cells in grid
+        int noParticlesInCellFaceX1=0;
+        int noParticlesInCellFaceY1=0;
+        int noParticlesInCellFaceZ1=0;
+
+        if (iIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_interpolationData.size();
+        }
+        if (jIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_interpolationData.size();
+        }
+        if (kIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_interpolationData.size();
+        }
+
+        //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+        if (noParticlesInCellCentre!=0
+            && noParticlesInCellFaceX1!=0
+            && noParticlesInCellFaceX_1!=0
+            && noParticlesInCellFaceY1!=0
+            && noParticlesInCellFaceY_1!=0
+            && noParticlesInCellFaceZ1!=0
+            && noParticlesInCellFaceZ_1!=0)
         {
           m_cellCentres[cellIndex]->m_state=State::Interior;
         }
+        //Otherwise the cell is empty
         else
         {
           m_cellCentres[cellIndex]->m_state=State::Empty;
@@ -1216,7 +1401,7 @@ void Grid::setBoundaryVelocity()
     //Test parallel
 //    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
 
-    //Check whether current cell is colliding, if so set all faces to colliding
+    //Check whether current cell is colliding, if so set stick collision to all faces
     if (m_cellCentres[cellIndex]->m_state==State::Colliding)
     {
       m_cellFacesX[cellIndex]->m_velocity=0.0;
