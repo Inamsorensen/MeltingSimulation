@@ -41,23 +41,11 @@ float Grid::calcDeviatoricForce(Particle* _particle, Eigen::Vector3f _eVector, E
   //Get particle volume
   float particleVolume=_particle->getVolume();
 
-  //Get deformation gradient deviatoric, J^{-1/d}FE
-  Eigen::Matrix3f deformationElastic_Deviatoric=_particle->getDeformationElastic_Deviatoric();
-
-  //Get R from polar decomposition of deformation gradient deviatoric, J^{-1/d}FE
-  Eigen::Matrix3f R_deformationElastic_Deviatoric=_particle->getR_deformationElastic_Deviatoric();
-
-  //Get Lame Mu coefficient
-  float lameMu=_particle->getLameMu();
-
-  //Calculate dYdFE=2*mu*(FE-RE)
-  Eigen::Matrix3f dYdFE=(2.0*lameMu)*(deformationElastic_Deviatoric-R_deformationElastic_Deviatoric);
-
-  //Pass in dYdFE to particle's getZ_DeformEDevDiff. Return is dY^{hat}dFE
-  Eigen::Matrix3f dY_hat_dFE=_particle->getZ_DeformEDevDiff(dYdFE);
-
   //Multiply FE^{T} with differentiated weight
   Eigen::Vector3f result_vec1=deformationElastic_trans*_weightDiff;
+
+  //Get dY^{hat}dFE from particle
+  Eigen::Matrix3f dY_hat_dFE=_particle->getPotentialEnergyDiff();
 
   //Multiply result with dY^{hat}dFE
   Eigen::Vector3f result_vec2=dY_hat_dFE*result_vec1;

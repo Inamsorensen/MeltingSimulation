@@ -247,6 +247,8 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
   Calculate new lame coefficients
 
   Calculate deviatoric elastic matrices + polar decomposition
+
+  Calculate differentiated elasto-plastic energy
   ------------------------------------------------------------------------------------------------------
   */
 
@@ -340,6 +342,9 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
 
   MathFunctions::polarDecomposition(m_deformationElastic_Deviatoric, m_R_deformationElastic_Deviatoric, m_S_deformationElastic_Deviatoric);
 
+
+  //Calculate differential of elasto-plastic potential energy
+  calcPotentialEnergyDiff();
 
 }
 
@@ -452,6 +457,30 @@ void Particle::applyPlasticity()
 //    }
 //  }
 
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void Particle::calcPotentialEnergyDiff()
+{
+  /* Outline
+  ------------------------------------------------------------------------------------------------------
+
+  dY_hatdFE=dYdFE_{p}:B_{kmij}
+
+  dYdFE_{p}=2*lame_mu_{p}*JE^a*FE_{p} - 2*lame_mu_{p}*RE_{p} where a=-1/d where d=dimensions=3? for dimensions and RE is the polar decomposition of JE^a*FE
+
+  B_{kmij}=JE^a*I + a*JE^a*FE_{p}^-T*FE_{p}
+
+  ------------------------------------------------------------------------------------------------------
+  */
+
+  //Calculate dYdFE=2*mu*(FE-RE)
+  Eigen::Matrix3f dYdFE=(2.0*m_lameMu)*(m_deformationElastic_Deviatoric-m_R_deformationElastic_Deviatoric);
+
+  //Pass in dYdFE to particle's getZ_DeformEDevDiff. Return is dY^{hat}dFE
+  m_potentialEnergyDiff=getZ_DeformEDevDiff(dYdFE);
 
 }
 
