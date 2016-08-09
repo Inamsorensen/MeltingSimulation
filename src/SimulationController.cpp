@@ -187,10 +187,11 @@ void SimulationController::readSimulationParameters()
   m_heatConductivitySolid=file->getSimulationParameter_Float(heatCondSolid);
   m_heatConductivityFluid=file->getSimulationParameter_Float(heatCondFluid);
   m_latentHeat=file->getSimulationParameter_Float(latentHeat);
-  m_freezingTemperature=file->getSimulationParameter_Float(freezeTemp);
 
-  m_ambientTemperature=file->getSimulationParameter_Float(ambientTemp);
-  m_heatSourceTemperature=file->getSimulationParameter_Float(heatSourceTemp);
+  //File gives temp in Celsius, need to change to Kelvin
+  m_freezingTemperature=file->getSimulationParameter_Float(freezeTemp)+273.0;
+  m_ambientTemperature=file->getSimulationParameter_Float(ambientTemp)+273.0;
+  m_heatSourceTemperature=file->getSimulationParameter_Float(heatSourceTemp)+273.0;
 
   delete file;
 
@@ -263,7 +264,7 @@ void SimulationController::render(ngl::Mat4 _modelMatrixCamera)
   /// @brief Renders particles through the emitter.Checks whether it is time to write to frame
 
   //Render particles
-  m_emitter->renderParticles(_modelMatrixCamera, m_camera);
+  m_emitter->renderParticles(_modelMatrixCamera, m_camera, m_ambientTemperature, m_heatSourceTemperature);
 
   //Check whether to create frame
 

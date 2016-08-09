@@ -97,7 +97,7 @@ void Emitter::createParticles(int _noParticles, const std::vector<Eigen::Vector3
     float temperature=_particleTemperature.at(i)+273.0;  //Add 273 as temperature in Kelvin whereas read in is in Celsius
     bool solid=_particlePhase.at(i);
 
-    Particle* particle=new Particle(position, mass, temperature, solid, m_latentHeat, this);
+    Particle* particle=new Particle(i, position, mass, temperature, solid, m_latentHeat, this);
     m_particles.push_back(particle);
   }
 }
@@ -135,7 +135,7 @@ void Emitter::setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, 
   m_heatConductivitySolid=_heatCondSolid;
   m_heatConductivityFluid=_heatCondFluid;
   m_latentHeat=_latentHeat;
-  m_freezingTemperature=_freezeTemp+273.0; //Add 273 to go from Celsius to Kelvin
+  m_freezingTemperature=_freezeTemp;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -194,7 +194,7 @@ void Emitter::updateParticles(float _dt)
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera)
+void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera, float _ambientTemp, float _heatSourceTemp)
 {
   /* Outline
   ------------------------------------------------------------------------------------------------------
@@ -208,6 +208,21 @@ void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera
 
   //Set shader to use
   shaderLib->use(m_particleShaderName);
+
+  //Set up colours for colour shader which displays temperatures
+  ngl::Vec3 redColour(0.75, 0.0, 0.0);
+  ngl::Vec3 yellowColour(0.8, 0.8, 0.0);
+  ngl::Vec3 greenColour(0.0, 0.75, 0.0);
+  ngl::Vec3 lightBlueColour(0.25, 0.25, 1.0);
+  ngl::Vec3 darkBlueColour(0.0, 0.0, 0.5);
+
+
+  float stepTemp=(_heatSourceTemp-_ambientTemp)/3.0;
+
+  float tempStep0=_ambientTemp;
+  float tempStep1=stepTemp+_ambientTemp;
+  float tempStep2=(stepTemp*2.0)+_ambientTemp;
+  float tempStep3=(stepTemp*3.0)+_ambientTemp;
 
 
   for (int i=0; i<m_noParticles; i++)
@@ -232,19 +247,65 @@ void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera
     ngl::Mat4 M;
     ngl::Mat4 MV;
     ngl::Mat4 MVP;
-    ngl::Mat3 normalMatrix;
 
     M=transformationMatrix.getMatrix();
     MV=M*_camera->getViewMatrix();
     MVP=MV*_camera->getProjectionMatrix();
-    normalMatrix=MV;
-    normalMatrix.inverse();
 
-    //Set MVP to shader
-    shaderLib->setShaderParamFromMat4("M", M);
-    shaderLib->setShaderParamFromMat4("MV", MV);
-    shaderLib->setShaderParamFromMat4("MVP", MVP);
-    shaderLib->setShaderParamFromMat3("normalMatrix", normalMatrix);
+
+    if (m_particleShaderName=="Phong")
+    {
+      //Calculate normalMatrix
+      ngl::Mat3 normalMatrix;
+      normalMatrix=MV;
+      normalMatrix.inverse();
+
+      //Set MVP to shader
+      shaderLib->setShaderParamFromMat4("M", M);
+      shaderLib->setShaderParamFromMat4("MV", MV);
+      shaderLib->setShaderParamFromMat4("MVP", MVP);
+      shaderLib->setShaderParamFromMat3("normalMatrix", normalMatrix);
+    }
+
+    if (m_particleShaderName=="Colour")
+    {
+      shaderLib->setShaderParamFromMat4("MVP", MVP);
+
+//      Phase particlePhase=m_particles[i]->getPhase();
+
+//      if (particlePhase==Phase::Solid)
+//      {
+//        shaderLib->setRegisteredUniformVec3("colour", darkBlueColour);
+//      }
+//      if (particlePhase==Phase::Liquid)
+//      {
+//        shaderLib->setRegisteredUniformVec3("colour", redColour);
+//      }
+
+      float particleTemperature=m_particles[i]->getTemperature();
+
+      if (particleTemperature>=tempStep3)
+      {
+        shaderLib->setRegisteredUniformVec3("colour", redColour);
+      }
+      if (particleTemperature>=tempStep2 && particleTemperature<tempStep3)
+      {
+        shaderLib->setRegisteredUniformVec3("colour", yellowColour);
+      }
+      if (particleTemperature>=tempStep1 && particleTemperature<tempStep2)
+      {
+        shaderLib->setRegisteredUniformVec3("colour", greenColour);
+      }
+      if (particleTemperature>=tempStep0 && particleTemperature<tempStep1)
+      {
+        shaderLib->setRegisteredUniformVec3("colour", lightBlueColour);
+      }
+      if (particleTemperature<=tempStep0)
+      {
+        shaderLib->setRegisteredUniformVec3("colour", darkBlueColour);
+      }
+
+    }
 
     //Draw particle
     vaoPrimitives->draw("sphere");

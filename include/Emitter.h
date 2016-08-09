@@ -115,7 +115,7 @@ public:
   /// @param [in] _modelMatrixCamera gives the scene transformations that also need to be applied to particle positions
   /// @param [in] _camera is used to get the view and projection matrices to give to the shader.
   //----------------------------------------------------------------------------------------------------------------------
-  void renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera *_camera);
+  void renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera *_camera, float _ambientTemp, float _heatSourceTemp);
 
 protected:
   //----------------------------------------------------------------------------------------------------------------------

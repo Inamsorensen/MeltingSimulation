@@ -189,11 +189,15 @@ private:
   /// @brief Calculate B in Ax=B for the implicit calculation of velocity.
   /// b_i=v_i + (dt/m_i)*f_i + dt*g*eVector*sumWeight
   //----------------------------------------------------------------------------------------------------------------------
-  float calcBComponent_DeviatoricVelocity(float _velocity, float _mass, float _deviatoricForce, float _sumWeight, Eigen::Vector3f _eVector);
+  Eigen::Vector3f calcBComponent_DeviatoricVelocity(int _cellIndex);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Get A components of one row for deviatoric velocity calculation
+  //----------------------------------------------------------------------------------------------------------------------
+  void calcAComponent_DeviatoricVelocity(int _cellIndex, int _noParticlesFaceX, int _noParticlesFaceY, int _noParticlesFaceZ, Eigen::MatrixXf &o_AX, Eigen::MatrixXf &o_AY, Eigen::MatrixXf &o_AZ);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculates component of A matrix for Ax=b. In this case have (I+A)x=b where I will not be included in the A component
   //----------------------------------------------------------------------------------------------------------------------
-  float calcAComponent_DeviatoricVelocity(Particle* _particle, Eigen::Vector3f _weight_i_diff, Eigen::Vector3f _weight_j_diff, Eigen::Vector3f _eVector, float _mass_i);
+  float calcAValue_DeviatoricVelocity(Particle* _particle, Eigen::Vector3f _weight_i_diff, Eigen::Vector3f _weight_j_diff, Eigen::Vector3f _eVector);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Explicitly update velocity. v_new=bcomponent
   //----------------------------------------------------------------------------------------------------------------------
@@ -201,11 +205,15 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Implicitly update velocity.
   //----------------------------------------------------------------------------------------------------------------------
-  void implicitUpdateVelocity(const Eigen::VectorXf &_bVector_X, const Eigen::VectorXf &_bVector_Y, const Eigen::VectorXf &_bVector_Z);
+  void implicitUpdateVelocity(const Eigen::MatrixXf &_A_X, const Eigen::VectorXf &_bVector_X, const Eigen::MatrixXf &_A_Y, const Eigen::VectorXf &_bVector_Y, const Eigen::MatrixXf &_A_Z, const Eigen::VectorXf &_bVector_Z);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate rotation matrix R in polar decomposition of the deformation gradient: F=RS
   //----------------------------------------------------------------------------------------------------------------------
   Eigen::Matrix3f calculate_dR(const Eigen::Matrix3f &_deltaDeformElastic_Deviatoric, const Eigen::Matrix3f &_R_deformElastic_Deviatoric, const Eigen::Matrix3f &_S_deformElastic_Deviatoric);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Search list of particles to find same particle in two cells
+  //----------------------------------------------------------------------------------------------------------------------
+  void searchCellsForCommonParticle(unsigned int _particleId, CellFace* _cellFace, unsigned int &o_particleIndexInFace, bool &o_isFound);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set boundary velocity. Set as stick on collision, ie. zero velocity for colliding faces
   //----------------------------------------------------------------------------------------------------------------------

@@ -9,7 +9,7 @@
 
 //----------------------------------------------------------------------------------------------------------------------
 
-Particle::Particle(Eigen::Vector3f _position, float _mass, float _temperature, bool _isSolid, float _latentHeat, Emitter* _emitter)
+Particle::Particle(unsigned int _id, Eigen::Vector3f _position, float _mass, float _temperature, bool _isSolid, float _latentHeat, Emitter* _emitter)
 {
   /* Outline
   ------------------------------------------------------------------------------------------------------
@@ -24,6 +24,8 @@ Particle::Particle(Eigen::Vector3f _position, float _mass, float _temperature, b
 
   ------------------------------------------------------------------------------------------------------
   */
+
+  m_id=_id;
 
   m_position=_position;
   m_mass=_mass;

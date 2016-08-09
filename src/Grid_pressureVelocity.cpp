@@ -69,7 +69,7 @@ void Grid::projectVelocity()
 
 
   //Solve system
-  float maxLoops=30;
+  float maxLoops=3000;
   float minResidual=0.00001;
   MathFunctions::conjugateGradient(A_matrix, B_vector, solution, maxLoops, minResidual);
 
@@ -173,11 +173,21 @@ float Grid::calcBComponent_projectVelocity(int _cellIndex, int _iIndex, int _jIn
   ----------------------------------------------------------------------------------------------------------------
   */
 
+  //Get density
+  float densityX=m_cellFacesX[_cellIndex]->m_density;
+  float densityY=m_cellFacesY[_cellIndex]->m_density;
+  float densityZ=m_cellFacesZ[_cellIndex]->m_density;
+
+  float sumDensity=densityX+densityY+densityZ;
+
     //Calculate constant
     float detDeformationGradElastic=m_cellCentres[_cellIndex]->m_detDeformationGradElastic;
     float constant=(detDeformationGradElastic-1.0);
     constant*=(1.0/(m_dt*detDeformationGradElastic));
     constant*=(-1.0);
+
+    //Add in density here
+    constant*=sumDensity;
 
     ///TO DO: Put in a check to make sure we aren't searching outside grid.
     /// Think this is prevented by only calculating B for interior cells though
@@ -196,7 +206,10 @@ float Grid::calcBComponent_projectVelocity(int _cellIndex, int _iIndex, int _jIn
     float velocityZ_backward=m_cellFacesZ[_cellIndex]->m_velocity;
 
     //Calculate central gradient stencil
-    float centralGradient=(1.0/m_cellSize)*((velocityX_forward-velocityX_backward)+(velocityY_forward-velocityY_backward)+(velocityZ_forward-velocityZ_backward));
+//    float centralGradient=(1.0/m_cellSize)*((velocityX_forward-velocityX_backward)+(velocityY_forward-velocityY_backward)+(velocityZ_forward-velocityZ_backward));
+    float centralGradient=(1.0/m_cellSize)*((densityX*(velocityX_forward-velocityX_backward))
+                                            +(densityY*(velocityY_forward-velocityY_backward))
+                                            +(densityZ*(velocityZ_forward-velocityZ_backward)));
 
     //Calculate B component
     float BComponent=constant-centralGradient;
@@ -278,7 +291,8 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   }
   case State::Interior :
   {
-    A_i1jk=(constant/densityX_ijk);
+//    A_i1jk=(constant/densityX_ijk);
+    A_i1jk=constant;
     break;
   }
   default:
@@ -296,7 +310,8 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   }
   case State::Interior :
   {
-    A_i_1jk=(constant/densityX_ijk);
+//    A_i_1jk=(constant/densityX_ijk);
+    A_i_1jk=constant;
     break;
   }
   default:
@@ -314,7 +329,8 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   }
   case State::Interior :
   {
-    A_ij1k=(constant/densityY_ijk);
+//    A_ij1k=(constant/densityY_ijk);
+    A_ij1k=constant;
     break;
   }
   default:
@@ -332,7 +348,8 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   }
   case State::Interior :
   {
-    A_ij_1k=(constant/densityY_ijk);
+//    A_ij_1k=(constant/densityY_ijk);
+    A_ij_1k=constant;
     break;
   }
   default:
@@ -350,7 +367,8 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   }
   case State::Interior :
   {
-    A_ijk1=(constant/densityZ_ijk);
+//    A_ijk1=(constant/densityZ_ijk);
+    A_ijk1=constant;
     break;
   }
   default:
@@ -368,7 +386,8 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   }
   case State::Interior :
   {
-    A_ijk_1=(constant/densityZ_ijk);
+//    A_ijk_1=(constant/densityZ_ijk);
+    A_ijk_1=constant;
     break;
   }
   default:
@@ -378,7 +397,8 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   }
 
   //Calculate A_ijk from X,Y,Z contributions, density and constant
-  A_ijk=((A_ijk_X/densityX_ijk)+(A_ijk_Y/densityY_ijk)+(A_ijk_Z/densityZ_ijk));
+//  A_ijk=((A_ijk_X/densityX_ijk)+(A_ijk_Y/densityY_ijk)+(A_ijk_Z/densityZ_ijk));
+  A_ijk=(A_ijk_X + A_ijk_Y + A_ijk_Z);
   A_ijk*=constant;
 
   //Add pressureConstant to A_ijk
@@ -389,6 +409,9 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   pressureConst=detDeformGradPlastic/detDeformGradElastic;
   pressureConst*=lambdaInv;
   pressureConst*=(1.0/m_dt);
+
+  //Add density here
+  pressureConst*=(densityX_ijk + densityY_ijk + densityZ_ijk);
 
   A_ijk+=pressureConst;
 

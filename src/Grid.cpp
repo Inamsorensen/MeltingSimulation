@@ -229,8 +229,8 @@ void Grid::setSurroundingTemperatures(float _ambientTemp, float _heatSourceTemp)
   ------------------------------------------------------------------------------------------------------
   */
 
-  m_ambientTemperature=_ambientTemp+273.0;
-  m_heatSourceTemperature=_heatSourceTemp+273.0;
+  m_ambientTemperature=_ambientTemp;
+  m_heatSourceTemperature=_heatSourceTemp;
 
 }
 

@@ -128,7 +128,9 @@ void OpenGLWindow::initializeGL()
 
   //Set up simulation controller
   m_simulationController=SimulationController::instance();
-  m_simulationController->setRenderParameters(&m_camera, "Phong");
+
+//  m_simulationController->setRenderParameters(&m_camera, "Phong");
+  m_simulationController->setRenderParameters(&m_camera, "Colour");
 
   //Setup VAO for bounding box
   buildVAO();
@@ -332,14 +334,14 @@ void OpenGLWindow::visualiseGrid()
 
         State cellState=m_simulationController->getGridCellState(cellIndex);
 
-        float cellTemperature=m_simulationController->getGridCellTemperature(cellIndex)-273.0;
+        float cellTemperature=m_simulationController->getGridCellTemperature(cellIndex);
         float ambientTemp=m_simulationController->getAmbientTemperature();
         float heatSourceTemp=m_simulationController->getHeatSourceTemperature();
 
         //Set colours for visualisation
-        ngl::Vec3 colourRed(1.0, 0.0, 0.0);
-        ngl::Vec3 colourGreen(0.0, 1.0, 0.0);
-        ngl::Vec3 colourBlue(0.0, 0.0, 1.0);
+        ngl::Vec3 colourRed(0.8, 0.0, 0.0);
+        ngl::Vec3 colourGreen(0.0, 0.8, 0.0);
+        ngl::Vec3 colourBlue(0.0, 0.0, 0.8);
 
 //        if (cellState==State::Colliding)
 //        {

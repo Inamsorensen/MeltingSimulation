@@ -436,9 +436,9 @@ void MathFunctions::conjugateGradient(const Eigen::SparseMatrix<double> &_A, con
   //Solve
   o_x=conjGrad.solve(_B);
 
-//  //Print out iteration number and error
-//  std::cout<<"Number of iterations: "<<conjGrad.iterations()<<"\n";
-//  std::cout<<"Error: "<<conjGrad.error()<<"\n";
+  //Print out iteration number and error
+  std::cout<<"Number of iterations: "<<conjGrad.iterations()<<"\n";
+  std::cout<<"Error: "<<conjGrad.error()<<"\n";
 
 
 }

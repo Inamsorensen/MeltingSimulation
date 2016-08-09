@@ -58,7 +58,7 @@ void Grid::calcTemperature()
   }
 
   //Solve system
-  float maxLoops=30;
+  float maxLoops=3000;
   float minResidual=0.00001;
   MathFunctions::conjugateGradient(A_matrix, B_vector, solution, maxLoops, minResidual);
 
@@ -88,8 +88,15 @@ float Grid::calcBComponent_temperature(int _cellIndex)
   ----------------------------------------------------------------------------------------------------------------
   */
 
+  float bComponent=0.0;
+
+  float mass=m_cellCentres[_cellIndex]->m_mass;
+  float heatCapacity=m_cellCentres[_cellIndex]->m_heatCapacity;
   float temperature=m_cellCentres[_cellIndex]->m_temperature;
-  return temperature;
+
+//  bComponent=temperature;
+  bComponent=mass*heatCapacity*temperature;
+  return bComponent;
 
 }
 
@@ -134,7 +141,8 @@ void Grid::calcAComponent_temperature(int _cellIndex, int _iIndex, int _jIndex, 
   float heatConductivityZ=m_cellFacesZ[_cellIndex]->m_heatConductivity;
 
   //Calculate constant
-  float constant=(m_dt*volume)/(mass*heatCapacity);
+//  float constant=(m_dt*volume)/(mass*heatCapacity);
+  float constant=(m_dt*volume);
 
   //Set up sumInvDensity
   float A_ijk_X=(-2.0);
@@ -264,8 +272,11 @@ void Grid::calcAComponent_temperature(int _cellIndex, int _iIndex, int _jIndex, 
   A_ijk=((A_ijk_X*heatConductivityX)+(A_ijk_Y*heatConductivityY)+(A_ijk_Z*heatConductivityZ));
   A_ijk*=constant;
 
-  //Add one to A_ijk
-  A_ijk+=1.0;
+//  //Add one to A_ijk
+//  A_ijk+=1.0;
+
+  //Add mass*heatCapacity to A_ijk
+  A_ijk+=(mass*heatCapacity);
 
   //Insert values into matrix
   //Might need to do this in main function for parallelisation
