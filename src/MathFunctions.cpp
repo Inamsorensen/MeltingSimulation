@@ -357,7 +357,7 @@ float MathFunctions::calcTightQuadraticStencil(float _x)
   /*Tight Quadratic Stencil
   --------------------------------------------------------------------------------------------------
   N(x) = -x^2 +3/4                       if 0<=|x|<1/2
-       = (1/2)*(x^2) - (3/2)x + 9/8      if 1/2<=|x|<3/2  NB! Paper says 1<=|x|<3/2 but assuming meant 1/2
+       = (1/2)*(x^2) - (3/2)|x| + 9/8      if 1/2<=|x|<3/2  NB! Paper says 1<=|x|<3/2 but assuming meant 1/2
        = 0                               otherwise
   --------------------------------------------------------------------------------------------------
   */
@@ -389,7 +389,7 @@ float MathFunctions::calcTightQuadraticStencil_Diff(float _x)
   /*Tight Quadratic Stencil
   --------------------------------------------------------------------------------------------------
   N(x) = -2x              if 0<=|x|<1/2
-       = x - 3/2          if 1/2<=|x|<3/2  NB! Paper says 1<=|x|<3/2 but assuming meant 1/2
+       = x - 3/2*signX    if 1/2<=|x|<3/2  NB! Paper says 1<=|x|<3/2 but assuming meant 1/2
        = 0                otherwise
   --------------------------------------------------------------------------------------------------
   */

@@ -258,6 +258,10 @@ private:
   /// @brief Update particle data from grid
   //----------------------------------------------------------------------------------------------------------------------
   void updateParticleFromGrid(float _velocityContribAlpha, float _tempContribBeta);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Update particle position directly
+  //----------------------------------------------------------------------------------------------------------------------
+  void updateParticlePositionDirectly(float _velocityContribAlpha, int _cellIndex);
 
 
 };

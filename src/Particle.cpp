@@ -262,6 +262,9 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
   m_temperature=_tempContribBeta*m_previousTemperature;
   m_velocityGradient=m_velocityGradient.setZero();
 
+  //Set new position to zero
+  m_newPosition.setZero();
+
 
   //For now, update elastic deformation gradient if liquid, here
   if (m_phase==Phase::Liquid)
@@ -276,8 +279,6 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
   //Apply plasticity contribution
   applyPlasticity();
 
-  //Apply correction for splitting
-  m_detDeformGradPlastic=m_deformationPlastic.determinant();
 
   //For test set determinant to absolute value. Determinant should always be positive
 //  ///NB!!!!!!!! Not sure I can do this is reality
@@ -286,6 +287,32 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
 //    std::cout<<"Determinant of F_{P} is negative. Setting it to positive.\n";
 //    m_detDeformGradPlastic=std::abs(m_detDeformGradPlastic);
 //  }
+
+
+  //Calculate new lame coefficients
+  float lameMuConstant=m_emitter->getLameMuConstant();
+  float lameLambdaConstant=m_emitter->getLameLambdaConstant();
+  float hardness=m_emitter->getHardnessCoefficient();
+  float exponentialParam=hardness*(1.0-m_detDeformGradPlastic);
+  float hardnessImpact=exp(exponentialParam);
+
+  //Clamp hardness impact
+  ///Not sure what to clamp to
+  hardnessImpact=std::min<float>(hardnessImpact, 10.0);
+
+
+  if (m_phase==Phase::Liquid)
+  {
+    m_lameMu=0.0; /// Unsure about this or whether I should just set FE=JE^(1/d)I? -> Should do both I believe
+  }
+  else
+  {
+    m_lameMu=lameMuConstant*hardnessImpact;
+  }
+  m_lameLambda=lameLambdaConstant*hardnessImpact;
+
+
+  //Apply correction for splitting
 
   float dimensionInv=1.0/((float)m_dimension);
 
@@ -300,6 +327,7 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
   m_detDeformGrad=deformationGradient.determinant();
   m_detDeformGradElastic=m_deformationElastic.determinant();
   m_detDeformGradPlastic=m_deformationPlastic.determinant();
+
 
 //  //For test set determinant to absolute value. Determinant should always be positive
 //  ///NB!!!!!!!! Not sure I can do this is reality
@@ -320,22 +348,23 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
 //  }
 
 
-  //Calculate new lame coefficients
-  float lameMuConstant=m_emitter->getLameMuConstant();
-  float lameLambdaConstant=m_emitter->getLameLambdaConstant();
-  float hardness=m_emitter->getHardnessCoefficient();
-  float exponentialParam=hardness*(1.0-m_detDeformGradPlastic);
-  float hardnessImpact=exp(exponentialParam);
 
-  if (m_phase==Phase::Liquid)
-  {
-    m_lameMu=0.0; /// Unsure about this or whether I should just set FE=JE^(1/d)I? -> Should do both I believe
-  }
-  else
-  {
-    m_lameMu=lameMuConstant*hardnessImpact;
-  }
-  m_lameLambda=lameLambdaConstant*hardnessImpact;
+//  //Calculate new lame coefficients
+//  float lameMuConstant=m_emitter->getLameMuConstant();
+//  float lameLambdaConstant=m_emitter->getLameLambdaConstant();
+//  float hardness=m_emitter->getHardnessCoefficient();
+//  float exponentialParam=hardness*(1.0-m_detDeformGradPlastic);
+//  float hardnessImpact=exp(exponentialParam);
+
+//  if (m_phase==Phase::Liquid)
+//  {
+//    m_lameMu=0.0; /// Unsure about this or whether I should just set FE=JE^(1/d)I? -> Should do both I believe
+//  }
+//  else
+//  {
+//    m_lameMu=lameMuConstant*hardnessImpact;
+//  }
+//  m_lameLambda=lameLambdaConstant*hardnessImpact;
 
 
   //Calculate new elastic deviatoric components
@@ -459,6 +488,11 @@ void Particle::applyPlasticity()
 //    }
 //  }
 
+
+  //Calculate new determinants
+  m_detDeformGrad=deformationGradient.determinant();
+  m_detDeformGradElastic=m_deformationElastic.determinant();
+  m_detDeformGradPlastic=m_deformationPlastic.determinant();
 
 }
 
@@ -649,6 +683,7 @@ void Particle::collisionResolve(float _dt, float _xMin, float _xMax, float _yMin
 
   //Calculate possible new position
   Eigen::Vector3f possibleNewPosition=m_position+(_dt*m_velocity);
+//  Eigen::Vector3f possibleNewPosition=m_newPosition;
 
   if (possibleNewPosition(0)<=_xMin || possibleNewPosition(0)>=_xMax || possibleNewPosition(1)<=_yMin || possibleNewPosition(1)>=_yMax || possibleNewPosition(2)<=_zMin || possibleNewPosition(2)>=_zMax)
   {
@@ -670,6 +705,7 @@ void Particle::updatePosition(float _dt)
   */
 
   m_position+=(_dt*m_velocity);
+//  m_position=m_newPosition;
 }
 
 //----------------------------------------------------------------------------------------------------------------------

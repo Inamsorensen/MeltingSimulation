@@ -468,6 +468,11 @@ void Grid::calcInterpolationWeights(Particle* _particle, int _i, int _j, int _k)
 
   Eigen::Vector3f particlePosition=_particle->getPosition();
 
+  ///Addition so particle and grid is in same reference
+  particlePosition(0)+=halfCellSize;
+  particlePosition(1)+=halfCellSize;
+  particlePosition(2)+=halfCellSize;
+
   //Calculate posDifference for each face and cell centre
   Eigen::Vector3f centrePosDiff=particlePosition-centreVector;
   Eigen::Vector3f faceXPosDiff=particlePosition-faceXVector;

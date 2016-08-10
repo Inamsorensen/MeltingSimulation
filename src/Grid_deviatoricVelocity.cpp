@@ -59,8 +59,17 @@ void Grid::calcDeviatoricVelocity()
   Eigen::MatrixXf A_Y(m_totNoCells, m_totNoCells);
   Eigen::MatrixXf A_Z(m_totNoCells, m_totNoCells);
 
-//  bool implicitUpdate=false;
-  bool implicitUpdate=true;
+  //Initialise all to zero
+  b_X.setZero();
+  b_Y.setZero();
+  b_Z.setZero();
+  A_X.setZero();
+  A_Y.setZero();
+  A_Z.setZero();
+
+  //Set whether implicit or explicit integration
+  bool implicitUpdate=false;
+//  bool implicitUpdate=true;
 
 #pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
@@ -75,14 +84,28 @@ void Grid::calcDeviatoricVelocity()
     m_cellFacesY[cellIndex]->m_previousVelocity=m_cellFacesY[cellIndex]->m_velocity;
     m_cellFacesZ[cellIndex]->m_previousVelocity=m_cellFacesZ[cellIndex]->m_velocity;
 
+    //Calculate number of particles in faces of cellIndex
+    int noParticles_FaceX=m_cellFacesX[cellIndex]->m_interpolationData.size();
+    int noParticles_FaceY=m_cellFacesY[cellIndex]->m_interpolationData.size();
+    int noParticles_FaceZ=m_cellFacesZ[cellIndex]->m_interpolationData.size();
+
     //Calculate B components
-    Eigen::Vector3f B_components=calcBComponent_DeviatoricVelocity(cellIndex);
+    Eigen::Vector3f B_components;
+    B_components.setZero();
 
-    //Insert into b vector
-    b_X(cellIndex)=B_components(0);
-    b_Y(cellIndex)=B_components(1);
-    b_Z(cellIndex)=B_components(2);
+    //Only set B components for non-empty cells
+    if (noParticles_FaceX!=0 && noParticles_FaceY!=0 && noParticles_FaceZ!=0)
+    {
+      B_components=calcBComponent_DeviatoricVelocity(cellIndex);
 
+      //Insert into b vector
+      b_X(cellIndex)=B_components(0);
+      b_Y(cellIndex)=B_components(1);
+      b_Z(cellIndex)=B_components(2);
+    }
+
+
+    //Get A components for implicit update
     if (implicitUpdate==true)
     {
       //Calculate number of particles in faces of cellIndex
@@ -122,8 +145,16 @@ void Grid::calcDeviatoricVelocity()
         velocityZ=(B_components(2)/m_cellFacesZ[cellIndex]->m_mass);
       }
 
+//      if (cellIndex==170)
+//      {
+//        std::cout<<"test\n";
+//      }
+
 //      explicitUpdateVelocity(cellIndex, bComponentX, bComponentY, bComponentZ);
       explicitUpdateVelocity(cellIndex, velocityX, velocityY, velocityZ);
+
+//      std::cout<<"test\n";
+
     }
 
   }
@@ -483,137 +514,148 @@ void Grid::calcAComponent_DeviatoricVelocity(int _cellIndex, int _noParticlesFac
         //Get index of neighbour
         int neighbourCellIndex=MathFunctions::getVectorIndex(iIndex+iIndexIncrement, jIndex+jIndexIncrement, kIndex+kIndexIncrement, m_noCells);
 
-        int noParticlesFaceX_neighbour=m_cellFacesX[neighbourCellIndex]->m_interpolationData.size();
-        int noParticlesFaceY_neighbour=m_cellFacesY[neighbourCellIndex]->m_interpolationData.size();
-        int noParticlesFaceZ_neighbour=m_cellFacesZ[neighbourCellIndex]->m_interpolationData.size();
 
-
-        //Face X
-        if (noParticlesFaceX_neighbour!=0 && _noParticlesFaceX!=0)
+        //Only insert an A component if neighbour face isn't colliding
+        if (m_cellFacesX[_cellIndex]->m_state!=State::Colliding && m_cellFacesX[neighbourCellIndex]->m_state!=State::Colliding)
         {
+          int noParticlesFaceX_neighbour=m_cellFacesX[neighbourCellIndex]->m_interpolationData.size();
 
-          //Find same particle in list
-          for (int particleIterator_i=0; particleIterator_i<_noParticlesFaceX; particleIterator_i++)
+          //Face X
+          if (noParticlesFaceX_neighbour!=0 && _noParticlesFaceX!=0)
           {
-            //Get id of particle i
-            unsigned int particleId_i=m_cellFacesX[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle->getId();
 
-            bool isFound=false;
-            unsigned int particleId_j;
-            searchCellsForCommonParticle(particleId_i, m_cellFacesX[neighbourCellIndex], particleId_j, isFound);
-
-            if (isFound==true)
+            //Find same particle in list
+            for (int particleIterator_i=0; particleIterator_i<_noParticlesFaceX; particleIterator_i++)
             {
-              //Get weights and mass
-              Eigen::Vector3f weight_i_diff=m_cellFacesX[_cellIndex]->m_interpolationData[particleIterator_i]->m_cubicBSpline_Diff;
-              Eigen::Vector3f weight_j_diff=m_cellFacesX[neighbourCellIndex]->m_interpolationData[particleId_j]->m_cubicBSpline_Diff;
+              //Get id of particle i
+              unsigned int particleId_i=m_cellFacesX[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle->getId();
 
-              //Get particle pointer
-              Particle* commonParticle=m_cellFacesX[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle;
+              bool isFound=false;
+              unsigned int particleId_j;
+              searchCellsForCommonParticle(particleId_i, m_cellFacesX[neighbourCellIndex], particleId_j, isFound);
 
-              //Calculate A value for specific particle
-              float AValue_particle=calcAValue_DeviatoricVelocity(commonParticle, weight_i_diff, weight_j_diff, e_x);
+              if (isFound==true)
+              {
+                //Get weights and mass
+                Eigen::Vector3f weight_i_diff=m_cellFacesX[_cellIndex]->m_interpolationData[particleIterator_i]->m_cubicBSpline_Diff;
+                Eigen::Vector3f weight_j_diff=m_cellFacesX[neighbourCellIndex]->m_interpolationData[particleId_j]->m_cubicBSpline_Diff;
 
-              //Add to A_ij value
-              AcomponentX+=AValue_particle;
+                //Get particle pointer
+                Particle* commonParticle=m_cellFacesX[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle;
+
+                //Calculate A value for specific particle
+                float AValue_particle=calcAValue_DeviatoricVelocity(commonParticle, weight_i_diff, weight_j_diff, e_x);
+
+                //Add to A_ij value
+                AcomponentX+=AValue_particle;
+              }
             }
-          }
 
-          //Add mass to diagonal elements
-          if (_cellIndex==neighbourCellIndex)
-          {
-            float mass_i=m_cellFacesX[_cellIndex]->m_mass;
-            AcomponentX+=mass_i;
-          }
+            //Add mass to diagonal elements
+            if (_cellIndex==neighbourCellIndex)
+            {
+              float mass_i=m_cellFacesX[_cellIndex]->m_mass;
+              AcomponentX+=mass_i;
+            }
 
-          //Insert A component to matrix
-          o_AX(_cellIndex, neighbourCellIndex)=AcomponentX;
+            //Insert A component to matrix
+            o_AX(_cellIndex, neighbourCellIndex)=AcomponentX;
+          }
         }
 
-
         //Face Y
-        if (noParticlesFaceY_neighbour!=0 && _noParticlesFaceY!=0)
+        if (m_cellFacesY[_cellIndex]->m_state!=State::Colliding && m_cellFacesY[neighbourCellIndex]->m_state!=State::Colliding)
         {
-          //Find same particle in list
-          for (int particleIterator_i=0; particleIterator_i<_noParticlesFaceY; particleIterator_i++)
+          int noParticlesFaceY_neighbour=m_cellFacesY[neighbourCellIndex]->m_interpolationData.size();
+
+          if (noParticlesFaceY_neighbour!=0 && _noParticlesFaceY!=0)
           {
-            //Get id of particle i
-            unsigned int particleId_i=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle->getId();
-
-            bool isFound=false;
-            unsigned int particleId_j;
-            searchCellsForCommonParticle(particleId_i, m_cellFacesY[neighbourCellIndex], particleId_j, isFound);
-
-            if (isFound==true)
+            //Find same particle in list
+            for (int particleIterator_i=0; particleIterator_i<_noParticlesFaceY; particleIterator_i++)
             {
-              //Get weights and mass
-              Eigen::Vector3f weight_i_diff=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator_i]->m_cubicBSpline_Diff;
-              Eigen::Vector3f weight_j_diff=m_cellFacesY[neighbourCellIndex]->m_interpolationData[particleId_j]->m_cubicBSpline_Diff;
+              //Get id of particle i
+              unsigned int particleId_i=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle->getId();
 
-              //Get particle pointer
-              Particle* commonParticle=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle;
+              bool isFound=false;
+              unsigned int particleId_j;
+              searchCellsForCommonParticle(particleId_i, m_cellFacesY[neighbourCellIndex], particleId_j, isFound);
 
-              //Calculate A value for specific particle
-              float AValue_particle=calcAValue_DeviatoricVelocity(commonParticle, weight_i_diff, weight_j_diff, e_y);
+              if (isFound==true)
+              {
+                //Get weights and mass
+                Eigen::Vector3f weight_i_diff=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator_i]->m_cubicBSpline_Diff;
+                Eigen::Vector3f weight_j_diff=m_cellFacesY[neighbourCellIndex]->m_interpolationData[particleId_j]->m_cubicBSpline_Diff;
 
-              //Add to A_ij value
-              AcomponentY+=AValue_particle;
+                //Get particle pointer
+                Particle* commonParticle=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle;
+
+                //Calculate A value for specific particle
+                float AValue_particle=calcAValue_DeviatoricVelocity(commonParticle, weight_i_diff, weight_j_diff, e_y);
+
+                //Add to A_ij value
+                AcomponentY+=AValue_particle;
+              }
             }
+
+            //Add mass to diagonal elements
+            if (_cellIndex==neighbourCellIndex)
+            {
+              float mass_i=m_cellFacesY[_cellIndex]->m_mass;
+              AcomponentY+=mass_i;
+            }
+
+            //Insert A component to matrix
+            o_AY(_cellIndex, neighbourCellIndex)=AcomponentY;
           }
 
-          //Add mass to diagonal elements
-          if (_cellIndex==neighbourCellIndex)
-          {
-            float mass_i=m_cellFacesY[_cellIndex]->m_mass;
-            AcomponentY+=mass_i;
-          }
-
-          //Insert A component to matrix
-          o_AY(_cellIndex, neighbourCellIndex)=AcomponentY;
         }
 
 
         //Face Z
-        if (noParticlesFaceZ_neighbour!=0 && _noParticlesFaceZ!=0)
+        if (m_cellFacesZ[_cellIndex]->m_state!=State::Colliding && m_cellFacesZ[neighbourCellIndex]->m_state!=State::Colliding)
         {
-          //Find same particle in list
-          for (int particleIterator_i=0; particleIterator_i<_noParticlesFaceZ; particleIterator_i++)
+          int noParticlesFaceZ_neighbour=m_cellFacesZ[neighbourCellIndex]->m_interpolationData.size();
+
+          if (noParticlesFaceZ_neighbour!=0 && _noParticlesFaceZ!=0)
           {
-            //Get id of particle i
-            unsigned int particleId_i=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle->getId();
-
-            bool isFound=false;
-            unsigned int particleId_j;
-            searchCellsForCommonParticle(particleId_i, m_cellFacesZ[neighbourCellIndex], particleId_j, isFound);
-
-            if (isFound==true)
+            //Find same particle in list
+            for (int particleIterator_i=0; particleIterator_i<_noParticlesFaceZ; particleIterator_i++)
             {
-              //Get weights and mass
-              Eigen::Vector3f weight_i_diff=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator_i]->m_cubicBSpline_Diff;
-              Eigen::Vector3f weight_j_diff=m_cellFacesZ[neighbourCellIndex]->m_interpolationData[particleId_j]->m_cubicBSpline_Diff;
+              //Get id of particle i
+              unsigned int particleId_i=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle->getId();
 
-              //Get particle pointer
-              Particle* commonParticle=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle;
+              bool isFound=false;
+              unsigned int particleId_j;
+              searchCellsForCommonParticle(particleId_i, m_cellFacesZ[neighbourCellIndex], particleId_j, isFound);
 
-              //Calculate A value for specific particle
-              float AValue_particle=calcAValue_DeviatoricVelocity(commonParticle, weight_i_diff, weight_j_diff, e_z);
+              if (isFound==true)
+              {
+                //Get weights and mass
+                Eigen::Vector3f weight_i_diff=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator_i]->m_cubicBSpline_Diff;
+                Eigen::Vector3f weight_j_diff=m_cellFacesZ[neighbourCellIndex]->m_interpolationData[particleId_j]->m_cubicBSpline_Diff;
 
-              //Add to A_ij value
-              AcomponentZ+=AValue_particle;
+                //Get particle pointer
+                Particle* commonParticle=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator_i]->m_particle;
+
+                //Calculate A value for specific particle
+                float AValue_particle=calcAValue_DeviatoricVelocity(commonParticle, weight_i_diff, weight_j_diff, e_z);
+
+                //Add to A_ij value
+                AcomponentZ+=AValue_particle;
+              }
             }
-          }
 
-          //Add mass to diagonal elements
-          if (_cellIndex==neighbourCellIndex)
-          {
-            float mass_i=m_cellFacesZ[_cellIndex]->m_mass;
-            AcomponentZ+=mass_i;
-          }
+            //Add mass to diagonal elements
+            if (_cellIndex==neighbourCellIndex)
+            {
+              float mass_i=m_cellFacesZ[_cellIndex]->m_mass;
+              AcomponentZ+=mass_i;
+            }
 
-          //Insert A component to matrix
-          o_AZ(_cellIndex, neighbourCellIndex)=AcomponentZ;
+            //Insert A component to matrix
+            o_AZ(_cellIndex, neighbourCellIndex)=AcomponentZ;
+          }
         }
-
       }
     }
   }
@@ -998,6 +1040,8 @@ void Grid::implicitUpdateVelocity(const Eigen::MatrixXf &_A_X, const Eigen::Vect
 
   Eigen::MatrixXf A_X_trans=_A_X.transpose();
   Eigen::MatrixXf test=_A_X-A_X_trans;
+
+
 
   MathFunctions::MinRes(_A_X, _bVector_X, solution_X, emptyPreconditioner, shift, maxNoLoops, tolerance, false);
   MathFunctions::MinRes(_A_Y, _bVector_Y, solution_Y, emptyPreconditioner, shift, maxNoLoops, tolerance, false);

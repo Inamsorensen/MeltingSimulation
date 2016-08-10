@@ -25,6 +25,11 @@ void Grid::projectVelocity()
 #pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
+//    if (cellIndex==172)
+//    {
+//      std::cout<<"test\n";
+//    }
+
     if (m_cellCentres[cellIndex]->m_state==State::Interior)
     {
       calcFaceDensities(cellIndex);
@@ -78,6 +83,10 @@ void Grid::projectVelocity()
 #pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
+//    if (cellIndex==172)
+//    {
+//      std::cout<<"test\n";
+//    }
     //Only correct faces surrounding interior cells
     if (m_cellCentres[cellIndex]->m_state==State::Interior)
     {

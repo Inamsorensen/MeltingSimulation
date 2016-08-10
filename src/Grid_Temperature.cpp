@@ -71,6 +71,10 @@ void Grid::calcTemperature()
     if (m_cellCentres[cellIndex]->m_state==State::Interior)
     {
       m_cellCentres[cellIndex]->m_temperature=solution(cellIndex);
+
+      //Need to divide by mass again
+//      float mass=m_cellCentres[cellIndex]->m_mass;
+//      m_cellCentres[cellIndex]->m_temperature=solution(cellIndex)/mass;
     }
   }
 
