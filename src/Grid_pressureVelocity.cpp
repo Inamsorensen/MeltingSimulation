@@ -55,6 +55,11 @@ void Grid::projectVelocity()
 //#pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
+      if (cellIndex==172)
+      {
+        std::cout<<"test\n";
+      }
+
     //Only fill in interior cells
     if (m_cellCentres[cellIndex]->m_state==State::Interior)
     {
@@ -80,13 +85,13 @@ void Grid::projectVelocity()
 
 
   //Use results to calculate projected velocities
-#pragma omp parallel for
+//#pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
-//    if (cellIndex==172)
-//    {
-//      std::cout<<"test\n";
-//    }
+    if (cellIndex==172)
+    {
+      std::cout<<"test\n";
+    }
     //Only correct faces surrounding interior cells
     if (m_cellCentres[cellIndex]->m_state==State::Interior)
     {
@@ -114,6 +119,44 @@ void Grid::projectVelocity()
       float pressure_ijk1=solution(indexCell_ijk1);
       float pressure_ijk_1=solution(indexCell_ijk_1);
 
+      //Check pressure isn't zero
+      if (pressure_ijk<0)
+      {
+        pressure_ijk=0.0;
+//        pressure_ijk=std::abs(pressure_ijk);
+      }
+
+      if (pressure_i1jk<0)
+      {
+        pressure_i1jk=0.0;
+//        pressure_i1jk=std::abs(pressure_i1jk);
+      }
+      if (pressure_i_1jk<0)
+      {
+        pressure_i_1jk=0.0;
+//        pressure_i_1jk=std::abs(pressure_i_1jk);
+      }
+      if (pressure_ij1k<0)
+      {
+        pressure_ij1k=0.0;
+//        pressure_ij1k=std::abs(pressure_ij1k);
+      }
+      if (pressure_ij_1k<0)
+      {
+        pressure_ij_1k=0.0;
+//        pressure_ij_1k=std::abs(pressure_ij_1k);
+      }
+      if (pressure_ijk1<0)
+      {
+        pressure_ijk1=0.0;
+//        pressure_ijk1=std::abs(pressure_ijk1);
+      }
+      if (pressure_ijk_1<0)
+      {
+        pressure_ijk_1=0.0;
+//        pressure_ijk_1=std::abs(pressure_ijk_1);
+      }
+
       //Calculate pressure gradients
       float pressureGradient_i1jk=pressure_i1jk-pressure_ijk;
       float pressureGradient_i_1jk=pressure_ijk-pressure_i_1jk;
@@ -127,6 +170,10 @@ void Grid::projectVelocity()
       float constantX=constant/m_cellFacesX[cellIndex]->m_density;
       float constantY=constant/m_cellFacesY[cellIndex]->m_density;
       float constantZ=constant/m_cellFacesZ[cellIndex]->m_density;
+//      float constantX=constant;
+//      float constantY=constant;
+//      float constantZ=constant;
+
 
       //Calculate projected velocity
       m_cellFacesX[cellIndex]->m_velocity=m_cellFacesX[cellIndex]->m_velocity - (constantX*pressureGradient_i_1jk);
@@ -276,9 +323,12 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   float densityZ_ijk=m_cellFacesZ[_cellIndex]->m_density;
 
   //Set up sumInvDensity
-  float A_ijk_X=(-2.0);
-  float A_ijk_Y=(-2.0);
-  float A_ijk_Z=(-2.0);
+//  float A_ijk_X=(-2.0);
+//  float A_ijk_Y=(-2.0);
+//  float A_ijk_Z=(-2.0);
+  float A_ijk_X=(2.0);
+  float A_ijk_Y=(2.0);
+  float A_ijk_Z=(2.0);
 
   //Initialise A matrix elements
   float A_i1jk=0.0;
@@ -295,13 +345,15 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   {
   case State::Colliding :
   {
-    A_ijk_X+=1.0;
+//    A_ijk_X+=1.0;
+    A_ijk_X-=1.0;
     break;
   }
   case State::Interior :
   {
 //    A_i1jk=(constant/densityX_ijk);
-    A_i1jk=constant;
+//    A_i1jk=constant;
+    A_i1jk=(-1.0*constant);
     break;
   }
   default:
@@ -314,13 +366,15 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   {
   case State::Colliding :
   {
-    A_ijk_X+=1.0;
+//    A_ijk_X+=1.0;
+    A_ijk_X-=1.0;
     break;
   }
   case State::Interior :
   {
 //    A_i_1jk=(constant/densityX_ijk);
-    A_i_1jk=constant;
+//    A_i_1jk=constant;
+    A_i_1jk=(-1.0*constant);
     break;
   }
   default:
@@ -333,13 +387,15 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   {
   case State::Colliding :
   {
-    A_ijk_Y+=1.0;
+//    A_ijk_Y+=1.0;
+    A_ijk_Y-=1.0;
     break;
   }
   case State::Interior :
   {
 //    A_ij1k=(constant/densityY_ijk);
-    A_ij1k=constant;
+//    A_ij1k=constant;
+    A_ij1k=(-1.0*constant);
     break;
   }
   default:
@@ -352,13 +408,15 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   {
   case State::Colliding :
   {
-    A_ijk_Y+=1.0;
+//    A_ijk_Y+=1.0;
+    A_ijk_Y-=1.0;
     break;
   }
   case State::Interior :
   {
 //    A_ij_1k=(constant/densityY_ijk);
-    A_ij_1k=constant;
+//    A_ij_1k=constant;
+    A_ij_1k=(-1.0*constant);
     break;
   }
   default:
@@ -371,13 +429,15 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   {
   case State::Colliding :
   {
-    A_ijk_Z+=1.0;
+//    A_ijk_Z+=1.0;
+    A_ijk_Z-=1.0;
     break;
   }
   case State::Interior :
   {
 //    A_ijk1=(constant/densityZ_ijk);
-    A_ijk1=constant;
+//    A_ijk1=constant;
+    A_ijk1=(-1.0*constant);
     break;
   }
   default:
@@ -390,13 +450,15 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   {
   case State::Colliding :
   {
-    A_ijk_Z+=1.0;
+//    A_ijk_Z+=1.0;
+    A_ijk_Z-=1.0;
     break;
   }
   case State::Interior :
   {
 //    A_ijk_1=(constant/densityZ_ijk);
-    A_ijk_1=constant;
+//    A_ijk_1=constant;
+    A_ijk_1=(-1.0*constant);
     break;
   }
   default:

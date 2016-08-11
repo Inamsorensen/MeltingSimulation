@@ -59,7 +59,8 @@ SimulationController::SimulationController()
 
 
   //Read in simulation parameters
-  m_readFileName="../HoudiniFiles/particles.geo";
+//  m_readFileName="../HoudiniFiles/particles.geo";
+  m_readFileName="../HoudiniFiles/particles2.geo";
   readSimulationParameters();
 
   //Create emitter and particles
@@ -234,6 +235,9 @@ void SimulationController::update()
 {
   /// @brief Steps the simulation. This controls the interlink between the particles and the grid
 
+  std::cout<<"Frame number: "<<m_noFrames<<"\n";
+  std::cout<<"Time elapsed after frame: "<<m_elapsedTimeAfterFrame<<"\n";
+
   //Determine if first step
   bool isFirstStep=false;
   if (m_noFrames==0 && m_elapsedTimeAfterFrame==0)
@@ -254,6 +258,15 @@ void SimulationController::update()
 
   //Update particles
   m_emitter->updateParticles(m_simTimeStep);
+
+  //Update number of frames
+  m_elapsedTimeAfterFrame+=m_simTimeStep;
+
+  if (m_elapsedTimeAfterFrame>=(1.0/25.0))
+  {
+    m_noFrames+=1;
+    m_elapsedTimeAfterFrame=0.0;
+  }
 
 }
 

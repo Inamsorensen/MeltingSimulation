@@ -71,7 +71,7 @@ void Grid::calcDeviatoricVelocity()
   bool implicitUpdate=false;
 //  bool implicitUpdate=true;
 
-#pragma omp parallel for
+//#pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
     //Test parallel
@@ -145,10 +145,10 @@ void Grid::calcDeviatoricVelocity()
         velocityZ=(B_components(2)/m_cellFacesZ[cellIndex]->m_mass);
       }
 
-//      if (cellIndex==170)
-//      {
-//        std::cout<<"test\n";
-//      }
+      if (cellIndex==172)
+      {
+        std::cout<<"test\n";
+      }
 
 //      explicitUpdateVelocity(cellIndex, bComponentX, bComponentY, bComponentZ);
       explicitUpdateVelocity(cellIndex, velocityX, velocityY, velocityZ);

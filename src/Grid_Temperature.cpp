@@ -149,9 +149,12 @@ void Grid::calcAComponent_temperature(int _cellIndex, int _iIndex, int _jIndex, 
   float constant=(m_dt*volume);
 
   //Set up sumInvDensity
-  float A_ijk_X=(-2.0);
-  float A_ijk_Y=(-2.0);
-  float A_ijk_Z=(-2.0);
+//  float A_ijk_X=(-2.0);
+//  float A_ijk_Y=(-2.0);
+//  float A_ijk_Z=(-2.0);
+  float A_ijk_X=(2.0);
+  float A_ijk_Y=(2.0);
+  float A_ijk_Z=(2.0);
 
   //Initialise A matrix elements
   float A_i1jk=0.0;
@@ -168,12 +171,14 @@ void Grid::calcAComponent_temperature(int _cellIndex, int _iIndex, int _jIndex, 
   {
   case State::Empty :
   {
-    A_ijk_X+=1.0;
+//    A_ijk_X+=1.0;
+    A_ijk_X-=1.0;
     break;
   }
   case State::Interior :
   {
-    A_i1jk=(constant*heatConductivityX);
+//    A_i1jk=(constant*heatConductivityX);
+    A_i1jk=(-1.0*constant*heatConductivityX);
     break;
   }
   default:
@@ -186,12 +191,14 @@ void Grid::calcAComponent_temperature(int _cellIndex, int _iIndex, int _jIndex, 
   {
   case State::Empty :
   {
-    A_ijk_X+=1.0;
+//    A_ijk_X+=1.0;
+    A_ijk_X-=1.0;
     break;
   }
   case State::Interior :
   {
-    A_i_1jk=(constant*heatConductivityX);
+//    A_i_1jk=(constant*heatConductivityX);
+    A_i_1jk=(-1.0*constant*heatConductivityX);
     break;
   }
   default:
@@ -204,12 +211,14 @@ void Grid::calcAComponent_temperature(int _cellIndex, int _iIndex, int _jIndex, 
   {
   case State::Empty :
   {
-    A_ijk_Y+=1.0;
+//    A_ijk_Y+=1.0;
+    A_ijk_Y-=1.0;
     break;
   }
   case State::Interior :
   {
-    A_ij1k=(constant*heatConductivityY);
+//    A_ij1k=(constant*heatConductivityY);
+    A_ij1k=(-1.0*constant*heatConductivityY);
     break;
   }
   default:
@@ -222,12 +231,14 @@ void Grid::calcAComponent_temperature(int _cellIndex, int _iIndex, int _jIndex, 
   {
   case State::Empty :
   {
-    A_ijk_Y+=1.0;
+//    A_ijk_Y+=1.0;
+    A_ijk_Y-=1.0;
     break;
   }
   case State::Interior :
   {
-    A_ij_1k=(constant*heatConductivityY);
+//    A_ij_1k=(constant*heatConductivityY);
+    A_ij_1k=(-1.0*constant*heatConductivityY);
     break;
   }
   default:
@@ -240,12 +251,14 @@ void Grid::calcAComponent_temperature(int _cellIndex, int _iIndex, int _jIndex, 
   {
   case State::Empty :
   {
-    A_ijk_Z+=1.0;
+//    A_ijk_Z+=1.0;
+    A_ijk_Z-=1.0;
     break;
   }
   case State::Interior :
   {
-    A_ijk1=(constant*heatConductivityZ);
+//    A_ijk1=(constant*heatConductivityZ);
+    A_ijk1=(-1.0*constant*heatConductivityZ);
     break;
   }
   default:
@@ -258,12 +271,14 @@ void Grid::calcAComponent_temperature(int _cellIndex, int _iIndex, int _jIndex, 
   {
   case State::Empty :
   {
-    A_ijk_Z+=1.0;
+//    A_ijk_Z+=1.0;
+    A_ijk_Z-=1.0;
     break;
   }
   case State::Interior :
   {
-    A_ijk_1=(constant*heatConductivityZ);
+//    A_ijk_1=(constant*heatConductivityZ);
+    A_ijk_1=(-1.0*constant*heatConductivityZ);
     break;
   }
   default:
