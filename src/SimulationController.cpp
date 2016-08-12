@@ -88,6 +88,14 @@ SimulationController::SimulationController()
   int minNoParticles=MathFunctions::findMinVectorValue(listParticleNoInCells);
   std::cout<<"The smallest number of particles in a non-empty cell is: "<<minNoParticles<<"\n";
 
+  //Set up alembic file for export
+  m_exportFileName="../HoudiniFiles/particles.abc";
+  m_isExporting=false;
+  if (m_isExporting==true)
+  {
+    m_alembicExporter.reset(new AlembicExport(m_exportFileName));
+  }
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -176,6 +184,9 @@ void SimulationController::readSimulationParameters()
   m_boundingBoxPosition=file->getSimulationParameter_Vec3(boundingBoxPos);
   m_boundingBoxSize=file->getSimulationParameter_Float(boundingBoxSize);
   m_noCells=file->getSimulationParameter_Float(noCells);
+
+  //Since add cells on the outside of bounding box for collisions.
+  m_noCells+=2.0;
 
   m_lameMuConstant=file->getSimulationParameter_Float(lameMu);
   m_lameLambdaConstant=file->getSimulationParameter_Float(lameLambda);
@@ -268,6 +279,11 @@ void SimulationController::update()
     m_elapsedTimeAfterFrame=0.0;
   }
 
+//  if (m_noFrames==1)
+//  {
+//    std::cout<<"test\n";
+//  }
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -280,5 +296,12 @@ void SimulationController::render(ngl::Mat4 _modelMatrixCamera)
   m_emitter->renderParticles(_modelMatrixCamera, m_camera, m_ambientTemperature, m_heatSourceTemperature);
 
   //Check whether to create frame
+  if (m_elapsedTimeAfterFrame==0)
+  {
+    if (m_isExporting==true)
+    {
+      m_emitter->exportParticles(m_alembicExporter);
+    }
+  }
 
 }

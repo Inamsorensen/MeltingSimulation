@@ -58,6 +58,8 @@ Grid::Grid(Eigen::Vector3f _originEdge, float _boundingBoxSize, int _noCells)
   m_ambientTemperature=0.0;
   m_heatSourceTemperature=0.0;
 
+  m_noParticlesThreshold=8;
+
 
   m_cellCentres.reserve(pow(m_noCells,3));
   m_cellFacesX.reserve(pow(m_noCells,3));
@@ -989,8 +991,6 @@ void Grid::classifyCells()
     Set heat source temperature for colliding cells with kIndex==0. Ie. heat source element is the k=0 plane.
     Set ambient temperature to empty cells
 
-  TODO:  Use switch/case instead of if statements
-
   ----------------------------------------------------------------------------------------------------------------------
   */
 
@@ -1079,13 +1079,20 @@ void Grid::classifyCells()
       }
 
       //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
-      if (noParticlesInCellCentre!=0
-          && noParticlesInCellFaceX1!=0
-          && noParticlesInCellFaceX_1!=0
-          && noParticlesInCellFaceY1!=0
-          && noParticlesInCellFaceY_1!=0
-          && noParticlesInCellFaceZ1!=0
-          && noParticlesInCellFaceZ_1!=0)
+//      if (noParticlesInCellCentre!=0
+//          && noParticlesInCellFaceX1!=0
+//          && noParticlesInCellFaceX_1!=0
+//          && noParticlesInCellFaceY1!=0
+//          && noParticlesInCellFaceY_1!=0
+//          && noParticlesInCellFaceZ1!=0
+//          && noParticlesInCellFaceZ_1!=0)
+      if (noParticlesInCellCentre>=m_noParticlesThreshold
+          && noParticlesInCellFaceX1>=m_noParticlesThreshold
+          && noParticlesInCellFaceX_1>=m_noParticlesThreshold
+          && noParticlesInCellFaceY1>=m_noParticlesThreshold
+          && noParticlesInCellFaceY_1>=m_noParticlesThreshold
+          && noParticlesInCellFaceZ1>=m_noParticlesThreshold
+          && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
       {
         m_cellCentres[cellIndex]->m_state=State::Interior;
       }
@@ -1094,6 +1101,12 @@ void Grid::classifyCells()
       {
         m_cellCentres[cellIndex]->m_state=State::Empty;
         m_cellCentres[cellIndex]->m_temperature=m_ambientTemperature;
+      }
+
+      //Set face to empty as well
+      if (noParticlesInCellFaceX_1<=m_noParticlesThreshold)
+      {
+        m_cellFacesX[cellIndex]->m_state==State::Empty;
       }
 
       //Go to next cellIndex
@@ -1133,13 +1146,20 @@ void Grid::classifyCells()
         }
 
         //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
-        if (noParticlesInCellCentre!=0
-            && noParticlesInCellFaceX1!=0
-            && noParticlesInCellFaceX_1!=0
-            && noParticlesInCellFaceY1!=0
-            && noParticlesInCellFaceY_1!=0
-            && noParticlesInCellFaceZ1!=0
-            && noParticlesInCellFaceZ_1!=0)
+//        if (noParticlesInCellCentre!=0
+//            && noParticlesInCellFaceX1!=0
+//            && noParticlesInCellFaceX_1!=0
+//            && noParticlesInCellFaceY1!=0
+//            && noParticlesInCellFaceY_1!=0
+//            && noParticlesInCellFaceZ1!=0
+//            && noParticlesInCellFaceZ_1!=0)
+        if (noParticlesInCellCentre>=m_noParticlesThreshold
+            && noParticlesInCellFaceX1>=m_noParticlesThreshold
+            && noParticlesInCellFaceX_1>=m_noParticlesThreshold
+            && noParticlesInCellFaceY1>=m_noParticlesThreshold
+            && noParticlesInCellFaceY_1>=m_noParticlesThreshold
+            && noParticlesInCellFaceZ1>=m_noParticlesThreshold
+            && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
         {
           m_cellCentres[cellIndex]->m_state=State::Interior;
         }
@@ -1184,13 +1204,20 @@ void Grid::classifyCells()
       }
 
       //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
-      if (noParticlesInCellCentre!=0
-          && noParticlesInCellFaceX1!=0
-          && noParticlesInCellFaceX_1!=0
-          && noParticlesInCellFaceY1!=0
-          && noParticlesInCellFaceY_1!=0
-          && noParticlesInCellFaceZ1!=0
-          && noParticlesInCellFaceZ_1!=0)
+//      if (noParticlesInCellCentre!=0
+//          && noParticlesInCellFaceX1!=0
+//          && noParticlesInCellFaceX_1!=0
+//          && noParticlesInCellFaceY1!=0
+//          && noParticlesInCellFaceY_1!=0
+//          && noParticlesInCellFaceZ1!=0
+//          && noParticlesInCellFaceZ_1!=0)
+      if (noParticlesInCellCentre>=m_noParticlesThreshold
+          && noParticlesInCellFaceX1>=m_noParticlesThreshold
+          && noParticlesInCellFaceX_1>=m_noParticlesThreshold
+          && noParticlesInCellFaceY1>=m_noParticlesThreshold
+          && noParticlesInCellFaceY_1>=m_noParticlesThreshold
+          && noParticlesInCellFaceZ1>=m_noParticlesThreshold
+          && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
       {
         m_cellCentres[cellIndex]->m_state=State::Interior;
       }
@@ -1199,6 +1226,12 @@ void Grid::classifyCells()
       {
         m_cellCentres[cellIndex]->m_state=State::Empty;
         m_cellCentres[cellIndex]->m_temperature=m_ambientTemperature;
+      }
+
+      //Set face to empty as well
+      if (noParticlesInCellFaceY_1<=m_noParticlesThreshold)
+      {
+        m_cellFacesY[cellIndex]->m_state==State::Empty;
       }
 
       //Go to next cellIndex
@@ -1238,13 +1271,20 @@ void Grid::classifyCells()
         }
 
         //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
-        if (noParticlesInCellCentre!=0
-            && noParticlesInCellFaceX1!=0
-            && noParticlesInCellFaceX_1!=0
-            && noParticlesInCellFaceY1!=0
-            && noParticlesInCellFaceY_1!=0
-            && noParticlesInCellFaceZ1!=0
-            && noParticlesInCellFaceZ_1!=0)
+//        if (noParticlesInCellCentre!=0
+//            && noParticlesInCellFaceX1!=0
+//            && noParticlesInCellFaceX_1!=0
+//            && noParticlesInCellFaceY1!=0
+//            && noParticlesInCellFaceY_1!=0
+//            && noParticlesInCellFaceZ1!=0
+//            && noParticlesInCellFaceZ_1!=0)
+        if (noParticlesInCellCentre>=m_noParticlesThreshold
+            && noParticlesInCellFaceX1>=m_noParticlesThreshold
+            && noParticlesInCellFaceX_1>=m_noParticlesThreshold
+            && noParticlesInCellFaceY1>=m_noParticlesThreshold
+            && noParticlesInCellFaceY_1>=m_noParticlesThreshold
+            && noParticlesInCellFaceZ1>=m_noParticlesThreshold
+            && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
         {
           m_cellCentres[cellIndex]->m_state=State::Interior;
         }
@@ -1289,13 +1329,20 @@ void Grid::classifyCells()
       }
 
       //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
-      if (noParticlesInCellCentre!=0
-          && noParticlesInCellFaceX1!=0
-          && noParticlesInCellFaceX_1!=0
-          && noParticlesInCellFaceY1!=0
-          && noParticlesInCellFaceY_1!=0
-          && noParticlesInCellFaceZ1!=0
-          && noParticlesInCellFaceZ_1!=0)
+//      if (noParticlesInCellCentre!=0
+//          && noParticlesInCellFaceX1!=0
+//          && noParticlesInCellFaceX_1!=0
+//          && noParticlesInCellFaceY1!=0
+//          && noParticlesInCellFaceY_1!=0
+//          && noParticlesInCellFaceZ1!=0
+//          && noParticlesInCellFaceZ_1!=0)
+      if (noParticlesInCellCentre>=m_noParticlesThreshold
+          && noParticlesInCellFaceX1>=m_noParticlesThreshold
+          && noParticlesInCellFaceX_1>=m_noParticlesThreshold
+          && noParticlesInCellFaceY1>=m_noParticlesThreshold
+          && noParticlesInCellFaceY_1>=m_noParticlesThreshold
+          && noParticlesInCellFaceZ1>=m_noParticlesThreshold
+          && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
       {
         m_cellCentres[cellIndex]->m_state=State::Interior;
       }
@@ -1304,6 +1351,12 @@ void Grid::classifyCells()
       {
         m_cellCentres[cellIndex]->m_state=State::Empty;
         m_cellCentres[cellIndex]->m_temperature=m_ambientTemperature;
+      }
+
+      //Set face to empty as well
+      if (noParticlesInCellFaceZ_1<=m_noParticlesThreshold)
+      {
+        m_cellFacesZ[cellIndex]->m_state==State::Empty;
       }
 
       //Go to next cellIndex
@@ -1343,13 +1396,20 @@ void Grid::classifyCells()
         }
 
         //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
-        if (noParticlesInCellCentre!=0
-            && noParticlesInCellFaceX1!=0
-            && noParticlesInCellFaceX_1!=0
-            && noParticlesInCellFaceY1!=0
-            && noParticlesInCellFaceY_1!=0
-            && noParticlesInCellFaceZ1!=0
-            && noParticlesInCellFaceZ_1!=0)
+//        if (noParticlesInCellCentre!=0
+//            && noParticlesInCellFaceX1!=0
+//            && noParticlesInCellFaceX_1!=0
+//            && noParticlesInCellFaceY1!=0
+//            && noParticlesInCellFaceY_1!=0
+//            && noParticlesInCellFaceZ1!=0
+//            && noParticlesInCellFaceZ_1!=0)
+        if (noParticlesInCellCentre>=m_noParticlesThreshold
+            && noParticlesInCellFaceX1>=m_noParticlesThreshold
+            && noParticlesInCellFaceX_1>=m_noParticlesThreshold
+            && noParticlesInCellFaceY1>=m_noParticlesThreshold
+            && noParticlesInCellFaceY_1>=m_noParticlesThreshold
+            && noParticlesInCellFaceZ1>=m_noParticlesThreshold
+            && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
         {
           m_cellCentres[cellIndex]->m_state=State::Interior;
         }

@@ -311,3 +311,10 @@ void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera
     vaoPrimitives->draw("sphere");
   }
 }
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void Emitter::exportParticles(std::unique_ptr<AlembicExport> _alembicExporter)
+{
+
+}

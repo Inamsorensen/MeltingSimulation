@@ -41,8 +41,8 @@ void Grid::projectVelocity()
   Eigen::VectorXd B_vector(m_totNoCells);
   Eigen::VectorXd solution(m_totNoCells);
 
-//  Eigen::MatrixXf A_matrix_test(m_totNoCells, m_totNoCells);
-//  A_matrix_test.setZero();
+  Eigen::MatrixXf A_matrix_test(m_totNoCells, m_totNoCells);
+  A_matrix_test.setZero();
 
   //Initialise A and B to zero
   A_matrix.setZero();
@@ -55,10 +55,10 @@ void Grid::projectVelocity()
 //#pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
-      if (cellIndex==172)
-      {
-        std::cout<<"test\n";
-      }
+//      if (cellIndex==172)
+//      {
+//        std::cout<<"test\n";
+//      }
 
     //Only fill in interior cells
     if (m_cellCentres[cellIndex]->m_state==State::Interior)
@@ -72,7 +72,7 @@ void Grid::projectVelocity()
       B_vector(cellIndex)=calcBComponent_projectVelocity(cellIndex, iIndex, jIndex, kIndex);
 
       //Insert A elements
-      calcAComponent_projectVelocity(cellIndex, iIndex, jIndex, kIndex, A_matrix);
+      calcAComponent_projectVelocity(cellIndex, iIndex, jIndex, kIndex, A_matrix, A_matrix_test);
     }
 
   }
@@ -85,13 +85,13 @@ void Grid::projectVelocity()
 
 
   //Use results to calculate projected velocities
-//#pragma omp parallel for
+#pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
-    if (cellIndex==172)
-    {
-      std::cout<<"test\n";
-    }
+//    if (cellIndex==172)
+//    {
+//      std::cout<<"test\n";
+//    }
     //Only correct faces surrounding interior cells
     if (m_cellCentres[cellIndex]->m_state==State::Interior)
     {
@@ -276,7 +276,7 @@ float Grid::calcBComponent_projectVelocity(int _cellIndex, int _iIndex, int _jIn
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jIndex, int _kIndex, Eigen::SparseMatrix<double> &o_A)
+void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jIndex, int _kIndex, Eigen::SparseMatrix<double> &o_A, Eigen::MatrixXf &o_A_test)
 {
   /* Outline
   ----------------------------------------------------------------------------------------------------------------
@@ -497,15 +497,15 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
   o_A.insert(_cellIndex, cellIndex_ijk1)=A_ijk1;
   o_A.insert(_cellIndex, cellIndex_ijk_1)=A_ijk_1;
 
-//  //Insert values into matrix
-//  //TEST
-//  o_A_test(_cellIndex, _cellIndex)=A_ijk;
-//  o_A_test(_cellIndex, cellIndex_i1jk)=A_i1jk;
-//  o_A_test(_cellIndex, cellIndex_i_1jk)=A_i_1jk;
-//  o_A_test(_cellIndex, cellIndex_ij1k)=A_ij1k;
-//  o_A_test(_cellIndex, cellIndex_ij_1k)=A_ij_1k;
-//  o_A_test(_cellIndex, cellIndex_ijk1)=A_ijk1;
-//  o_A_test(_cellIndex, cellIndex_ijk_1)=A_ijk_1;
+  //Insert values into matrix
+  //TEST
+  o_A_test(_cellIndex, _cellIndex)=A_ijk;
+  o_A_test(_cellIndex, cellIndex_i1jk)=A_i1jk;
+  o_A_test(_cellIndex, cellIndex_i_1jk)=A_i_1jk;
+  o_A_test(_cellIndex, cellIndex_ij1k)=A_ij1k;
+  o_A_test(_cellIndex, cellIndex_ij_1k)=A_ij_1k;
+  o_A_test(_cellIndex, cellIndex_ijk1)=A_ijk1;
+  o_A_test(_cellIndex, cellIndex_ijk_1)=A_ijk_1;
 
 
 }

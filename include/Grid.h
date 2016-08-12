@@ -151,6 +151,11 @@ private:
   float m_heatSourceTemperature;
 
   //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Threshold for number of particles that must be affecting cell. Otherwise get too small mass.
+  //----------------------------------------------------------------------------------------------------------------------
+  int m_noParticlesThreshold;
+
+  //----------------------------------------------------------------------------------------------------------------------
   /// @brief Clear list of InterpolationData
   //----------------------------------------------------------------------------------------------------------------------
   void clearCellData();
@@ -189,7 +194,7 @@ private:
   /// @brief Calculate B in Ax=B for the implicit calculation of velocity.
   /// b_i=v_i + (dt/m_i)*f_i + dt*g*eVector*sumWeight
   //----------------------------------------------------------------------------------------------------------------------
-  Eigen::Vector3f calcBComponent_DeviatoricVelocity(int _cellIndex);
+  float calcBComponent_DeviatoricVelocity(CellFace *_cellFace, Eigen::Vector3f _eVector);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get A components of one row for deviatoric velocity calculation
   //----------------------------------------------------------------------------------------------------------------------
@@ -234,7 +239,7 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set up A in Ax=B for Poisson equation which solves for pressure
   //----------------------------------------------------------------------------------------------------------------------
-  void calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jIndex, int _kIndex, Eigen::SparseMatrix<double> &o_A);
+  void calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jIndex, int _kIndex, Eigen::SparseMatrix<double> &o_A, Eigen::MatrixXf &o_A_test);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate exact volume of cell at boundaries. If not done, then this volume will be too small, and lead to
   /// errors

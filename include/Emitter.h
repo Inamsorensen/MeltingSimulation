@@ -10,6 +10,7 @@
 #include <ngl/Camera.h>
 
 #include "Particle.h"
+#include "AlembicExport.h"
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------
 /// @file Emitter.h
@@ -116,6 +117,13 @@ public:
   /// @param [in] _camera is used to get the view and projection matrices to give to the shader.
   //----------------------------------------------------------------------------------------------------------------------
   void renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera *_camera, float _ambientTemp, float _heatSourceTemp);
+
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Export particles
+  /// @param [in] _alembicExporter: std::unique pointer to alembic exporter
+  //----------------------------------------------------------------------------------------------------------------------
+  void exportParticles(std::unique_ptr <AlembicExport> _alembicExporter);
+
 
 protected:
   //----------------------------------------------------------------------------------------------------------------------

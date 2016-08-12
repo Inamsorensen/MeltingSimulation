@@ -84,25 +84,42 @@ void Grid::calcDeviatoricVelocity()
     m_cellFacesY[cellIndex]->m_previousVelocity=m_cellFacesY[cellIndex]->m_velocity;
     m_cellFacesZ[cellIndex]->m_previousVelocity=m_cellFacesZ[cellIndex]->m_velocity;
 
-    //Calculate number of particles in faces of cellIndex
-    int noParticles_FaceX=m_cellFacesX[cellIndex]->m_interpolationData.size();
-    int noParticles_FaceY=m_cellFacesY[cellIndex]->m_interpolationData.size();
-    int noParticles_FaceZ=m_cellFacesZ[cellIndex]->m_interpolationData.size();
+//    //Calculate number of particles in faces of cellIndex
+//    int noParticles_FaceX=m_cellFacesX[cellIndex]->m_interpolationData.size();
+//    int noParticles_FaceY=m_cellFacesY[cellIndex]->m_interpolationData.size();
+//    int noParticles_FaceZ=m_cellFacesZ[cellIndex]->m_interpolationData.size();
 
-    //Calculate B components
-    Eigen::Vector3f B_components;
-    B_components.setZero();
+    //Get state of cell face instead
+    State state_FaceX=m_cellFacesX[cellIndex]->m_state;
+    State state_FaceY=m_cellFacesY[cellIndex]->m_state;
+    State state_FaceZ=m_cellFacesZ[cellIndex]->m_state;
 
     //Only set B components for non-empty cells
-    if (noParticles_FaceX!=0 && noParticles_FaceY!=0 && noParticles_FaceZ!=0)
+//    if (noParticles_FaceX!=0 && noParticles_FaceY!=0 && noParticles_FaceZ!=0)
+    if (state_FaceX==State::Interior)
     {
-      B_components=calcBComponent_DeviatoricVelocity(cellIndex);
-
-      //Insert into b vector
-      b_X(cellIndex)=B_components(0);
-      b_Y(cellIndex)=B_components(1);
-      b_Z(cellIndex)=B_components(2);
+      b_X(cellIndex)=calcBComponent_DeviatoricVelocity(m_cellFacesX[cellIndex], e_x);
     }
+
+    if (state_FaceY==State::Interior)
+    {
+      b_Y(cellIndex)=calcBComponent_DeviatoricVelocity(m_cellFacesY[cellIndex], e_y);
+    }
+
+    if (state_FaceZ==State::Interior)
+    {
+      b_Z(cellIndex)=calcBComponent_DeviatoricVelocity(m_cellFacesZ[cellIndex], e_y);
+    }
+
+//    if (state_FaceX!=State::Empty || state_FaceY!=State::Empty || state_FaceZ!=State::Empty)
+//    {
+//      B_components=calcBComponent_DeviatoricVelocity(cellIndex);
+
+//      //Insert into b vector
+//      b_X(cellIndex)=B_components(0);
+//      b_Y(cellIndex)=B_components(1);
+//      b_Z(cellIndex)=B_components(2);
+//    }
 
 
     //Get A components for implicit update
@@ -114,7 +131,8 @@ void Grid::calcDeviatoricVelocity()
       int noParticles_FaceZ=m_cellFacesZ[cellIndex]->m_interpolationData.size();
 
       //Only set A components for non-empty cells
-      if (noParticles_FaceX!=0 && noParticles_FaceY!=0 && noParticles_FaceZ!=0)
+//      if (noParticles_FaceX!=0 && noParticles_FaceY!=0 && noParticles_FaceZ!=0)
+      if (state_FaceX!=State::Empty || state_FaceY!=State::Empty || state_FaceZ!=State::Empty)
       {
         calcAComponent_DeviatoricVelocity(cellIndex, noParticles_FaceX, noParticles_FaceY, noParticles_FaceZ, A_X, A_Y, A_Z);
       }
@@ -122,38 +140,33 @@ void Grid::calcDeviatoricVelocity()
 
     else
     {
-      float massX=m_cellFacesX[cellIndex]->m_mass;
-      float massY=m_cellFacesY[cellIndex]->m_mass;
-      float massZ=m_cellFacesZ[cellIndex]->m_mass;
+//      float massX=m_cellFacesX[cellIndex]->m_mass;
+//      float massY=m_cellFacesY[cellIndex]->m_mass;
+//      float massZ=m_cellFacesZ[cellIndex]->m_mass;
 
       float velocityX=0.0;
       float velocityY=0.0;
       float velocityZ=0.0;
 
-      if (massX!=0)
+//      if (massX!=0)
+      if (state_FaceX==State::Interior)
       {
-        velocityX=(B_components(0)/m_cellFacesX[cellIndex]->m_mass);
+        velocityX=(b_X(cellIndex)/m_cellFacesX[cellIndex]->m_mass);
       }
 
-      if (massY!=0)
+//      if (massY!=0)
+      if (state_FaceY==State::Interior)
       {
-        velocityY=(B_components(1)/m_cellFacesY[cellIndex]->m_mass);
+        velocityY=(b_Y(cellIndex)/m_cellFacesY[cellIndex]->m_mass);
       }
 
-      if (massZ!=0)
+//      if (massZ!=0)
+      if (state_FaceZ==State::Interior)
       {
-        velocityZ=(B_components(2)/m_cellFacesZ[cellIndex]->m_mass);
+        velocityZ=(b_Z(cellIndex)/m_cellFacesZ[cellIndex]->m_mass);
       }
 
-      if (cellIndex==172)
-      {
-        std::cout<<"test\n";
-      }
-
-//      explicitUpdateVelocity(cellIndex, bComponentX, bComponentY, bComponentZ);
       explicitUpdateVelocity(cellIndex, velocityX, velocityY, velocityZ);
-
-//      std::cout<<"test\n";
 
     }
 
@@ -238,7 +251,7 @@ float Grid::calcDeviatoricForce(Particle* _particle, Eigen::Vector3f _eVector, E
 
 //----------------------------------------------------------------------------------------------------------------------
 
-Eigen::Vector3f Grid::calcBComponent_DeviatoricVelocity(int _cellIndex)
+float Grid::calcBComponent_DeviatoricVelocity(CellFace *_cellFace, Eigen::Vector3f _eVector)
 {
   /* Outline
   --------------------------------------------------------------------------------------------------------------
@@ -251,159 +264,153 @@ Eigen::Vector3f Grid::calcBComponent_DeviatoricVelocity(int _cellIndex)
   */
 
   //Components to return
-  Eigen::Vector3f B_components;
-  B_components.setZero();
-
-  //Set e_{a(i)} vectors
-  Eigen::Vector3f e_x(1.0, 0.0, 0.0);
-  Eigen::Vector3f e_y(0.0, 1.0, 0.0);
-  Eigen::Vector3f e_z(0.0, 0.0, 1.0);
+  float BComponent=0.0;
 
 
-  //Face X
   //Set storage variables
-  float forceSumX=0.0;
-  float weightSumX=0.0;
+  float forceSum=0.0;
+  float weightSum=0.0;
 
-  int noParticles_FaceX=m_cellFacesX[_cellIndex]->m_interpolationData.size();
-  for (int particleIterator=0; particleIterator<noParticles_FaceX; particleIterator++)
+  int noParticles=_cellFace->m_interpolationData.size();
+  for (int particleIterator=0; particleIterator<noParticles; particleIterator++)
   {
     //Get cubic B spline
-    float weight=m_cellFacesX[_cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
+    float weight=_cellFace->m_interpolationData[particleIterator]->m_cubicBSpline;
 
     //Get cubic B spline differentiated
-    Eigen::Vector3f weight_diff=m_cellFacesX[_cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline_Diff;
+    Eigen::Vector3f weight_diff=_cellFace->m_interpolationData[particleIterator]->m_cubicBSpline_Diff;
 
     //Get particle pointer
-    Particle* particle=m_cellFacesX[_cellIndex]->m_interpolationData[particleIterator]->m_particle;
+    Particle* particle=_cellFace->m_interpolationData[particleIterator]->m_particle;
 
-    float forceFromParticle=calcDeviatoricForce(particle, e_x, weight_diff);
+    float forceFromParticle=calcDeviatoricForce(particle, _eVector, weight_diff);
 
     //Add force to sum
-    forceSumX+=forceFromParticle;
+    forceSum+=forceFromParticle;
 
     //Add interpolation weight
-    weightSumX+=weight;
+    weightSum+=weight;
   }
 
-  //Determine if cell is empty, if so B_component is zero
-  if (noParticles_FaceX!=0)
+  //Determine if cell is empty, if so B_component is zero. Need to do this in case collision cell is empty
+  ///Might be able to take this out since should be no particles inside collision cells
+  if (noParticles!=0)
   {
-    float cellMassX=m_cellFacesX[_cellIndex]->m_mass;
+    float cellMass=_cellFace->m_mass;
 
     //External forces component
-    float externalForceX=0.0;
-    externalForceX=m_externalForce.dot(e_x);
+    float externalForce=0.0;
+    externalForce=m_externalForce.dot(_eVector);
 //    externalForceX*=(m_dt*weightSumX);
-    externalForceX*=(m_dt*weightSumX*cellMassX);
+    externalForce*=(m_dt*weightSum*cellMass);
 
     //Deviatoric force component
 //    float deviatoricForceX=(m_dt/cellMassX)*forceSumX;
-    float deviatoricForceX=(m_dt*forceSumX);
+    float deviatoricForce=(m_dt*forceSum);
 
     //Calculate b component
 //    B_components(0)=m_cellFacesX[_cellIndex]->m_velocity+deviatoricForceX+externalForceX;
-    B_components(0)=(m_cellFacesX[_cellIndex]->m_velocity*cellMassX) + deviatoricForceX + externalForceX;
+    BComponent=(_cellFace->m_velocity*cellMass) + deviatoricForce + externalForce;
   }
 
 
-  //Face Y
-  //Set storage variables
-  float forceSumY=0.0;
-  float weightSumY=0.0;
+//  //Face Y
+//  //Set storage variables
+//  float forceSumY=0.0;
+//  float weightSumY=0.0;
 
-  int noParticles_FaceY=m_cellFacesY[_cellIndex]->m_interpolationData.size();
-  for (int particleIterator=0; particleIterator<noParticles_FaceY; particleIterator++)
-  {
-    //Get cubic B spline
-    float weight=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
+//  int noParticles_FaceY=m_cellFacesY[_cellIndex]->m_interpolationData.size();
+//  for (int particleIterator=0; particleIterator<noParticles_FaceY; particleIterator++)
+//  {
+//    //Get cubic B spline
+//    float weight=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
 
-    //Get cubic B spline differentiated
-    Eigen::Vector3f weight_diff=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline_Diff;
+//    //Get cubic B spline differentiated
+//    Eigen::Vector3f weight_diff=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline_Diff;
 
-    //Get particle pointer
-    Particle* particle=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator]->m_particle;
+//    //Get particle pointer
+//    Particle* particle=m_cellFacesY[_cellIndex]->m_interpolationData[particleIterator]->m_particle;
 
-    float forceFromParticle=calcDeviatoricForce(particle, e_y, weight_diff);
+//    float forceFromParticle=calcDeviatoricForce(particle, e_y, weight_diff);
 
-    //Add force to sum
-    forceSumY+=forceFromParticle;
+//    //Add force to sum
+//    forceSumY+=forceFromParticle;
 
-    //Add interpolation weight
-    weightSumY+=weight;
-  }
+//    //Add interpolation weight
+//    weightSumY+=weight;
+//  }
 
-  //Determine if cell is empty, if so B_component is zero
-  if (noParticles_FaceY!=0)
-  {
-    float cellMassY=m_cellFacesY[_cellIndex]->m_mass;
+//  //Determine if cell is empty, if so B_component is zero
+//  if (noParticles_FaceY!=0)
+//  {
+//    float cellMassY=m_cellFacesY[_cellIndex]->m_mass;
 
-    //External forces component
-    float externalForceY=0.0;
-    externalForceY=m_externalForce.dot(e_y);
-//    externalForceY*=(m_dt*weightSumY);
-    externalForceY*=(m_dt*weightSumY*cellMassY);
+//    //External forces component
+//    float externalForceY=0.0;
+//    externalForceY=m_externalForce.dot(e_y);
+////    externalForceY*=(m_dt*weightSumY);
+//    externalForceY*=(m_dt*weightSumY*cellMassY);
 
-    //Deviatoric force component
-//    float deviatoricForceY=(m_dt/cellMassY)*forceSumY;
-    float deviatoricForceY=(m_dt*forceSumY);
+//    //Deviatoric force component
+////    float deviatoricForceY=(m_dt/cellMassY)*forceSumY;
+//    float deviatoricForceY=(m_dt*forceSumY);
 
-    //Calculate b component
-//    B_components(1)=m_cellFacesY[_cellIndex]->m_velocity + deviatoricForceY + externalForceY;
-    B_components(1)=(m_cellFacesY[_cellIndex]->m_velocity*cellMassY) + deviatoricForceY + externalForceY;
-  }
+//    //Calculate b component
+////    B_components(1)=m_cellFacesY[_cellIndex]->m_velocity + deviatoricForceY + externalForceY;
+//    B_components(1)=(m_cellFacesY[_cellIndex]->m_velocity*cellMassY) + deviatoricForceY + externalForceY;
+//  }
 
 
 
-  //Face Z
-  //Set storage variables
-  float forceSumZ=0.0;
-  float weightSumZ=0.0;
+//  //Face Z
+//  //Set storage variables
+//  float forceSumZ=0.0;
+//  float weightSumZ=0.0;
 
-  int noParticles_FaceZ=m_cellFacesZ[_cellIndex]->m_interpolationData.size();
-  for (int particleIterator=0; particleIterator<noParticles_FaceZ; particleIterator++)
-  {
-    //Get cubic B spline
-    float weight=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
+//  int noParticles_FaceZ=m_cellFacesZ[_cellIndex]->m_interpolationData.size();
+//  for (int particleIterator=0; particleIterator<noParticles_FaceZ; particleIterator++)
+//  {
+//    //Get cubic B spline
+//    float weight=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline;
 
-    //Get cubic B spline differentiated
-    Eigen::Vector3f weight_diff=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline_Diff;
+//    //Get cubic B spline differentiated
+//    Eigen::Vector3f weight_diff=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator]->m_cubicBSpline_Diff;
 
-    //Get particle pointer
-    Particle* particle=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator]->m_particle;
+//    //Get particle pointer
+//    Particle* particle=m_cellFacesZ[_cellIndex]->m_interpolationData[particleIterator]->m_particle;
 
-    float forceFromParticle=calcDeviatoricForce(particle, e_z, weight_diff);
+//    float forceFromParticle=calcDeviatoricForce(particle, e_z, weight_diff);
 
-    //Add force to sum
-    forceSumZ+=forceFromParticle;
+//    //Add force to sum
+//    forceSumZ+=forceFromParticle;
 
-    //Add interpolation weight
-    weightSumZ+=weight;
-  }
+//    //Add interpolation weight
+//    weightSumZ+=weight;
+//  }
 
-  //Determine if cell is empty, if so B_component is zero
-  if (noParticles_FaceZ!=0)
-  {
-    float cellMassZ=m_cellFacesZ[_cellIndex]->m_mass;
+//  //Determine if cell is empty, if so B_component is zero
+//  if (noParticles_FaceZ!=0)
+//  {
+//    float cellMassZ=m_cellFacesZ[_cellIndex]->m_mass;
 
-    //External forces component
-    float externalForceZ=0.0;
-    externalForceZ=m_externalForce.dot(e_z);
-//    externalForceZ*=(m_dt*weightSumZ);
-    externalForceZ*=(m_dt*weightSumZ*cellMassZ);
+//    //External forces component
+//    float externalForceZ=0.0;
+//    externalForceZ=m_externalForce.dot(e_z);
+////    externalForceZ*=(m_dt*weightSumZ);
+//    externalForceZ*=(m_dt*weightSumZ*cellMassZ);
 
-    //Deviatoric force component
-//    float deviatoricForceZ=(m_dt/cellMassZ)*forceSumZ;
-    float deviatoricForceZ=(m_dt*forceSumZ);
+//    //Deviatoric force component
+////    float deviatoricForceZ=(m_dt/cellMassZ)*forceSumZ;
+//    float deviatoricForceZ=(m_dt*forceSumZ);
 
-    //Calculate b component
-//    B_components(2)=m_cellFacesZ[_cellIndex]->m_velocity + deviatoricForceZ + externalForceZ;
-    B_components(2)=(m_cellFacesZ[_cellIndex]->m_velocity*cellMassZ) + deviatoricForceZ + externalForceZ;
-  }
+//    //Calculate b component
+////    B_components(2)=m_cellFacesZ[_cellIndex]->m_velocity + deviatoricForceZ + externalForceZ;
+//    B_components(2)=(m_cellFacesZ[_cellIndex]->m_velocity*cellMassZ) + deviatoricForceZ + externalForceZ;
+//  }
 
 
   //Return result
-  return B_components;
+  return BComponent;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -498,6 +505,11 @@ void Grid::calcAComponent_DeviatoricVelocity(int _cellIndex, int _noParticlesFac
     kMaxIncrement=0;
   }
 
+  //Get state of cell faces
+  State state_FaceX=m_cellFacesX[_cellIndex]->m_state;
+  State state_FaceY=m_cellFacesY[_cellIndex]->m_state;
+  State state_FaceZ=m_cellFacesZ[_cellIndex]->m_state;
+
 
   //Loop over neighbouring cells that can have same particles in them
   for (int kIndexIncrement=kMinIncrement; kIndexIncrement<(kMaxIncrement+1); kIndexIncrement++)
@@ -514,15 +526,20 @@ void Grid::calcAComponent_DeviatoricVelocity(int _cellIndex, int _noParticlesFac
         //Get index of neighbour
         int neighbourCellIndex=MathFunctions::getVectorIndex(iIndex+iIndexIncrement, jIndex+jIndexIncrement, kIndex+kIndexIncrement, m_noCells);
 
+        //Get state of neighbour cell
+        State state_FaceX_neighbour=m_cellFacesX[neighbourCellIndex]->m_state;
+        State state_FaceY_neighbour=m_cellFacesY[neighbourCellIndex]->m_state;
+        State state_FaceZ_neighbour=m_cellFacesZ[neighbourCellIndex]->m_state;
 
         //Only insert an A component if neighbour face isn't colliding
-        if (m_cellFacesX[_cellIndex]->m_state!=State::Colliding && m_cellFacesX[neighbourCellIndex]->m_state!=State::Colliding)
+        if (state_FaceX==State::Interior && state_FaceX_neighbour==State::Interior)
         {
-          int noParticlesFaceX_neighbour=m_cellFacesX[neighbourCellIndex]->m_interpolationData.size();
+//          int noParticlesFaceX_neighbour=m_cellFacesX[neighbourCellIndex]->m_interpolationData.size();
 
           //Face X
-          if (noParticlesFaceX_neighbour!=0 && _noParticlesFaceX!=0)
-          {
+//          if (noParticlesFaceX_neighbour!=0 && _noParticlesFaceX!=0)
+//          if (state_FaceX==State::Interior && state_FaceX_neighbour==State::Interior)
+//          {
 
             //Find same particle in list
             for (int particleIterator_i=0; particleIterator_i<_noParticlesFaceX; particleIterator_i++)
@@ -560,16 +577,16 @@ void Grid::calcAComponent_DeviatoricVelocity(int _cellIndex, int _noParticlesFac
 
             //Insert A component to matrix
             o_AX(_cellIndex, neighbourCellIndex)=AcomponentX;
-          }
+//          }
         }
 
         //Face Y
-        if (m_cellFacesY[_cellIndex]->m_state!=State::Colliding && m_cellFacesY[neighbourCellIndex]->m_state!=State::Colliding)
+        if (state_FaceY==State::Interior && state_FaceY_neighbour==State::Interior)
         {
           int noParticlesFaceY_neighbour=m_cellFacesY[neighbourCellIndex]->m_interpolationData.size();
 
-          if (noParticlesFaceY_neighbour!=0 && _noParticlesFaceY!=0)
-          {
+//          if (noParticlesFaceY_neighbour!=0 && _noParticlesFaceY!=0)
+//          {
             //Find same particle in list
             for (int particleIterator_i=0; particleIterator_i<_noParticlesFaceY; particleIterator_i++)
             {
@@ -606,18 +623,18 @@ void Grid::calcAComponent_DeviatoricVelocity(int _cellIndex, int _noParticlesFac
 
             //Insert A component to matrix
             o_AY(_cellIndex, neighbourCellIndex)=AcomponentY;
-          }
+//          }
 
         }
 
 
         //Face Z
-        if (m_cellFacesZ[_cellIndex]->m_state!=State::Colliding && m_cellFacesZ[neighbourCellIndex]->m_state!=State::Colliding)
+        if (state_FaceZ==State::Interior && state_FaceZ_neighbour==State::Interior)
         {
           int noParticlesFaceZ_neighbour=m_cellFacesZ[neighbourCellIndex]->m_interpolationData.size();
 
-          if (noParticlesFaceZ_neighbour!=0 && _noParticlesFaceZ!=0)
-          {
+//          if (noParticlesFaceZ_neighbour!=0 && _noParticlesFaceZ!=0)
+//          {
             //Find same particle in list
             for (int particleIterator_i=0; particleIterator_i<_noParticlesFaceZ; particleIterator_i++)
             {
@@ -654,7 +671,7 @@ void Grid::calcAComponent_DeviatoricVelocity(int _cellIndex, int _noParticlesFac
 
             //Insert A component to matrix
             o_AZ(_cellIndex, neighbourCellIndex)=AcomponentZ;
-          }
+//          }
         }
       }
     }

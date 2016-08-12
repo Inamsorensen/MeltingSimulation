@@ -15,7 +15,7 @@ CXX           = g++
 DEFINES       = -DQT5BUILD -DQT5BUILD -DNGL_DEBUG -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -g -Wall -W -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -fopenmp -msse -msse2 -msse3 -march=native -march=native -g -std=c++0x -Wall -W -Wno-unused-parameter -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -Iinclude -I/usr/local/include/eigen3/Eigen -I/home/i7435906/NGL/include -I/opt/qt/5.5/gcc_64/include -I/opt/qt/5.5/gcc_64/include/QtOpenGL -I/opt/qt/5.5/gcc_64/include/QtWidgets -I/opt/qt/5.5/gcc_64/include/QtGui -I/opt/qt/5.5/gcc_64/include/QtCore -Imoc -I/opt/qt/5.5/gcc_64/mkspecs/linux-g++
+INCPATH       = -I. -Iinclude -I/usr/local/include/eigen3/Eigen -I/usr/local/include/OpenEXR -I/public/devel/include -I/home/i7435906/NGL/include -I/opt/qt/5.5/gcc_64/include -I/opt/qt/5.5/gcc_64/include/QtOpenGL -I/opt/qt/5.5/gcc_64/include/QtWidgets -I/opt/qt/5.5/gcc_64/include/QtGui -I/opt/qt/5.5/gcc_64/include/QtCore -Imoc -I/opt/qt/5.5/gcc_64/mkspecs/linux-g++
 QMAKE         = /opt/qt/5.5/gcc_64/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -36,7 +36,7 @@ DISTNAME      = MeltingSimulation1.0.0
 DISTDIR = /home/i7435906/MasterProject/MeltingSimulation/obj/MeltingSimulation1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-rpath,/opt/qt/5.5/gcc_64 -Wl,-rpath,/home/i7435906/NGL/lib -Wl,-rpath,/opt/qt/5.5/gcc_64/lib
-LIBS          = $(SUBLIBS) -fopenmp -L/usr/local/lib -L/home/i7435906/NGL/lib -l NGL -ltiff -L/opt/qt/5.5/gcc_64/lib -lQt5OpenGL -L/usr/lib64 -lQt5Widgets -lQt5Gui -lQt5Core -lGL -lpthread 
+LIBS          = $(SUBLIBS) -L/public/devel/lib -lAlembic -lhdf5 -lhdf5_hl -L/usr/local/lib -lHalf -fopenmp -L/home/i7435906/NGL/lib -l NGL -ltiff -L/opt/qt/5.5/gcc_64/lib -lQt5OpenGL -L/usr/lib64 -lQt5Widgets -lQt5Gui -lQt5Core -lGL -lpthread 
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -60,7 +60,8 @@ SOURCES       = src/main.cpp \
 		src/Grid_Temperature.cpp \
 		src/ReadGeo.cpp \
 		src/MinRes.cpp \
-		src/Grid_updateParticleFromGrid.cpp moc/moc_OpenGLWindow.cpp
+		src/Grid_updateParticleFromGrid.cpp \
+		src/AlembicExport.cpp moc/moc_OpenGLWindow.cpp
 OBJECTS       = obj/main.o \
 		obj/SimulationController.o \
 		obj/Emitter.o \
@@ -74,6 +75,7 @@ OBJECTS       = obj/main.o \
 		obj/ReadGeo.o \
 		obj/MinRes.o \
 		obj/Grid_updateParticleFromGrid.o \
+		obj/AlembicExport.o \
 		obj/moc_OpenGLWindow.o
 DIST          = MeltingSimulation.pro include/ReadGeo.h \
 		include/SimulationController.h \
@@ -84,7 +86,8 @@ DIST          = MeltingSimulation.pro include/ReadGeo.h \
 		include/MathFunctions.h \
 		include/CellCentre.h \
 		include/CellFace.h \
-		include/InterpolationData.h src/main.cpp \
+		include/InterpolationData.h \
+		include/AlembicExport.h src/main.cpp \
 		src/SimulationController.cpp \
 		src/Emitter.cpp \
 		src/Particle.cpp \
@@ -96,7 +99,8 @@ DIST          = MeltingSimulation.pro include/ReadGeo.h \
 		src/Grid_Temperature.cpp \
 		src/ReadGeo.cpp \
 		src/MinRes.cpp \
-		src/Grid_updateParticleFromGrid.cpp
+		src/Grid_updateParticleFromGrid.cpp \
+		src/AlembicExport.cpp
 QMAKE_TARGET  = MeltingSimulation
 DESTDIR       = #avoid trailing-slash linebreak
 TARGET        = MeltingSimulation
@@ -418,8 +422,8 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents include/ReadGeo.h include/SimulationController.h include/Emitter.h include/Particle.h include/Grid.h include/OpenGLWindow.h include/MathFunctions.h include/CellCentre.h include/CellFace.h include/InterpolationData.h $(DISTDIR)/
-	$(COPY_FILE) --parents src/main.cpp src/SimulationController.cpp src/Emitter.cpp src/Particle.cpp src/Grid.cpp src/OpenGLWindow.cpp src/MathFunctions.cpp src/Grid_deviatoricVelocity.cpp src/Grid_pressureVelocity.cpp src/Grid_Temperature.cpp src/ReadGeo.cpp src/MinRes.cpp src/Grid_updateParticleFromGrid.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents include/ReadGeo.h include/SimulationController.h include/Emitter.h include/Particle.h include/Grid.h include/OpenGLWindow.h include/MathFunctions.h include/CellCentre.h include/CellFace.h include/InterpolationData.h include/AlembicExport.h $(DISTDIR)/
+	$(COPY_FILE) --parents src/main.cpp src/SimulationController.cpp src/Emitter.cpp src/Particle.cpp src/Grid.cpp src/OpenGLWindow.cpp src/MathFunctions.cpp src/Grid_deviatoricVelocity.cpp src/Grid_pressureVelocity.cpp src/Grid_Temperature.cpp src/ReadGeo.cpp src/MinRes.cpp src/Grid_updateParticleFromGrid.cpp src/AlembicExport.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -610,7 +614,7 @@ moc/moc_OpenGLWindow.cpp: /home/i7435906/NGL/include/ngl/Camera.h \
 		include/MathFunctions.h \
 		include/ReadGeo.h \
 		include/OpenGLWindow.h
-	/opt/qt/5.5/gcc_64/bin/moc $(DEFINES) -I/opt/qt/5.5/gcc_64/mkspecs/linux-g++ -I/home/i7435906/MasterProject/MeltingSimulation -I/home/i7435906/MasterProject/MeltingSimulation/include -I/usr/local/include/eigen3/Eigen -I/home/i7435906/NGL/include -I/opt/qt/5.5/gcc_64/include -I/opt/qt/5.5/gcc_64/include/QtOpenGL -I/opt/qt/5.5/gcc_64/include/QtWidgets -I/opt/qt/5.5/gcc_64/include/QtGui -I/opt/qt/5.5/gcc_64/include/QtCore include/OpenGLWindow.h -o moc/moc_OpenGLWindow.cpp
+	/opt/qt/5.5/gcc_64/bin/moc $(DEFINES) -I/opt/qt/5.5/gcc_64/mkspecs/linux-g++ -I/home/i7435906/MasterProject/MeltingSimulation -I/home/i7435906/MasterProject/MeltingSimulation/include -I/usr/local/include/eigen3/Eigen -I/usr/local/include/OpenEXR -I/public/devel/include -I/home/i7435906/NGL/include -I/opt/qt/5.5/gcc_64/include -I/opt/qt/5.5/gcc_64/include/QtOpenGL -I/opt/qt/5.5/gcc_64/include/QtWidgets -I/opt/qt/5.5/gcc_64/include/QtGui -I/opt/qt/5.5/gcc_64/include/QtCore include/OpenGLWindow.h -o moc/moc_OpenGLWindow.cpp
 
 compiler_moc_source_make_all:
 compiler_moc_source_clean:
@@ -2453,6 +2457,257 @@ obj/Grid_updateParticleFromGrid.o: src/Grid_updateParticleFromGrid.cpp include/G
 		/home/i7435906/NGL/include/ngl/AbstractVAO.h \
 		include/MathFunctions.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/Grid_updateParticleFromGrid.o src/Grid_updateParticleFromGrid.cpp
+
+obj/AlembicExport.o: src/AlembicExport.cpp include/AlembicExport.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/All.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ArchiveReader.h \
+		/public/devel/include/Alembic/Util/Export.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/Foundation.h \
+		/public/devel/include/Alembic/Util/All.h \
+		/public/devel/include/Alembic/Util/Foundation.h \
+		/public/devel/include/Alembic/Util/Config.h \
+		/usr/local/include/OpenEXR/half.h \
+		/usr/local/include/OpenEXR/halfExport.h \
+		/public/devel/include/Alembic/Util/Digest.h \
+		/public/devel/include/Alembic/Util/PlainOldDataType.h \
+		/public/devel/include/Alembic/Util/Exception.h \
+		/public/devel/include/Alembic/Util/Dimensions.h \
+		/public/devel/include/Alembic/Util/Murmur3.h \
+		/public/devel/include/Alembic/Util/Naming.h \
+		/public/devel/include/Alembic/Util/OperatorBool.h \
+		/public/devel/include/Alembic/Util/TokenMap.h \
+		/public/devel/include/Alembic/Util/SpookyV2.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ForwardDeclarations.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/PropertyHeader.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/MetaData.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/DataType.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/TimeSampling.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/TimeSamplingType.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ArraySample.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ArraySampleKey.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ReadArraySampleCache.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ArchiveWriter.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ArrayPropertyReader.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/BasePropertyReader.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ArrayPropertyWriter.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/BasePropertyWriter.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/CompoundPropertyReader.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/CompoundPropertyWriter.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ObjectHeader.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ObjectReader.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ObjectWriter.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ScalarPropertyReader.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ScalarPropertyWriter.h \
+		/public/devel/include/Alembic/AbcCoreAbstract/ScalarSample.h \
+		/public/devel/include/Alembic/AbcGeom/All.h \
+		/public/devel/include/Alembic/AbcGeom/ArchiveBounds.h \
+		/public/devel/include/Alembic/AbcGeom/Foundation.h \
+		/public/devel/include/Alembic/Abc/All.h \
+		/public/devel/include/Alembic/Abc/Base.h \
+		/public/devel/include/Alembic/Abc/Foundation.h \
+		/usr/local/include/OpenEXR/ImathVec.h \
+		/usr/local/include/OpenEXR/ImathExc.h \
+		/usr/local/include/OpenEXR/ImathNamespace.h \
+		/usr/local/include/OpenEXR/IlmBaseConfig.h \
+		/usr/local/include/OpenEXR/IexBaseExc.h \
+		/usr/local/include/OpenEXR/IexNamespace.h \
+		/usr/local/include/OpenEXR/IexExport.h \
+		/usr/local/include/OpenEXR/ImathExport.h \
+		/usr/local/include/OpenEXR/ImathLimits.h \
+		/usr/local/include/OpenEXR/ImathMath.h \
+		/usr/local/include/OpenEXR/ImathPlatform.h \
+		/usr/local/include/OpenEXR/ImathBox.h \
+		/usr/local/include/OpenEXR/ImathMatrix.h \
+		/usr/local/include/OpenEXR/ImathFun.h \
+		/usr/local/include/OpenEXR/ImathInt64.h \
+		/usr/local/include/OpenEXR/ImathShear.h \
+		/usr/local/include/OpenEXR/ImathQuat.h \
+		/usr/local/include/OpenEXR/ImathColor.h \
+		/public/devel/include/Alembic/Abc/ErrorHandler.h \
+		/public/devel/include/Alembic/Abc/ArchiveInfo.h \
+		/public/devel/include/Alembic/Abc/IArchive.h \
+		/public/devel/include/Alembic/Abc/Argument.h \
+		/public/devel/include/Alembic/Abc/OArchive.h \
+		/public/devel/include/Alembic/Abc/IArrayProperty.h \
+		/public/devel/include/Alembic/Abc/ISampleSelector.h \
+		/public/devel/include/Alembic/Abc/IBaseProperty.h \
+		/public/devel/include/Alembic/Abc/IObject.h \
+		/public/devel/include/Alembic/Abc/ICompoundProperty.h \
+		/public/devel/include/Alembic/Abc/IScalarProperty.h \
+		/public/devel/include/Alembic/Abc/ISchema.h \
+		/public/devel/include/Alembic/Abc/OSchema.h \
+		/public/devel/include/Alembic/Abc/OCompoundProperty.h \
+		/public/devel/include/Alembic/Abc/OBaseProperty.h \
+		/public/devel/include/Alembic/Abc/OObject.h \
+		/public/devel/include/Alembic/Abc/ISchemaObject.h \
+		/public/devel/include/Alembic/Abc/ITypedArrayProperty.h \
+		/public/devel/include/Alembic/Abc/TypedPropertyTraits.h \
+		/public/devel/include/Alembic/Abc/TypedArraySample.h \
+		/public/devel/include/Alembic/Abc/ITypedScalarProperty.h \
+		/public/devel/include/Alembic/Abc/OArrayProperty.h \
+		/public/devel/include/Alembic/Abc/OScalarProperty.h \
+		/public/devel/include/Alembic/Abc/OSchemaObject.h \
+		/public/devel/include/Alembic/Abc/OTypedArrayProperty.h \
+		/public/devel/include/Alembic/Abc/OTypedScalarProperty.h \
+		/public/devel/include/Alembic/Abc/Reference.h \
+		/public/devel/include/Alembic/Abc/SourceName.h \
+		/usr/local/include/OpenEXR/ImathMatrixAlgo.h \
+		/usr/local/include/OpenEXR/ImathEuler.h \
+		/public/devel/include/Alembic/AbcGeom/GeometryScope.h \
+		/public/devel/include/Alembic/AbcGeom/Basis.h \
+		/public/devel/include/Alembic/AbcGeom/OCurves.h \
+		/public/devel/include/Alembic/AbcGeom/CurveType.h \
+		/public/devel/include/Alembic/AbcGeom/SchemaInfoDeclarations.h \
+		/public/devel/include/Alembic/AbcGeom/OGeomParam.h \
+		/public/devel/include/Alembic/AbcGeom/OGeomBase.h \
+		/public/devel/include/Alembic/AbcGeom/ICurves.h \
+		/public/devel/include/Alembic/AbcGeom/IGeomParam.h \
+		/public/devel/include/Alembic/AbcGeom/IGeomBase.h \
+		/public/devel/include/Alembic/AbcGeom/OFaceSet.h \
+		/public/devel/include/Alembic/AbcGeom/FaceSetExclusivity.h \
+		/public/devel/include/Alembic/AbcGeom/IFaceSet.h \
+		/public/devel/include/Alembic/AbcGeom/FilmBackXformOp.h \
+		/public/devel/include/Alembic/AbcGeom/CameraSample.h \
+		/public/devel/include/Alembic/AbcGeom/OCamera.h \
+		/public/devel/include/Alembic/AbcGeom/ICamera.h \
+		/public/devel/include/Alembic/AbcGeom/ILight.h \
+		/public/devel/include/Alembic/AbcGeom/OLight.h \
+		/public/devel/include/Alembic/AbcGeom/INuPatch.h \
+		/public/devel/include/Alembic/AbcGeom/ONuPatch.h \
+		/public/devel/include/Alembic/AbcGeom/OPoints.h \
+		/public/devel/include/Alembic/AbcGeom/IPoints.h \
+		/public/devel/include/Alembic/AbcGeom/OPolyMesh.h \
+		/public/devel/include/Alembic/AbcGeom/IPolyMesh.h \
+		/public/devel/include/Alembic/AbcGeom/OSubD.h \
+		/public/devel/include/Alembic/AbcGeom/ISubD.h \
+		/public/devel/include/Alembic/AbcGeom/XformOp.h \
+		/public/devel/include/Alembic/AbcGeom/XformSample.h \
+		/public/devel/include/Alembic/AbcGeom/OXform.h \
+		/public/devel/include/Alembic/AbcGeom/IXform.h \
+		/public/devel/include/Alembic/AbcGeom/Visibility.h \
+		/public/devel/include/Alembic/AbcCoreOgawa/All.h \
+		/public/devel/include/Alembic/AbcCoreOgawa/ReadWrite.h \
+		/public/devel/include/Alembic/AbcCoreHDF5/All.h \
+		/public/devel/include/Alembic/AbcCoreHDF5/ReadWrite.h \
+		/home/i7435906/NGL/include/ngl/Vec3.h \
+		/home/i7435906/NGL/include/ngl/Types.h \
+		/home/i7435906/NGL/include/ngl/glew.h \
+		/opt/qt/5.5/gcc_64/include/QtOpenGL/QGLContext \
+		/opt/qt/5.5/gcc_64/include/QtOpenGL/qgl.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qopengl.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qglobal.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qconfig.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qfeatures.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qsystemdetection.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qprocessordetection.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qcompilerdetection.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qtypeinfo.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qtypetraits.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qsysinfo.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qlogging.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qflags.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qbasicatomic.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_bootstrap.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qgenericatomic.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_cxx11.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_gcc.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_msvc.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_armv7.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_armv6.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_armv5.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_ia64.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_mips.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_x86.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qatomic_unix.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qglobalstatic.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qmutex.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qnumeric.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qt_windows.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qopengles2ext.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qopenglext.h \
+		/opt/qt/5.5/gcc_64/include/QtWidgets/qwidget.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qwindowdefs.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qobjectdefs.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qnamespace.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qobjectdefs_impl.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qwindowdefs_win.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qobject.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qstring.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qchar.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qbytearray.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qrefcount.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qarraydata.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qstringbuilder.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qlist.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qalgorithms.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qiterator.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qbytearraylist.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qstringlist.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qregexp.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qstringmatcher.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qcoreevent.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qscopedpointer.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qmetatype.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qvarlengtharray.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qcontainerfwd.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qisenum.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qobject_impl.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qmargins.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpaintdevice.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qrect.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qsize.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qpoint.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpalette.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qcolor.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qrgb.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qbrush.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qpair.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qvector.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qmatrix.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpolygon.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qregion.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qdatastream.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qiodevice.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qline.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qtransform.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpainterpath.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qimage.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpixelformat.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpixmap.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qsharedpointer.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qshareddata.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qhash.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qsharedpointer_impl.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qfont.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qfontmetrics.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qfontinfo.h \
+		/opt/qt/5.5/gcc_64/include/QtWidgets/qsizepolicy.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qcursor.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qkeysequence.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qevent.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qvariant.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qmap.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qdebug.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qtextstream.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qlocale.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qset.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qcontiguouscache.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qurl.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qurlquery.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qfile.h \
+		/opt/qt/5.5/gcc_64/include/QtCore/qfiledevice.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qvector2d.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qtouchdevice.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpaintengine.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpainter.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qtextoption.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/qpen.h \
+		/opt/qt/5.5/gcc_64/include/QtOpenGL/qglcolormap.h \
+		/opt/qt/5.5/gcc_64/include/QtOpenGL/qtopenglglobal.h \
+		/opt/qt/5.5/gcc_64/include/QtGui/QSurfaceFormat \
+		/opt/qt/5.5/gcc_64/include/QtGui/qsurfaceformat.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/AlembicExport.o src/AlembicExport.cpp
 
 obj/moc_OpenGLWindow.o: moc/moc_OpenGLWindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/moc_OpenGLWindow.o moc/moc_OpenGLWindow.cpp

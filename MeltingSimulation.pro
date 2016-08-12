@@ -30,7 +30,8 @@ SOURCES+= $$PWD/src/main.cpp \
     src/Grid_Temperature.cpp \
     src/ReadGeo.cpp \
     src/MinRes.cpp \
-    src/Grid_updateParticleFromGrid.cpp
+    src/Grid_updateParticleFromGrid.cpp \
+    src/AlembicExport.cpp
 
 # same for the .h files
 HEADERS+= $$PWD/include/ReadGeo.h \
@@ -42,13 +43,22 @@ HEADERS+= $$PWD/include/ReadGeo.h \
     include/MathFunctions.h \
     include/CellCentre.h \
     include/CellFace.h \
-    include/InterpolationData.h
+    include/InterpolationData.h \
+    include/AlembicExport.h
 
 
 # and add the include dir into the search path for Qt and make
 INCLUDEPATH +=./include
 INCLUDEPATH +=/usr/local/include/eigen3/Eigen/
 #INCLUDEPATH +=/usr/lib/gcc/x86_64-redhat-linux/4.8.2/include
+INCLUDEPATH+=/usr/local/include/OpenEXR
+
+linux*:INCLUDEPATH+= /public/devel/include
+linux*:LIBS+=-L/public/devel/lib -lAlembic -lhdf5 -lhdf5_hl
+
+linux*:LIBS+=-L/usr/local/lib -lHalf
+
+macx:LIBS+=-lAlembic
 
 LIBS+= -fopenmp
 

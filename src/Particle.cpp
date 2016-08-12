@@ -299,6 +299,7 @@ void Particle::presetParticlesForTimeStep(float _velocityContribAlpha, float _te
   //Clamp hardness impact
   ///Not sure what to clamp to
   hardnessImpact=std::min<float>(hardnessImpact, 10.0);
+  hardnessImpact=std::max<float>(hardnessImpact, 0.1);
 
 
   if (m_phase==Phase::Liquid)
