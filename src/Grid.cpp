@@ -58,8 +58,17 @@ Grid::Grid(Eigen::Vector3f _originEdge, float _boundingBoxSize, int _noCells)
   m_ambientTemperature=0.0;
   m_heatSourceTemperature=0.0;
 
+  //Set threshold for number of particles in non-empty cell
   m_noParticlesThreshold=6;
 
+  //Set storage for A matrices and B vectors for deviatoric velocity calculations
+  m_Amatrix_deviatoric_X.setZero(m_totNoCells, m_totNoCells);
+  m_Amatrix_deviatoric_Y.setZero(m_totNoCells, m_totNoCells);
+  m_Amatrix_deviatoric_Z.setZero(m_totNoCells, m_totNoCells);
+
+  m_Bvector_deviatoric_X.setZero(m_totNoCells);
+  m_Bvector_deviatoric_Y.setZero(m_totNoCells);
+  m_Bvector_deviatoric_Z.setZero(m_totNoCells);
 
   m_cellCentres.reserve(pow(m_noCells,3));
   m_cellFacesX.reserve(pow(m_noCells,3));
@@ -273,6 +282,9 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep, float _veloci
   //Clear InterpolationData for each grid cell so all empty before start adding particles
   clearCellData();
 
+  //TEST NEW INTERPOLATION SETUP
+  interpolateParticleToGrid(_emitter, _isFirstStep);
+
   //findParticleInCell - need to find out which particles are in which cells and their respective interp weight
   findParticleContributionToCell(_emitter);
 
@@ -338,6 +350,7 @@ void Grid::clearCellData()
     m_cellFacesZ[cellIndex]->m_interpolationData.clear();    
 
     //Reset cell centre values to zero
+    m_cellCentres[cellIndex]->m_noParticlesContributing=0;
     m_cellCentres[cellIndex]->m_mass=0.0;
     m_cellCentres[cellIndex]->m_detDeformationGrad=0.0;
     m_cellCentres[cellIndex]->m_detDeformationGradElastic=0.0;
@@ -349,6 +362,7 @@ void Grid::clearCellData()
     m_cellCentres[cellIndex]->m_state=State::Colliding;
 
     //Reset cell face X values to zero
+    m_cellFacesX[cellIndex]->m_noParticlesContributing=0;
     m_cellFacesX[cellIndex]->m_mass=0.0;
     m_cellFacesX[cellIndex]->m_deviatoricForce=0.0;
     m_cellFacesX[cellIndex]->m_velocity=0.0;
@@ -356,6 +370,7 @@ void Grid::clearCellData()
     m_cellFacesX[cellIndex]->m_state=State::Interior;
 
     //Reset cell face Y values to zero
+    m_cellFacesY[cellIndex]->m_noParticlesContributing=0;
     m_cellFacesY[cellIndex]->m_mass=0.0;
     m_cellFacesY[cellIndex]->m_deviatoricForce=0.0;
     m_cellFacesY[cellIndex]->m_velocity=0.0;
@@ -363,6 +378,7 @@ void Grid::clearCellData()
     m_cellFacesY[cellIndex]->m_state=State::Interior;
 
     //Reset cell face Z values to zero
+    m_cellFacesZ[cellIndex]->m_noParticlesContributing=0;
     m_cellFacesZ[cellIndex]->m_mass=0.0;
     m_cellFacesZ[cellIndex]->m_deviatoricForce=0.0;
     m_cellFacesZ[cellIndex]->m_velocity=0.0;
@@ -399,6 +415,9 @@ void Grid::findParticleContributionToCell(Emitter* _emitter)
   gridEdgePosition(0)-=halfCellSize;
   gridEdgePosition(1)-=halfCellSize;
   gridEdgePosition(2)-=halfCellSize;
+//  gridEdgePosition(0)+=halfCellSize;
+//  gridEdgePosition(1)+=halfCellSize;
+//  gridEdgePosition(2)+=halfCellSize;
 
   int totNoParticles=_emitter->m_noParticles;
 //#pragma omp parallel for
@@ -471,9 +490,9 @@ void Grid::calcInterpolationWeights(Particle* _particle, int _i, int _j, int _k)
   Eigen::Vector3f particlePosition=_particle->getPosition();
 
   ///Addition so particle and grid is in same reference
-  particlePosition(0)+=halfCellSize;
-  particlePosition(1)+=halfCellSize;
-  particlePosition(2)+=halfCellSize;
+//  particlePosition(0)+=halfCellSize;
+//  particlePosition(1)+=halfCellSize;
+//  particlePosition(2)+=halfCellSize;
 
   //Calculate posDifference for each face and cell centre
   Eigen::Vector3f centrePosDiff=particlePosition-centreVector;

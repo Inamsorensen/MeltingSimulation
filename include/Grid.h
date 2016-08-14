@@ -140,6 +140,30 @@ private:
   /// @brief External force on simulation. Set to gravity for now
   //----------------------------------------------------------------------------------------------------------------------
   Eigen::Vector3f m_externalForce;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief A matrix for deviatoric velocity calculation
+  //----------------------------------------------------------------------------------------------------------------------
+  Eigen::MatrixXf m_Amatrix_deviatoric_X;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief B vector for deviatoric velocity calculation
+  //----------------------------------------------------------------------------------------------------------------------
+  Eigen::VectorXf m_Bvector_deviatoric_X;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief A matrix for deviatoric velocity calculation
+  //----------------------------------------------------------------------------------------------------------------------
+  Eigen::MatrixXf m_Amatrix_deviatoric_Y;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief B vector for deviatoric velocity calculation
+  //----------------------------------------------------------------------------------------------------------------------
+  Eigen::VectorXf m_Bvector_deviatoric_Y;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief A matrix for deviatoric velocity calculation
+  //----------------------------------------------------------------------------------------------------------------------
+  Eigen::MatrixXf m_Amatrix_deviatoric_Z;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief B vector for deviatoric velocity calculation
+  //----------------------------------------------------------------------------------------------------------------------
+  Eigen::VectorXf m_Bvector_deviatoric_Z;
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Ambient temperature; temperature of the surrounding air. In Kelvin
@@ -180,6 +204,41 @@ private:
   /// @todo Change to switch/case statements instead of if statements
   //----------------------------------------------------------------------------------------------------------------------
   void classifyCells();
+
+  //NEW INTERPOLATION AND DEVIATORIC CALC SETUP - 14.08.16
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Interpolate data from particles to grid
+  /// @brief Calculates variables for grid
+  /// @brief Calculates deviatoric force, B component and A components for deviatoric velocity calculations
+  //----------------------------------------------------------------------------------------------------------------------
+  void interpolateParticleToGrid(Emitter* _emitter, bool _isFirstStep);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Calculate interpolation weights based on cubic B Spline for given particle and cell
+  //----------------------------------------------------------------------------------------------------------------------
+  void calcWeight_cubicBSpline(Eigen::Vector3f _particlePosition, int _iIndex, int _jIndex, int _kIndex,
+                                    float &o_weightCentre, float &o_weightFaceX, float &o_weightFaceY, float &o_weightFaceZ);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Calculate interpolation weights differentiated based on cubic B Spline for given particle and cell
+  //----------------------------------------------------------------------------------------------------------------------
+  void calcWeight_cubicBSpline_Diff(Eigen::Vector3f _particlePosition, int _iIndex, int _jIndex, int _kIndex, Eigen::Vector3f &o_weightFaceX, Eigen::Vector3f &o_weightFaceY, Eigen::Vector3f &o_weightFaceZ);
+
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Calculate deviatoric force, B component and A row component contributions from a particle
+  //----------------------------------------------------------------------------------------------------------------------
+  void calcDeviatoricContributions(Particle *_particle, int _cellIndex, int _iIndex, int _jIndex, int _kIndex, float _weightX, float _weightY, float _weightZ);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Calculate force due to deviatoric stress
+  //----------------------------------------------------------------------------------------------------------------------
+  float calcDeviatoricForce_New(Particle *_particle, Eigen::Vector3f _eVector, Eigen::Vector3f _weightDiff);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Calculate B in Ax=B for the implicit calculation of velocity.
+  /// b_i=v_i + (dt/m_i)*f_i + dt*g*eVector*sumWeight
+  //----------------------------------------------------------------------------------------------------------------------
+  float calcBComponent_DeviatoricVelocity_New(Particle *_particle, Eigen::Vector3f _eVector, float _weight, float _deviatoricForce, float _massFace);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Calculates component of A matrix for Ax=b. In this case have (I+A)x=b where I will not be included in the A component
+  //----------------------------------------------------------------------------------------------------------------------
+  float calcAComponent_DeviatoricVelocity_New(Particle* _particle, Eigen::Vector3f _weight_i_diff, Eigen::Vector3f _weight_j_diff, Eigen::Vector3f _eVector);
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate force due to deviatoric stress

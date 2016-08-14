@@ -196,8 +196,7 @@ void Grid::projectVelocity()
       }
       else if (state_i1jk==State::Colliding)
       {
-//        pressure_i1jk=pressure_ijk;
-        pressure_i1jk=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
+        pressure_i1jk=pressure_ijk;
       }
 
       if (state_i_1jk==State::Interior)
@@ -206,8 +205,7 @@ void Grid::projectVelocity()
       }
       else if (state_i_1jk==State::Colliding)
       {
-//        pressure_i_1jk=pressure_ijk;
-        pressure_i_1jk=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
+        pressure_i_1jk=pressure_ijk;
       }
 
       if (state_ij1k==State::Interior)
@@ -216,8 +214,7 @@ void Grid::projectVelocity()
       }
       else if (state_ij1k==State::Colliding)
       {
-//        pressure_ij1k=pressure_ijk;
-        pressure_ij1k=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
+        pressure_ij1k=pressure_ijk;
       }
 
       if (state_ij_1k==State::Interior)
@@ -226,8 +223,7 @@ void Grid::projectVelocity()
       }
       else if (state_ij_1k==State::Colliding)
       {
-//        pressure_ij_1k=pressure_ijk;
-        pressure_ij_1k=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
+        pressure_ij_1k=pressure_ijk;
       }
 
       if (state_ijk1==State::Interior)
@@ -236,8 +232,7 @@ void Grid::projectVelocity()
       }
       else if (state_ijk1==State::Colliding)
       {
-//        pressure_ijk1=pressure_ijk;
-        pressure_ijk1=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
+        pressure_ijk1=pressure_ijk;
       }
 
       if (state_ijk_1==State::Interior)
@@ -246,48 +241,46 @@ void Grid::projectVelocity()
       }
       else if (state_ijk_1==State::Colliding)
       {
-//        pressure_ijk_1=pressure_ijk;
-        pressure_ijk_1=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
+        pressure_ijk_1=pressure_ijk;
       }
 
+      //Check pressure isn't zero
+      if (pressure_ijk<0)
+      {
+        pressure_ijk=0.0;
+//        pressure_ijk=std::abs(pressure_ijk);
+      }
 
-//      //Check pressure isn't zero
-//      if (pressure_ijk<0)
-//      {
-//        pressure_ijk=0.0;
-////        pressure_ijk=std::abs(pressure_ijk);
-//      }
-
-//      if (pressure_i1jk<0)
-//      {
-//        pressure_i1jk=0.0;
-////        pressure_i1jk=std::abs(pressure_i1jk);
-//      }
-//      if (pressure_i_1jk<0)
-//      {
-//        pressure_i_1jk=0.0;
-////        pressure_i_1jk=std::abs(pressure_i_1jk);
-//      }
-//      if (pressure_ij1k<0)
-//      {
-//        pressure_ij1k=0.0;
-////        pressure_ij1k=std::abs(pressure_ij1k);
-//      }
-//      if (pressure_ij_1k<0)
-//      {
-//        pressure_ij_1k=0.0;
-////        pressure_ij_1k=std::abs(pressure_ij_1k);
-//      }
-//      if (pressure_ijk1<0)
-//      {
-//        pressure_ijk1=0.0;
-////        pressure_ijk1=std::abs(pressure_ijk1);
-//      }
-//      if (pressure_ijk_1<0)
-//      {
-//        pressure_ijk_1=0.0;
-////        pressure_ijk_1=std::abs(pressure_ijk_1);
-//      }
+      if (pressure_i1jk<0)
+      {
+        pressure_i1jk=0.0;
+//        pressure_i1jk=std::abs(pressure_i1jk);
+      }
+      if (pressure_i_1jk<0)
+      {
+        pressure_i_1jk=0.0;
+//        pressure_i_1jk=std::abs(pressure_i_1jk);
+      }
+      if (pressure_ij1k<0)
+      {
+        pressure_ij1k=0.0;
+//        pressure_ij1k=std::abs(pressure_ij1k);
+      }
+      if (pressure_ij_1k<0)
+      {
+        pressure_ij_1k=0.0;
+//        pressure_ij_1k=std::abs(pressure_ij_1k);
+      }
+      if (pressure_ijk1<0)
+      {
+        pressure_ijk1=0.0;
+//        pressure_ijk1=std::abs(pressure_ijk1);
+      }
+      if (pressure_ijk_1<0)
+      {
+        pressure_ijk_1=0.0;
+//        pressure_ijk_1=std::abs(pressure_ijk_1);
+      }
 
       //Calculate pressure gradients
       float pressureGradient_i1jk=pressure_i1jk-pressure_ijk;
