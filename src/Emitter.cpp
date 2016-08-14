@@ -314,7 +314,23 @@ void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Emitter::exportParticles(std::unique_ptr<AlembicExport> _alembicExporter)
+void Emitter::exportParticles(AlembicExport *_alembicExporter)
 {
+  //Set up particle position and id containers
+  std::vector<Imath::V3f> positions;
+  std::vector<Alembic::Util::uint64_t> IDs;
+
+  //Get positions and ids of particles
+  unsigned int noParticles=m_noParticles;
+  for (unsigned int i=0; i<noParticles; i++)
+  {
+    IDs.push_back(i);
+
+    Eigen::Vector3f position=m_particles[i]->getPosition();
+    positions.push_back(Imath::V3f(position(0), position(1), position(2)));
+  }
+
+  //Give IDs and positions to Alembic exporter
+  _alembicExporter->exportFrame(positions, IDs);
 
 }

@@ -89,11 +89,13 @@ SimulationController::SimulationController()
   std::cout<<"The smallest number of particles in a non-empty cell is: "<<minNoParticles<<"\n";
 
   //Set up alembic file for export
-  m_exportFileName="../HoudiniFiles/particles.abc";
-  m_isExporting=false;
+  m_exportFileName="../HoudiniFiles/MeltingParticles.abc";
+//  m_isExporting=false;
+  m_isExporting=true;
   if (m_isExporting==true)
   {
-    m_alembicExporter.reset(new AlembicExport(m_exportFileName));
+//    m_alembicExporter.reset(new AlembicExport(m_exportFileName));
+    m_alembicExporter=new AlembicExport(m_exportFileName);
   }
 
 }
@@ -107,6 +109,8 @@ SimulationController::~SimulationController()
   //Delete emitter and grid pointers
   delete m_emitter;
   delete m_grid;
+
+  delete m_alembicExporter;
 
   std::cout<<"Removing simulation controller\n";
 

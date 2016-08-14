@@ -122,7 +122,8 @@ public:
   /// @brief Export particles
   /// @param [in] _alembicExporter: std::unique pointer to alembic exporter
   //----------------------------------------------------------------------------------------------------------------------
-  void exportParticles(std::unique_ptr <AlembicExport> _alembicExporter);
+//  void exportParticles(std::unique_ptr <AlembicExport> _alembicExporter);
+  void exportParticles(AlembicExport* _alembicExporter);
 
 
 protected:
