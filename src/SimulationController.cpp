@@ -258,6 +258,12 @@ void SimulationController::update()
   if (m_noFrames==0 && m_elapsedTimeAfterFrame==0)
   {
     isFirstStep=true;
+
+    //Write first set up to file
+    if (m_isExporting==true)
+    {
+      m_emitter->exportParticles(m_alembicExporter);
+    }
   }
 
   //Update elastic/plastic

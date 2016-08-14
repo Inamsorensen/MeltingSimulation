@@ -30,8 +30,7 @@ Emitter::Emitter()
   m_heatConductivitySolid=0.0;
   m_heatConductivityFluid=0.0;
   m_latentHeat=0.0;
-  m_freezingTemperature=0.0;
-  m_freezingTemperatureBuffer=2.0;
+  m_transitionTemperature=0.0;
 
   m_xMin=0.0;
   m_xMax=0.0;
@@ -122,7 +121,7 @@ void Emitter::setStrainConstants(float _lameMuConstant, float _lameLambdaConstan
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void Emitter::setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, float _heatCondSolid, float _heatCondFluid, float _latentHeat, float _freezeTemp)
+void Emitter::setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, float _heatCondSolid, float _heatCondFluid, float _latentHeat, float _transitionTemp)
 {
   /* Outline
   ------------------------------------------------------------------------------------------------------
@@ -135,7 +134,7 @@ void Emitter::setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, 
   m_heatConductivitySolid=_heatCondSolid;
   m_heatConductivityFluid=_heatCondFluid;
   m_latentHeat=_latentHeat;
-  m_freezingTemperature=_freezeTemp;
+  m_transitionTemperature=_transitionTemp;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -217,12 +216,16 @@ void Emitter::renderParticles(ngl::Mat4 _modelMatrixCamera, ngl::Camera* _camera
   ngl::Vec3 darkBlueColour(0.0, 0.0, 0.5);
 
 
-  float stepTemp=(_heatSourceTemp-_ambientTemp)/3.0;
+//  float stepTemp=(_heatSourceTemp-_ambientTemp)/3.0;
 
+//  float tempStep0=_ambientTemp;
+//  float tempStep1=stepTemp+_ambientTemp;
+//  float tempStep2=(stepTemp*2.0)+_ambientTemp;
+//  float tempStep3=(stepTemp*3.0)+_ambientTemp;
   float tempStep0=_ambientTemp;
-  float tempStep1=stepTemp+_ambientTemp;
-  float tempStep2=(stepTemp*2.0)+_ambientTemp;
-  float tempStep3=(stepTemp*3.0)+_ambientTemp;
+  float tempStep1=m_transitionTemperature-1;
+  float tempStep2=m_transitionTemperature+1;
+  float tempStep3=100;
 
 
   for (int i=0; i<m_noParticles; i++)

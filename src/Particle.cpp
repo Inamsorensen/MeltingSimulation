@@ -474,22 +474,6 @@ void Particle::applyPlasticity()
   m_deformationPlastic=tempMatrix2*deformationGradient;
 
 
-//  //Verify that new deformation gradient is the same as the one before applying plasticity
-//  Eigen::Matrix3f newDeformationGradient=m_deformationElastic*m_deformationPlastic;
-
-//  //Check if new deformation gradient is the same as the one calculated at the beginning
-//  //Even when correct there is a difference probably due to floating point error.
-//  float tolerance=1.0*(pow(10,(-5.0)));
-//  for (int i=0; i<9; ++i)
-//  {
-//    float difference=std::abs(deformationGradient(i)-newDeformationGradient(i));
-//    if (difference>tolerance)
-//    {
-//      throw std::invalid_argument("New deformation gradient not the same as the old.");
-//    }
-//  }
-
-
   //Calculate new determinants
   m_detDeformGrad=deformationGradient.determinant();
   m_detDeformGradElastic=m_deformationElastic.determinant();
@@ -589,18 +573,6 @@ void Particle::updateDeformationGradient(float _dt)
     }
   }
 
-//  if (power>1)
-//  {
-//    std::cout<<"test\n";
-//  }
-
-//  //Multiply I+M the number of times given by the power
-//  Eigen::Matrix3f R_of_M=I_matrix;
-//  for (int i=0; i<power; i++)
-//  {
-//    R_of_M*=determinantMatrix;
-//  }
-
   //Find new deformation gradient
   m_deformationElastic=determinantMatrix*m_deformationElastic;
 
@@ -624,8 +596,8 @@ void Particle::applyPhaseTransition()
   ------------------------------------------------------------------------------------------------------
   */
 
-  //Get freezing temperature
-  float freezeTemp=m_emitter->getFreezingTemperature();
+  //Get transition temperature
+  float transitionTemp=m_emitter->getTransitionTemperature();
 
   //Get latent heat
   float latentHeat=m_emitter->getLatentHeat();
@@ -641,10 +613,8 @@ void Particle::applyPhaseTransition()
     heatCapacity=m_emitter->getHeatCapacitySolid();
   }
 
-  //Get freezing temp buffer
-  float freezeTempBuffer=m_emitter->getFreezingTemperatureBuffer();
-
-  if (m_previousTemperature<=(freezeTemp+freezeTempBuffer) && m_previousTemperature>=(freezeTemp-freezeTempBuffer))
+  //Check if previous temperature is at transition temp
+  if (m_previousTemperature==transitionTemp)
   {
     //Increment transition heat
     float deltaT=m_temperature-m_previousTemperature;
@@ -667,8 +637,16 @@ void Particle::applyPhaseTransition()
     else
     {
       //If transition heat has not been filled or emptied entirely, then no change in temperature
-      m_temperature=freezeTemp;
+      m_temperature=transitionTemp;
     }
+  }
+
+  //Check if phase transition is reached
+  else if ((m_previousTemperature<transitionTemp && m_temperature>=transitionTemp)
+            || (m_previousTemperature>transitionTemp && m_temperature<=transitionTemp))
+  {
+    //Set temperature to transition temp, ignoring its contribution to transition heat
+    m_temperature=transitionTemp;
   }
 }
 

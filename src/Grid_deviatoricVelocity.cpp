@@ -108,7 +108,7 @@ void Grid::calcDeviatoricVelocity()
 
     if (state_FaceZ==State::Interior)
     {
-      b_Z(cellIndex)=calcBComponent_DeviatoricVelocity(m_cellFacesZ[cellIndex], e_y);
+      b_Z(cellIndex)=calcBComponent_DeviatoricVelocity(m_cellFacesZ[cellIndex], e_z);
     }
 
 //    if (state_FaceX!=State::Empty || state_FaceY!=State::Empty || state_FaceZ!=State::Empty)
@@ -583,7 +583,7 @@ void Grid::calcAComponent_DeviatoricVelocity(int _cellIndex, int _noParticlesFac
         //Face Y
         if (state_FaceY==State::Interior && state_FaceY_neighbour==State::Interior)
         {
-          int noParticlesFaceY_neighbour=m_cellFacesY[neighbourCellIndex]->m_interpolationData.size();
+//          int noParticlesFaceY_neighbour=m_cellFacesY[neighbourCellIndex]->m_interpolationData.size();
 
 //          if (noParticlesFaceY_neighbour!=0 && _noParticlesFaceY!=0)
 //          {
@@ -631,7 +631,7 @@ void Grid::calcAComponent_DeviatoricVelocity(int _cellIndex, int _noParticlesFac
         //Face Z
         if (state_FaceZ==State::Interior && state_FaceZ_neighbour==State::Interior)
         {
-          int noParticlesFaceZ_neighbour=m_cellFacesZ[neighbourCellIndex]->m_interpolationData.size();
+//          int noParticlesFaceZ_neighbour=m_cellFacesZ[neighbourCellIndex]->m_interpolationData.size();
 
 //          if (noParticlesFaceZ_neighbour!=0 && _noParticlesFaceZ!=0)
 //          {

@@ -43,7 +43,7 @@ public:
   /// @brief Set material constants
   //----------------------------------------------------------------------------------------------------------------------
   void setStrainConstants(float _lameMuConstant, float _lameLambdaConstant, float _compressionLim, float _stretchLim, float _hardnessCoefficient);
-  void setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, float _heatCondSolid, float _heatCondFluid, float _latentHeat, float _freezeTemp);
+  void setTemperatureConstants(float _heatCapSolid, float _heatCapFluid, float _heatCondSolid, float _heatCondFluid, float _latentHeat, float _transitionTemp);
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Set collision object
   //----------------------------------------------------------------------------------------------------------------------
@@ -82,13 +82,9 @@ public:
 //  //----------------------------------------------------------------------------------------------------------------------
 //  inline std::vector<Particle*>* getParticlesList() {return &m_particles;}
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Get freezing temperature
+  /// @brief Get transition temperature
   //----------------------------------------------------------------------------------------------------------------------
-  inline float getFreezingTemperature() const {return m_freezingTemperature;}
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Get freezing temperature buffer
-  //----------------------------------------------------------------------------------------------------------------------
-  inline float getFreezingTemperatureBuffer() const {return m_freezingTemperatureBuffer;}
+  inline float getTransitionTemperature() const {return m_transitionTemperature;}
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Get heat capacity for fluid
   //----------------------------------------------------------------------------------------------------------------------
@@ -172,13 +168,9 @@ protected:
   //----------------------------------------------------------------------------------------------------------------------
   float m_latentHeat;
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Freezing or melting temperature of material being simulated
+  /// @brief Transition temperature of material being simulated
   //----------------------------------------------------------------------------------------------------------------------
-  float m_freezingTemperature;
-  //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Freezing point buffer in case temperature doesn't hit freezing temperature exactly
-  //----------------------------------------------------------------------------------------------------------------------
-  float m_freezingTemperatureBuffer;
+  float m_transitionTemperature;
 
 private:
   //----------------------------------------------------------------------------------------------------------------------

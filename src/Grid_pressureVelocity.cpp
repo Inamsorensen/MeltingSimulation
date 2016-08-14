@@ -22,17 +22,78 @@ void Grid::projectVelocity()
   */
 
   //Calculate cell face densities for interior cells
+//#pragma omp parallel for
+//  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
+//  {
+//    if (m_cellCentres[cellIndex]->m_state==State::Interior)
+//    {
+//      calcFaceDensities(cellIndex);
+//    }
+//  }
+
+//Calculate cell face densities for interior cells
 #pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
-//    if (cellIndex==172)
-//    {
-//      std::cout<<"test\n";
-//    }
-
+    //Only update if cell centres are interior
     if (m_cellCentres[cellIndex]->m_state==State::Interior)
     {
-      calcFaceDensities(cellIndex);
+      //Get index of cell
+      int iIndex=m_cellCentres[cellIndex]->m_iIndex;
+      int jIndex=m_cellCentres[cellIndex]->m_jIndex;
+      int kIndex=m_cellCentres[cellIndex]->m_kIndex;
+
+      //Get mass of cell faces
+      float massX=m_cellFacesX[cellIndex]->m_mass;
+      float massY=m_cellFacesY[cellIndex]->m_mass;
+      float massZ=m_cellFacesZ[cellIndex]->m_mass;
+
+      //Calculate control volumes of cell faces
+      float volumeX=calcFaceVolume(iIndex, jIndex, kIndex, 0);
+      float volumeY=calcFaceVolume(iIndex, jIndex, kIndex, 1);
+      float volumeZ=calcFaceVolume(iIndex, jIndex, kIndex, 2);
+
+      //Set cell face densities
+      m_cellFacesX[cellIndex]->m_density=massX/volumeX;
+      m_cellFacesY[cellIndex]->m_density=massY/volumeY;
+      m_cellFacesZ[cellIndex]->m_density=massZ/volumeZ;
+
+      //Check if cells of the upper faces are empty or colliding, if so calculate their density too
+      int cellIndex_i1jk=MathFunctions::getVectorIndex(iIndex+1, jIndex, kIndex, m_noCells);
+      int cellIndex_ij1k=MathFunctions::getVectorIndex(iIndex, jIndex+1, kIndex, m_noCells);
+      int cellIndex_ijk1=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex+1, m_noCells);
+
+      if (m_cellCentres[cellIndex_i1jk]->m_state!=State::Interior)
+      {
+        float mass=m_cellFacesX[cellIndex_i1jk]->m_mass;
+        float volume=calcFaceVolume(iIndex+1, jIndex, kIndex, 0);
+        //Make sure volume isn't zero
+        if (volume!=0.0)
+        {
+          m_cellFacesX[cellIndex_i1jk]->m_density=mass/volume;
+        }
+      }
+      if (m_cellCentres[cellIndex_ij1k]->m_state!=State::Interior)
+      {
+        float mass=m_cellFacesY[cellIndex_ij1k]->m_mass;
+        float volume=calcFaceVolume(iIndex, jIndex+1, kIndex, 1);
+        //Make sure volume isn't zero
+        if (volume!=0.0)
+        {
+          m_cellFacesY[cellIndex_ij1k]->m_density=mass/volume;
+        }
+      }
+      if (m_cellCentres[cellIndex_ijk1]->m_state!=State::Interior)
+      {
+        float mass=m_cellFacesZ[cellIndex_ijk1]->m_mass;
+        float volume=calcFaceVolume(iIndex, jIndex, kIndex+1, 2);
+        //Make sure volume isn't zero
+        if (volume!=0.0)
+        {
+          m_cellFacesZ[cellIndex_ijk1]->m_density=mass/volume;
+        }
+      }
+
     }
   }
 
@@ -55,11 +116,6 @@ void Grid::projectVelocity()
 //#pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
-//      if (cellIndex==172)
-//      {
-//        std::cout<<"test\n";
-//      }
-
     //Only fill in interior cells
     if (m_cellCentres[cellIndex]->m_state==State::Interior)
     {
@@ -88,10 +144,6 @@ void Grid::projectVelocity()
 #pragma omp parallel for
   for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
   {
-//    if (cellIndex==172)
-//    {
-//      std::cout<<"test\n";
-//    }
     //Only correct faces surrounding interior cells
     if (m_cellCentres[cellIndex]->m_state==State::Interior)
     {
@@ -100,7 +152,7 @@ void Grid::projectVelocity()
       int jIndex=m_cellCentres[cellIndex]->m_jIndex;
       int kIndex=m_cellCentres[cellIndex]->m_kIndex;
 
-      //Get indices of upper surrounding faces
+      //Get indices of surrounding cells
       int indexCell_i1jk=MathFunctions::getVectorIndex(iIndex+1, jIndex, kIndex, m_noCells);
       int indexCell_i_1jk=MathFunctions::getVectorIndex(iIndex-1, jIndex, kIndex, m_noCells);
       int indexCell_ij1k=MathFunctions::getVectorIndex(iIndex, jIndex+1, kIndex, m_noCells);
@@ -112,50 +164,130 @@ void Grid::projectVelocity()
 
       //Get pressure for all indices
       float pressure_ijk=solution(cellIndex);
-      float pressure_i1jk=solution(indexCell_i1jk);
-      float pressure_i_1jk=solution(indexCell_i_1jk);
-      float pressure_ij1k=solution(indexCell_ij1k);
-      float pressure_ij_1k=solution(indexCell_ij_1k);
-      float pressure_ijk1=solution(indexCell_ijk1);
-      float pressure_ijk_1=solution(indexCell_ijk_1);
+//      float pressure_i1jk=solution(indexCell_i1jk);
+//      float pressure_i_1jk=solution(indexCell_i_1jk);
+//      float pressure_ij1k=solution(indexCell_ij1k);
+//      float pressure_ij_1k=solution(indexCell_ij_1k);
+//      float pressure_ijk1=solution(indexCell_ijk1);
+//      float pressure_ijk_1=solution(indexCell_ijk_1);
 
-      //Check pressure isn't zero
-      if (pressure_ijk<0)
+        float pressure_i1jk=0.0;
+        float pressure_i_1jk=0.0;
+        float pressure_ij1k=0.0;
+        float pressure_ij_1k=0.0;
+        float pressure_ijk1=0.0;
+        float pressure_ijk_1=0.0;
+
+      //Get state of neighbouring cells
+      State state_i1jk=m_cellCentres[indexCell_i1jk]->m_state;
+      State state_i_1jk=m_cellCentres[indexCell_i_1jk]->m_state;
+      State state_ij1k=m_cellCentres[indexCell_ij1k]->m_state;
+      State state_ij_1k=m_cellCentres[indexCell_ij_1k]->m_state;
+      State state_ijk1=m_cellCentres[indexCell_ijk1]->m_state;
+      State state_ijk_1=m_cellCentres[indexCell_ijk_1]->m_state;
+
+      //Enforce boundaries
+      //If neighbour cells is interior, set to solution
+      //if colliding set to pressure of ijk so pressure gradient is zero
+      //If empty, leave pressure as zero.
+      if (state_i1jk==State::Interior)
       {
-        pressure_ijk=0.0;
-//        pressure_ijk=std::abs(pressure_ijk);
+        pressure_i1jk=solution(indexCell_i1jk);
+      }
+      else if (state_i1jk==State::Colliding)
+      {
+//        pressure_i1jk=pressure_ijk;
+        pressure_i1jk=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
       }
 
-      if (pressure_i1jk<0)
+      if (state_i_1jk==State::Interior)
       {
-        pressure_i1jk=0.0;
-//        pressure_i1jk=std::abs(pressure_i1jk);
+        pressure_i_1jk=solution(indexCell_i_1jk);
       }
-      if (pressure_i_1jk<0)
+      else if (state_i_1jk==State::Colliding)
       {
-        pressure_i_1jk=0.0;
-//        pressure_i_1jk=std::abs(pressure_i_1jk);
+//        pressure_i_1jk=pressure_ijk;
+        pressure_i_1jk=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
       }
-      if (pressure_ij1k<0)
+
+      if (state_ij1k==State::Interior)
       {
-        pressure_ij1k=0.0;
-//        pressure_ij1k=std::abs(pressure_ij1k);
+        pressure_ij1k=solution(indexCell_ij1k);
       }
-      if (pressure_ij_1k<0)
+      else if (state_ij1k==State::Colliding)
       {
-        pressure_ij_1k=0.0;
-//        pressure_ij_1k=std::abs(pressure_ij_1k);
+//        pressure_ij1k=pressure_ijk;
+        pressure_ij1k=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
       }
-      if (pressure_ijk1<0)
+
+      if (state_ij_1k==State::Interior)
       {
-        pressure_ijk1=0.0;
-//        pressure_ijk1=std::abs(pressure_ijk1);
+        pressure_ij_1k=solution(indexCell_ij_1k);
       }
-      if (pressure_ijk_1<0)
+      else if (state_ij_1k==State::Colliding)
       {
-        pressure_ijk_1=0.0;
-//        pressure_ijk_1=std::abs(pressure_ijk_1);
+//        pressure_ij_1k=pressure_ijk;
+        pressure_ij_1k=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
       }
+
+      if (state_ijk1==State::Interior)
+      {
+        pressure_ijk1=solution(indexCell_ijk1);
+      }
+      else if (state_ijk1==State::Colliding)
+      {
+//        pressure_ijk1=pressure_ijk;
+        pressure_ijk1=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
+      }
+
+      if (state_ijk_1==State::Interior)
+      {
+        pressure_ijk_1=solution(indexCell_ijk_1);
+      }
+      else if (state_ijk_1==State::Colliding)
+      {
+//        pressure_ijk_1=pressure_ijk;
+        pressure_ijk_1=pressure_ijk*MathFunctions::signFunction(pressure_ijk);
+      }
+
+
+//      //Check pressure isn't zero
+//      if (pressure_ijk<0)
+//      {
+//        pressure_ijk=0.0;
+////        pressure_ijk=std::abs(pressure_ijk);
+//      }
+
+//      if (pressure_i1jk<0)
+//      {
+//        pressure_i1jk=0.0;
+////        pressure_i1jk=std::abs(pressure_i1jk);
+//      }
+//      if (pressure_i_1jk<0)
+//      {
+//        pressure_i_1jk=0.0;
+////        pressure_i_1jk=std::abs(pressure_i_1jk);
+//      }
+//      if (pressure_ij1k<0)
+//      {
+//        pressure_ij1k=0.0;
+////        pressure_ij1k=std::abs(pressure_ij1k);
+//      }
+//      if (pressure_ij_1k<0)
+//      {
+//        pressure_ij_1k=0.0;
+////        pressure_ij_1k=std::abs(pressure_ij_1k);
+//      }
+//      if (pressure_ijk1<0)
+//      {
+//        pressure_ijk1=0.0;
+////        pressure_ijk1=std::abs(pressure_ijk1);
+//      }
+//      if (pressure_ijk_1<0)
+//      {
+//        pressure_ijk_1=0.0;
+////        pressure_ijk_1=std::abs(pressure_ijk_1);
+//      }
 
       //Calculate pressure gradients
       float pressureGradient_i1jk=pressure_i1jk-pressure_ijk;
@@ -634,5 +766,146 @@ void Grid::calcFaceDensities(int _cellIndex)
   m_cellFacesX[_cellIndex]->m_density=(m_cellFacesX[_cellIndex]->m_mass/xFaceVolume);
   m_cellFacesY[_cellIndex]->m_density=(m_cellFacesY[_cellIndex]->m_mass/yFaceVolume);
   m_cellFacesZ[_cellIndex]->m_density=(m_cellFacesZ[_cellIndex]->m_mass/zFaceVolume);
+
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+float Grid::calcFaceVolume(int _iIndex, int _jIndex, int _kIndex, int _cellFaceDirection)
+{
+  /* Outline
+  ----------------------------------------------------------------------------------------------------------------
+  Set up to loop over neighbour cells in +-2 in each direction
+    Verify that this does not include non-excisting cells
+
+  Loop over neighbour cells
+    For each cell, calculate cubicBSpline_Integ
+    Add to sum cubicBSpline_Integ
+
+  Clamp to 1, since maximum volume should be cellSize^3??
+
+  Multiply with cellSize^3
+
+  Return result
+
+  ----------------------------------------------------------------------------------------------------------------
+  */
+
+  //Set storage for volume
+  float faceVolume=0.0;
+
+  //Set min and max increments for ijk
+  int iMinIncrement=-2;
+  int jMinIncrement=-2;
+  int kMinIncrement=-2;
+  int iMaxIncrement=2;
+  int jMaxIncrement=2;
+  int kMaxIncrement=2;
+
+  //Make sure doesn't loop over outside cells.
+  //Sort of makes the non-existing cells seem like collision cells as will add nothing to volume
+  // i direction
+  if (_iIndex==0)
+  {
+    iMinIncrement=0;
+  }
+  if (_iIndex==1)
+  {
+    iMinIncrement=-1;
+  }
+  if (_iIndex==(m_noCells-2))
+  {
+    iMaxIncrement=1;
+  }
+  if (_iIndex==(m_noCells-1))
+  {
+    iMaxIncrement=0;
+  }
+
+  //j direction
+  if (_jIndex==0)
+  {
+    jMinIncrement=0;
+  }
+  if (_jIndex==1)
+  {
+    jMinIncrement=-1;
+  }
+  if (_jIndex==(m_noCells-2))
+  {
+    jMaxIncrement=1;
+  }
+  if (_jIndex==(m_noCells-1))
+  {
+    jMaxIncrement=0;
+  }
+
+  // k direction
+  if (_kIndex==0)
+  {
+    kMinIncrement=0;
+  }
+  if (_kIndex==1)
+  {
+    kMinIncrement=-1;
+  }
+  if (_kIndex==(m_noCells-2))
+  {
+    kMaxIncrement=1;
+  }
+  if (_kIndex==(m_noCells-1))
+  {
+    kMaxIncrement=0;
+  }
+
+
+  //Loop over neighbouring cells that will give cubicBSpline_Integ!=0
+  for (int kIndexIncrement=kMinIncrement; kIndexIncrement<(kMaxIncrement+1); kIndexIncrement++)
+  {
+    for (int jIndexIncrement=jMinIncrement; jIndexIncrement<(jMaxIncrement+1); jIndexIncrement++)
+    {
+      for (int iIndexIncrement=iMinIncrement; iIndexIncrement<(iMaxIncrement+1); iIndexIncrement++)
+      {
+
+        //Get index of incremented cell
+        int cellIndexIncremented=MathFunctions::getVectorIndex((_iIndex+iIndexIncrement), (_jIndex+jIndexIncrement), (_kIndex+kIndexIncrement), m_noCells);
+
+        //Check if cell is colliding. If colliding then will add nothing to cell face volume
+        if (m_cellCentres[cellIndexIncremented]->m_state!=State::Colliding)
+        {
+          //Check which face direction is calculated for
+          //Face X
+          if (_cellFaceDirection==0)
+          {
+            faceVolume+=MathFunctions::calcCubicBSpline_Integ(0, iIndexIncrement, jIndexIncrement, kIndexIncrement);
+          }
+          //Face Y
+          if (_cellFaceDirection==1)
+          {
+            faceVolume+=MathFunctions::calcCubicBSpline_Integ(1, iIndexIncrement, jIndexIncrement, kIndexIncrement);
+          }
+          //Face Z
+          if (_cellFaceDirection==2)
+          {
+            faceVolume+=MathFunctions::calcCubicBSpline_Integ(2, iIndexIncrement, jIndexIncrement, kIndexIncrement);
+          }
+        }
+
+      }
+    }
+  }
+
+  //Clamp volume to 1
+  ///Not sure if this should be done
+//  faceVolume=std::min<float>(faceVolume, 1.0);
+
+  //Multiply interpolation integration sum with cell volume
+  float cellVolume=pow(m_cellSize, 3);
+  faceVolume*=cellVolume;
+
+  //Return face volume
+  return faceVolume;
+
+
 
 }

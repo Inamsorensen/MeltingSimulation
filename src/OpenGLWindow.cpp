@@ -343,32 +343,32 @@ void OpenGLWindow::visualiseGrid()
         ngl::Vec3 colourGreen(0.0, 0.8, 0.0);
         ngl::Vec3 colourBlue(0.0, 0.0, 0.8);
 
-//        if (cellState==State::Colliding)
-//        {
-//          shaderLib->setRegisteredUniformVec3("colour", colourRed);
-//        }
-//        else if (cellState==State::Interior)
-//        {
-//          shaderLib->setRegisteredUniformVec3("colour", colourGreen);
-//        }
-//        else if (cellState==State::Empty)
-//        {
-//          shaderLib->setRegisteredUniformVec3("colour", colourBlue);
-//        }
-
-        //Visualise cell temperatures
-        if (cellTemperature==heatSourceTemp)
+        if (cellState==State::Colliding)
         {
           shaderLib->setRegisteredUniformVec3("colour", colourRed);
         }
-        else if (cellTemperature==ambientTemp)
+        else if (cellState==State::Interior)
         {
           shaderLib->setRegisteredUniformVec3("colour", colourGreen);
         }
-        else
+        else if (cellState==State::Empty)
         {
           shaderLib->setRegisteredUniformVec3("colour", colourBlue);
         }
+
+//        //Visualise cell temperatures
+//        if (cellTemperature==heatSourceTemp)
+//        {
+//          shaderLib->setRegisteredUniformVec3("colour", colourRed);
+//        }
+//        else if (cellTemperature==ambientTemp)
+//        {
+//          shaderLib->setRegisteredUniformVec3("colour", colourGreen);
+//        }
+//        else
+//        {
+//          shaderLib->setRegisteredUniformVec3("colour", colourBlue);
+//        }
 
         //Draw
         m_vao->bind();

@@ -58,7 +58,7 @@ Grid::Grid(Eigen::Vector3f _originEdge, float _boundingBoxSize, int _noCells)
   m_ambientTemperature=0.0;
   m_heatSourceTemperature=0.0;
 
-  m_noParticlesThreshold=8;
+  m_noParticlesThreshold=6;
 
 
   m_cellCentres.reserve(pow(m_noCells,3));
@@ -1086,13 +1086,13 @@ void Grid::classifyCells()
 //          && noParticlesInCellFaceY_1!=0
 //          && noParticlesInCellFaceZ1!=0
 //          && noParticlesInCellFaceZ_1!=0)
-      if (noParticlesInCellCentre>=m_noParticlesThreshold
-          && noParticlesInCellFaceX1>=m_noParticlesThreshold
-          && noParticlesInCellFaceX_1>=m_noParticlesThreshold
-          && noParticlesInCellFaceY1>=m_noParticlesThreshold
-          && noParticlesInCellFaceY_1>=m_noParticlesThreshold
-          && noParticlesInCellFaceZ1>=m_noParticlesThreshold
-          && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
+      if (noParticlesInCellCentre>m_noParticlesThreshold
+          && noParticlesInCellFaceX1>m_noParticlesThreshold
+          && noParticlesInCellFaceX_1>m_noParticlesThreshold
+          && noParticlesInCellFaceY1>m_noParticlesThreshold
+          && noParticlesInCellFaceY_1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
       {
         m_cellCentres[cellIndex]->m_state=State::Interior;
       }
@@ -1106,7 +1106,7 @@ void Grid::classifyCells()
       //Set face to empty as well
       if (noParticlesInCellFaceX_1<=m_noParticlesThreshold)
       {
-        m_cellFacesX[cellIndex]->m_state==State::Empty;
+        m_cellFacesX[cellIndex]->m_state=State::Empty;
       }
 
       //Go to next cellIndex
@@ -1153,13 +1153,13 @@ void Grid::classifyCells()
 //            && noParticlesInCellFaceY_1!=0
 //            && noParticlesInCellFaceZ1!=0
 //            && noParticlesInCellFaceZ_1!=0)
-        if (noParticlesInCellCentre>=m_noParticlesThreshold
-            && noParticlesInCellFaceX1>=m_noParticlesThreshold
-            && noParticlesInCellFaceX_1>=m_noParticlesThreshold
-            && noParticlesInCellFaceY1>=m_noParticlesThreshold
-            && noParticlesInCellFaceY_1>=m_noParticlesThreshold
-            && noParticlesInCellFaceZ1>=m_noParticlesThreshold
-            && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
+        if (noParticlesInCellCentre>m_noParticlesThreshold
+            && noParticlesInCellFaceX1>m_noParticlesThreshold
+            && noParticlesInCellFaceX_1>m_noParticlesThreshold
+            && noParticlesInCellFaceY1>m_noParticlesThreshold
+            && noParticlesInCellFaceY_1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
         {
           m_cellCentres[cellIndex]->m_state=State::Interior;
         }
@@ -1211,13 +1211,13 @@ void Grid::classifyCells()
 //          && noParticlesInCellFaceY_1!=0
 //          && noParticlesInCellFaceZ1!=0
 //          && noParticlesInCellFaceZ_1!=0)
-      if (noParticlesInCellCentre>=m_noParticlesThreshold
-          && noParticlesInCellFaceX1>=m_noParticlesThreshold
-          && noParticlesInCellFaceX_1>=m_noParticlesThreshold
-          && noParticlesInCellFaceY1>=m_noParticlesThreshold
-          && noParticlesInCellFaceY_1>=m_noParticlesThreshold
-          && noParticlesInCellFaceZ1>=m_noParticlesThreshold
-          && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
+      if (noParticlesInCellCentre>m_noParticlesThreshold
+          && noParticlesInCellFaceX1>m_noParticlesThreshold
+          && noParticlesInCellFaceX_1>m_noParticlesThreshold
+          && noParticlesInCellFaceY1>m_noParticlesThreshold
+          && noParticlesInCellFaceY_1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
       {
         m_cellCentres[cellIndex]->m_state=State::Interior;
       }
@@ -1231,7 +1231,7 @@ void Grid::classifyCells()
       //Set face to empty as well
       if (noParticlesInCellFaceY_1<=m_noParticlesThreshold)
       {
-        m_cellFacesY[cellIndex]->m_state==State::Empty;
+        m_cellFacesY[cellIndex]->m_state=State::Empty;
       }
 
       //Go to next cellIndex
@@ -1278,13 +1278,13 @@ void Grid::classifyCells()
 //            && noParticlesInCellFaceY_1!=0
 //            && noParticlesInCellFaceZ1!=0
 //            && noParticlesInCellFaceZ_1!=0)
-        if (noParticlesInCellCentre>=m_noParticlesThreshold
-            && noParticlesInCellFaceX1>=m_noParticlesThreshold
-            && noParticlesInCellFaceX_1>=m_noParticlesThreshold
-            && noParticlesInCellFaceY1>=m_noParticlesThreshold
-            && noParticlesInCellFaceY_1>=m_noParticlesThreshold
-            && noParticlesInCellFaceZ1>=m_noParticlesThreshold
-            && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
+        if (noParticlesInCellCentre>m_noParticlesThreshold
+            && noParticlesInCellFaceX1>m_noParticlesThreshold
+            && noParticlesInCellFaceX_1>m_noParticlesThreshold
+            && noParticlesInCellFaceY1>m_noParticlesThreshold
+            && noParticlesInCellFaceY_1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
         {
           m_cellCentres[cellIndex]->m_state=State::Interior;
         }
@@ -1336,13 +1336,13 @@ void Grid::classifyCells()
 //          && noParticlesInCellFaceY_1!=0
 //          && noParticlesInCellFaceZ1!=0
 //          && noParticlesInCellFaceZ_1!=0)
-      if (noParticlesInCellCentre>=m_noParticlesThreshold
-          && noParticlesInCellFaceX1>=m_noParticlesThreshold
-          && noParticlesInCellFaceX_1>=m_noParticlesThreshold
-          && noParticlesInCellFaceY1>=m_noParticlesThreshold
-          && noParticlesInCellFaceY_1>=m_noParticlesThreshold
-          && noParticlesInCellFaceZ1>=m_noParticlesThreshold
-          && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
+      if (noParticlesInCellCentre>m_noParticlesThreshold
+          && noParticlesInCellFaceX1>m_noParticlesThreshold
+          && noParticlesInCellFaceX_1>m_noParticlesThreshold
+          && noParticlesInCellFaceY1>m_noParticlesThreshold
+          && noParticlesInCellFaceY_1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
       {
         m_cellCentres[cellIndex]->m_state=State::Interior;
       }
@@ -1356,7 +1356,7 @@ void Grid::classifyCells()
       //Set face to empty as well
       if (noParticlesInCellFaceZ_1<=m_noParticlesThreshold)
       {
-        m_cellFacesZ[cellIndex]->m_state==State::Empty;
+        m_cellFacesZ[cellIndex]->m_state=State::Empty;
       }
 
       //Go to next cellIndex
@@ -1403,13 +1403,13 @@ void Grid::classifyCells()
 //            && noParticlesInCellFaceY_1!=0
 //            && noParticlesInCellFaceZ1!=0
 //            && noParticlesInCellFaceZ_1!=0)
-        if (noParticlesInCellCentre>=m_noParticlesThreshold
-            && noParticlesInCellFaceX1>=m_noParticlesThreshold
-            && noParticlesInCellFaceX_1>=m_noParticlesThreshold
-            && noParticlesInCellFaceY1>=m_noParticlesThreshold
-            && noParticlesInCellFaceY_1>=m_noParticlesThreshold
-            && noParticlesInCellFaceZ1>=m_noParticlesThreshold
-            && noParticlesInCellFaceZ_1>=m_noParticlesThreshold)
+        if (noParticlesInCellCentre>m_noParticlesThreshold
+            && noParticlesInCellFaceX1>m_noParticlesThreshold
+            && noParticlesInCellFaceX_1>m_noParticlesThreshold
+            && noParticlesInCellFaceY1>m_noParticlesThreshold
+            && noParticlesInCellFaceY_1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
         {
           m_cellCentres[cellIndex]->m_state=State::Interior;
         }
