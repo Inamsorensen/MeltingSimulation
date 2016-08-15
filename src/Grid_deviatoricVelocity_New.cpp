@@ -222,15 +222,35 @@ void Grid::calcAComponent_DeviatoricVelocity_New(Particle *_particle, int _cellI
   Eigen::Vector3f e_y(0.0, 1.0, 0.0);
   Eigen::Vector3f e_z(0.0, 0.0, 1.0);
 
+  //Get number of particles in faces
+  int noParticles_FaceX_column=m_cellFacesX[_cellIndex_column]->m_noParticlesContributing;
+  int noParticles_FaceY_column=m_cellFacesY[_cellIndex_column]->m_noParticlesContributing;
+  int noParticles_FaceZ_column=m_cellFacesZ[_cellIndex_column]->m_noParticlesContributing;
+
   //Get particle parameters necessary: V_{p} and F_{Ep}
   float particleVolume=_particle->getVolume();
   Eigen::Matrix3f deformGradElastic=_particle->getDeformationElastic();
   Eigen::Matrix3f deformGradElastic_trans=deformGradElastic.transpose();
 
   //Calculate Ap component for the particle and cellIndex_column
-  Eigen::Matrix3f ApComponentX=calcApComponent_DeviatoricVelocity_New(_particle, _weightDiff_FaceX_column, e_x);
-  Eigen::Matrix3f ApComponentY=calcApComponent_DeviatoricVelocity_New(_particle, _weightDiff_FaceY_column, e_y);
-  Eigen::Matrix3f ApComponentZ=calcApComponent_DeviatoricVelocity_New(_particle, _weightDiff_FaceZ_column, e_z);
+  Eigen::Matrix3f ApComponentX;
+  Eigen::Matrix3f ApComponentY;
+  Eigen::Matrix3f ApComponentZ;
+
+  if (noParticles_FaceX_column>0)
+  {
+    ApComponentX=calcApComponent_DeviatoricVelocity_New(_particle, _weightDiff_FaceX_column, e_x);
+  }
+
+  if (noParticles_FaceY_column>0)
+  {
+    ApComponentY=calcApComponent_DeviatoricVelocity_New(_particle, _weightDiff_FaceY_column, e_y);
+  }
+
+  if (noParticles_FaceZ_column>0)
+  {
+    ApComponentZ=calcApComponent_DeviatoricVelocity_New(_particle, _weightDiff_FaceZ_column, e_z);
+  }
 
   //Calculate position of particle in grid
   //To calc position of particle, need origin of grid corner, not centre of first grid cell.
@@ -261,6 +281,11 @@ void Grid::calcAComponent_DeviatoricVelocity_New(Particle *_particle, int _cellI
           //Get cell index of row
           int cellIndex_row=MathFunctions::getVectorIndex(iIndex_row, jIndex_row, kIndex_row, m_noCells);
 
+          //Get number of particles in faces
+          int noParticles_FaceX_row=m_cellFacesX[cellIndex_row]->m_noParticlesContributing;
+          int noParticles_FaceY_row=m_cellFacesY[cellIndex_row]->m_noParticlesContributing;
+          int noParticles_FaceZ_row=m_cellFacesZ[cellIndex_row]->m_noParticlesContributing;
+
           //Get differentiated weights
           Eigen::Vector3f weightDiff_FaceX_row;
           Eigen::Vector3f weightDiff_FaceY_row;
@@ -268,35 +293,70 @@ void Grid::calcAComponent_DeviatoricVelocity_New(Particle *_particle, int _cellI
           calcWeight_cubicBSpline_Diff(particlePosition, iIndex_row, jIndex_row, kIndex_row, weightDiff_FaceX_row, weightDiff_FaceY_row, weightDiff_FaceZ_row);
 
           //Multiply Ap with row variables
-          Eigen::Vector3f part1_X=deformGradElastic_trans*weightDiff_FaceX_row;
-          Eigen::Vector3f part2_X=ApComponentX*part1_X;
-          float AComponentX=e_x.dot(part2_X);
-          AComponentX*=(particleVolume*((pow(m_dt, 2.0))/2.0));
+          float AComponentX=0.0;
+          float AComponentY=0.0;
+          float AComponentZ=0.0;
 
-          Eigen::Vector3f part1_Y=deformGradElastic_trans*weightDiff_FaceY_row;
-          Eigen::Vector3f part2_Y=ApComponentY*part1_Y;
-          float AComponentY=e_y.dot(part2_Y);
-          AComponentY*=(particleVolume*((pow(m_dt, 2.0))/2.0));
+          if (noParticles_FaceX_column>0 && noParticles_FaceX_row>0)
+          {
+            Eigen::Vector3f part1_X=deformGradElastic_trans*weightDiff_FaceX_row;
+            Eigen::Vector3f part2_X=ApComponentX*part1_X;
+            AComponentX=e_x.dot(part2_X);
+            AComponentX*=(particleVolume*((pow(m_dt, 2.0))/2.0));
+          }
 
-          Eigen::Vector3f part1_Z=deformGradElastic_trans*weightDiff_FaceZ_row;
-          Eigen::Vector3f part2_Z=ApComponentZ*part1_Z;
-          float AComponentZ=e_z.dot(part2_Z);
-          AComponentZ*=(particleVolume*((pow(m_dt, 2.0))/2.0));
+          if (noParticles_FaceY_column>0 && noParticles_FaceY_row>0)
+          {
+            Eigen::Vector3f part1_Y=deformGradElastic_trans*weightDiff_FaceY_row;
+            Eigen::Vector3f part2_Y=ApComponentY*part1_Y;
+            AComponentY=e_y.dot(part2_Y);
+            AComponentY*=(particleVolume*((pow(m_dt, 2.0))/2.0));
+          }
+
+          if (noParticles_FaceZ_column>0 && noParticles_FaceZ_row>0)
+          {
+            Eigen::Vector3f part1_Z=deformGradElastic_trans*weightDiff_FaceZ_row;
+            Eigen::Vector3f part2_Z=ApComponentZ*part1_Z;
+            AComponentZ=e_z.dot(part2_Z);
+            AComponentZ*=(particleVolume*((pow(m_dt, 2.0))/2.0));
+          }
 
 
           //Add mass to diagonal elements
           if (cellIndex_row==_cellIndex_column)
           {
-            AComponentX+=m_cellFacesX[cellIndex_row]->m_mass;
-            AComponentY+=m_cellFacesY[cellIndex_row]->m_mass;
-            AComponentZ+=m_cellFacesZ[cellIndex_row]->m_mass;
+            if (noParticles_FaceX_row>0)
+            {
+              AComponentX+=m_cellFacesX[cellIndex_row]->m_mass;
+            }
+
+            if (noParticles_FaceY_row>0)
+            {
+              AComponentY+=m_cellFacesY[cellIndex_row]->m_mass;
+            }
+
+            if (noParticles_FaceZ_row>0)
+            {
+              AComponentZ+=m_cellFacesZ[cellIndex_row]->m_mass;
+            }
           }
 
 
           //Add contribution from this particle to components of A matrix
-          m_Amatrix_deviatoric_X(cellIndex_row, _cellIndex_column)+=AComponentX;
-          m_Amatrix_deviatoric_Y(cellIndex_row, _cellIndex_column)+=AComponentY;
-          m_Amatrix_deviatoric_Z(cellIndex_row, _cellIndex_column)+=AComponentZ;
+          if (noParticles_FaceX_column>0 && noParticles_FaceX_row>0)
+          {
+            m_Amatrix_deviatoric_X(cellIndex_row, _cellIndex_column)+=AComponentX;
+          }
+
+          if (noParticles_FaceY_column>0 && noParticles_FaceY_row>0)
+          {
+            m_Amatrix_deviatoric_Y(cellIndex_row, _cellIndex_column)+=AComponentY;
+          }
+
+          if (noParticles_FaceZ_column>0 && noParticles_FaceZ_row>0)
+          {
+            m_Amatrix_deviatoric_Z(cellIndex_row, _cellIndex_column)+=AComponentZ;
+          }
 
         }
       }
@@ -543,12 +603,50 @@ void Grid::implicitUpdate_DeviatoricVelocity_New()
   float tolerance=0.0000001;
   int maxNoLoops=20;
 
-  Eigen::MatrixXf A_X_trans=m_Amatrix_deviatoric_X.transpose();
-  Eigen::MatrixXf test=m_Amatrix_deviatoric_X-A_X_trans;
+//  //Testing symmetry of A matrix
+//  Eigen::MatrixXf A_X_trans=m_Amatrix_deviatoric_X.transpose();
+//  Eigen::MatrixXf test=m_Amatrix_deviatoric_X-A_X_trans;
 
-  MathFunctions::MinRes(m_Amatrix_deviatoric_X, m_Bvector_deviatoric_X, solution_X, emptyPreconditioner, shift, maxNoLoops, tolerance, false);
-  MathFunctions::MinRes(m_Amatrix_deviatoric_Y, m_Bvector_deviatoric_Y, solution_Y, emptyPreconditioner, shift, maxNoLoops, tolerance, false);
-  MathFunctions::MinRes(m_Amatrix_deviatoric_Z, m_Bvector_deviatoric_Z, solution_Z, emptyPreconditioner, shift, maxNoLoops, tolerance, false);
+//  for (int testItr=0; testItr<m_totNoCells; testItr++)
+//  {
+//    for (int testItr2=0; testItr2<m_totNoCells; testItr2++)
+//    {
+//      if (testItr==testItr2)
+//      {
+//        if ((m_Amatrix_deviatoric_X(testItr, testItr2))>0)
+//        {
+//          std::cout<<"Index: ["<<testItr<<", "<<testItr2<<"] : "<<m_Amatrix_deviatoric_X(testItr, testItr2)<<"\n";
+//        }
+//      }
+//    }
+//  }
+
+//  //Remake matrix to check if determinant is zero
+//  Eigen::MatrixXf testSingular;
+//  testSingular=testSingular.Identity(m_totNoCells, m_totNoCells);
+//  for (int testItr=0; testItr<m_totNoCells; testItr++)
+//  {
+//    for (int testItr2=0; testItr2<m_totNoCells; testItr2++)
+//    {
+//      if (testItr!=testItr2)
+//      {
+//        if (m_Amatrix_deviatoric_X(testItr, testItr2)!=0)
+//        {
+//          testSingular(testItr,testItr2)=m_Amatrix_deviatoric_X(testItr, testItr2);
+//        }
+//      }
+//    }
+//  }
+//  float determinant=testSingular.determinant();
+
+  //Set to display details or not
+  bool displayDetails=true;
+//  bool displayDetails=false;
+
+  //Solve system using MINRES
+  MathFunctions::MinRes(m_Amatrix_deviatoric_X, m_Bvector_deviatoric_X, solution_X, emptyPreconditioner, shift, maxNoLoops, tolerance, displayDetails);
+  MathFunctions::MinRes(m_Amatrix_deviatoric_Y, m_Bvector_deviatoric_Y, solution_Y, emptyPreconditioner, shift, maxNoLoops, tolerance, displayDetails);
+  MathFunctions::MinRes(m_Amatrix_deviatoric_Z, m_Bvector_deviatoric_Z, solution_Z, emptyPreconditioner, shift, maxNoLoops, tolerance, displayDetails);
 
 
   //Read in solutions

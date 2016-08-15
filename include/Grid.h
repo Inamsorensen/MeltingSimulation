@@ -131,6 +131,21 @@ private:
   std::vector<CellFace*> m_cellFacesY;
   std::vector<CellFace*> m_cellFacesZ;
   //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Number of empty cell centres and faces
+  //----------------------------------------------------------------------------------------------------------------------
+  int m_noCellCentres_Empty;
+  int m_noCellFacesX_Empty;
+  int m_noCellFacesY_Empty;
+  int m_noCellFacesZ_Empty;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Number of interior cell centres and faces
+  //----------------------------------------------------------------------------------------------------------------------
+  int m_noCellCentres_Interior;
+  int m_noCellFacesX_Interior;
+  int m_noCellFacesY_Interior;
+  int m_noCellFacesZ_Interior;
+
+  //----------------------------------------------------------------------------------------------------------------------
   /// @brief Simulation time step
   //----------------------------------------------------------------------------------------------------------------------
   float m_dt;

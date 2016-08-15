@@ -266,6 +266,8 @@ void SimulationController::update()
     }
   }
 
+  if (m_noFrames<=10)
+  {
   //Update elastic/plastic
   m_emitter->presetParticles(m_velocityContributionAlpha, m_temperatureContributionBeta);
 
@@ -287,6 +289,11 @@ void SimulationController::update()
   {
     m_noFrames+=1;
     m_elapsedTimeAfterFrame=0.0;
+  }
+  }
+  else
+  {
+    delete m_alembicExporter;
   }
 
 //  if (m_noFrames==1)

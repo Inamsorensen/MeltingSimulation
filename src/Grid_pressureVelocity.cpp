@@ -133,11 +133,42 @@ void Grid::projectVelocity()
 
   }
 
+   //TEST FOR WHETHER 1 AT EMPTY DIAGONALS WILL MAKE A DIFFERENCE
+  //Remake matrix to check if determinant is zero
+  Eigen::SparseMatrix<double> testSingular(m_totNoCells, m_totNoCells);
+  for (int testItr=0; testItr<m_totNoCells; testItr++)
+  {
+    for (int testItr2=0; testItr2<m_totNoCells; testItr2++)
+    {
+      if (testItr==testItr2)
+      {
+        if (m_Amatrix_deviatoric_X(testItr, testItr2)!=0)
+        {
+          testSingular.insert(testItr,testItr2)=m_Amatrix_deviatoric_X(testItr, testItr2);
+        }
+        else
+        {
+          testSingular.insert(testItr,testItr2)=1.0;
+        }
+      }
+      else
+      {
+        if (m_Amatrix_deviatoric_X(testItr, testItr2)!=0)
+        {
+          testSingular.insert(testItr,testItr2)=m_Amatrix_deviatoric_X(testItr, testItr2);
+        }
+      }
+
+    }
+  }
+//  float determinant=testSingular.determinant();
+
 
   //Solve system
   float maxLoops=3000;
   float minResidual=0.00001;
-  MathFunctions::conjugateGradient(A_matrix, B_vector, solution, maxLoops, minResidual);
+//  MathFunctions::conjugateGradient(A_matrix, B_vector, solution, maxLoops, minResidual);
+  MathFunctions::conjugateGradient(testSingular, B_vector, solution, maxLoops, minResidual);
 
 
   //Use results to calculate projected velocities
@@ -599,8 +630,12 @@ void Grid::calcAComponent_projectVelocity(int _cellIndex, int _iIndex, int _jInd
 
   //Add pressureConstant to A_ijk
   float pressureConst;
-  float detDeformGradPlastic=m_cellCentres[_cellIndex]->m_detDeformationGradPlastic;
   float detDeformGradElastic=m_cellCentres[_cellIndex]->m_detDeformationGradElastic;
+//  float detDeformGradPlastic=m_cellCentres[_cellIndex]->m_detDeformationGradPlastic;
+
+  float detDeformGrad=m_cellCentres[_cellIndex]->m_detDeformationGrad;
+  float detDeformGradPlastic=detDeformGrad/detDeformGradElastic;
+
   float lambdaInv=m_cellCentres[_cellIndex]->m_lameLambdaInverse;
   pressureConst=detDeformGradPlastic/detDeformGradElastic;
   pressureConst*=lambdaInv;

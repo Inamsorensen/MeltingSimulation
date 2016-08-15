@@ -97,25 +97,23 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
             if (weightX!=0)
             {
               m_cellFacesX[cellIndex]->m_noParticlesContributing+=1;
+              m_cellFacesX[cellIndex]->m_mass+=(weightX*particleMass);
             }
             if (weightY!=0)
             {
               m_cellFacesY[cellIndex]->m_noParticlesContributing+=1;
+              m_cellFacesY[cellIndex]->m_mass+=(weightY*particleMass);
             }
             if (weightZ!=0)
             {
               m_cellFacesZ[cellIndex]->m_noParticlesContributing+=1;
+              m_cellFacesZ[cellIndex]->m_mass+=(weightZ*particleMass);
             }
             if (weightCentre!=0)
             {
               m_cellCentres[cellIndex]->m_noParticlesContributing+=1;
+              m_cellCentres[cellIndex]->m_mass+=(weightCentre*particleMass);
             }
-
-            //Add to mass
-            m_cellCentres[cellIndex]->m_mass+=(weightCentre*particleMass);
-            m_cellFacesX[cellIndex]->m_mass+=(weightX*particleMass);
-            m_cellFacesY[cellIndex]->m_mass+=(weightY*particleMass);
-            m_cellFacesZ[cellIndex]->m_mass+=(weightZ*particleMass);
 
           }
         }
@@ -161,16 +159,11 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
               calcWeight_cubicBSpline(particlePosition, iIndex, jIndex, kIndex,
                                       weightCentre, weightX, weightY, weightZ);
 
-              //Get mass of faces
-              float massX=m_cellFacesX[cellIndex]->m_mass;
-              float massY=m_cellFacesY[cellIndex]->m_mass;
-              float massZ=m_cellFacesZ[cellIndex]->m_mass;
+              //Get mass of cell centre
+              float mass=m_cellCentres[cellIndex]->m_mass;
 
               //Add to density of particle
-              float densityContrib=0.0;
-              densityContrib+=((massX*weightX)/cellVolume);
-              densityContrib+=((massY*weightY)/cellVolume);
-              densityContrib+=((massZ*weightZ)/cellVolume);
+              float densityContrib=(mass*weightCentre)/cellVolume;
 
               particlePtr->addParticleDensity(densityContrib);
 
@@ -186,7 +179,7 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
 
 
   //Loop over particles to rasterise particle data to grid
-  #pragma omp parallel for
+//  #pragma omp parallel for
   for (int particleItr=0; particleItr<noParticles; particleItr++)
   {
     //Get particle pointer
@@ -227,7 +220,7 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
     int kParticle=particleIndex(2);
 
 //    omp_set_nested(1);
-//#pragma omp parallel for
+#pragma omp parallel for
     for (int kIndex=(kParticle-2); kIndex<(kParticle+4); kIndex++)
     {
       for (int jIndex=(jParticle-2); jIndex<(jParticle+4); jIndex++)
@@ -278,14 +271,6 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
               m_cellFacesZ[cellIndex]->m_heatConductivity+=(particleMass*weightZ*particleHeatConductivity)/mass_FaceZ;
             }
 
-//            //Face variables
-//            m_cellFacesX[cellIndex]->m_velocity+=(particleMass*weightX*particleVelocity(0))/mass_FaceX;
-//            m_cellFacesX[cellIndex]->m_heatConductivity+=(particleMass*weightX*particleHeatConductivity)/mass_FaceX;
-//            m_cellFacesY[cellIndex]->m_velocity+=(particleMass*weightY*particleVelocity(1))/mass_FaceY;
-//            m_cellFacesY[cellIndex]->m_heatConductivity+=(particleMass*weightY*particleHeatConductivity)/mass_FaceY;
-//            m_cellFacesZ[cellIndex]->m_velocity+=(particleMass*weightZ*particleVelocity(2))/mass_FaceZ;
-//            m_cellFacesZ[cellIndex]->m_heatConductivity+=(particleMass*weightZ*particleHeatConductivity)/mass_FaceZ;
-
             if (noParticles_Centre>0)
             {
               //Centre variables
@@ -295,13 +280,6 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
               m_cellCentres[cellIndex]->m_temperature+=(particleMass*weightCentre*particleTemperature)/mass_Centre;
               m_cellCentres[cellIndex]->m_lameLambdaInverse+=(particleMass*weightCentre*particleLameLambdaInv)/mass_Centre;
             }
-
-//            //Centre variables
-//            m_cellCentres[cellIndex]->m_detDeformationGrad+=(particleMass*weightCentre*particleDetDeformGrad)/mass_Centre;
-//            m_cellCentres[cellIndex]->m_detDeformationGradElastic+=(particleMass*weightCentre*particleDetDeformGradElastic)/mass_Centre;
-//            m_cellCentres[cellIndex]->m_heatCapacity+=(particleMass*weightCentre*particleHeatCapacity)/mass_Centre;
-//            m_cellCentres[cellIndex]->m_temperature+=(particleMass*weightCentre*particleTemperature)/mass_Centre;
-//            m_cellCentres[cellIndex]->m_lameLambdaInverse+=(particleMass*weightCentre*particleLameLambdaInv)/mass_Centre;
 
 
             //Calculate force, B component and A row components for deviatoric velocity

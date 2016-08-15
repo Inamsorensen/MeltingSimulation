@@ -285,55 +285,48 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep, float _veloci
   //Clear InterpolationData for each grid cell so all empty before start adding particles
   clearCellData();
 
-  //TEST NEW INTERPOLATION SETUP
-  //--------------------------------------------
-  interpolateParticleToGrid(_emitter, _isFirstStep);
+////  //TEST NEW INTERPOLATION SETUP
+////  //--------------------------------------------
 
-  classifyCells_New();
+//  interpolateParticleToGrid(_emitter, _isFirstStep);
 
-  if (m_isImplictIntegration==true)
-  {
-    implicitUpdate_DeviatoricVelocity_New();
-  }
-  else
-  {
-    explicitUpdate_DeviatoricVelocity_New();
-  }
-
-  setBoundaryVelocity();
+//  classifyCells_New();
 
 
+//  if (m_isImplictIntegration==true)
+//  {
+//    implicitUpdate_DeviatoricVelocity_New();
+//  }
+//  else
+//  {
+//    explicitUpdate_DeviatoricVelocity_New();
+//  }
 
-  projectVelocity();
-
-  calcTemperature();
-
-
-  updateParticleFromGrid_New(_emitter, _velocityContribAlpha, _temperatureContribBeta);
-
-  //----------------------------------------------
+//  setBoundaryVelocity();
 
 
 
+//  projectVelocity();
+
+//  calcTemperature();
+
+
+//  updateParticleFromGrid_New(_emitter, _velocityContribAlpha, _temperatureContribBeta);
+
+//  //----------------------------------------------
 
 
 
 
-//  //findParticleInCell - need to find out which particles are in which cells and their respective interp weight
-//  findParticleContributionToCell(_emitter);
 
-//  ///Combine data transfer and classification of cells
-//  //Transfer particle data to grid
-//  transferParticleData(_emitter);
 
-////  //If first step calculate particle density during this loop as well
-////  if (_isFirstStep)
-////  {
-////    calcInitialParticleVolumes(_emitter);
-////  }
 
-//  //Classify cells
-//  classifyCells();
+  //findParticleInCell - need to find out which particles are in which cells and their respective interp weight
+  findParticleContributionToCell(_emitter);
+
+  ///Combine data transfer and classification of cells
+  //Transfer particle data to grid
+  transferParticleData(_emitter);
 
 //  //If first step calculate particle density during this loop as well
 //  if (_isFirstStep)
@@ -341,20 +334,29 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep, float _veloci
 //    calcInitialParticleVolumes(_emitter);
 //  }
 
-//  //Calculate deviatoric force and velocity update from it
-//  calcDeviatoricVelocity();
+  //Classify cells
+  classifyCells();
 
-//  //Set boundary velocities here for now
-//  setBoundaryVelocity();
+  //If first step calculate particle density during this loop as well
+  if (_isFirstStep)
+  {
+    calcInitialParticleVolumes(_emitter);
+  }
 
-//  //Project velocity
-//  projectVelocity();
+  //Calculate deviatoric force and velocity update from it
+  calcDeviatoricVelocity();
 
-//  //Calculate new temperature
-//  calcTemperature();
+  //Set boundary velocities here for now
+  setBoundaryVelocity();
 
-//  //Update particle values from grid
-//  updateParticleFromGrid(_velocityContribAlpha, _temperatureContribBeta);
+  //Project velocity
+  projectVelocity();
+
+  //Calculate new temperature
+  calcTemperature();
+
+  //Update particle values from grid
+  updateParticleFromGrid(_velocityContribAlpha, _temperatureContribBeta);
 
 }
 
@@ -395,6 +397,7 @@ void Grid::clearCellData()
     //Reset cell centre values to zero
     m_cellCentres[cellIndex]->m_noParticlesContributing=0;
     m_cellCentres[cellIndex]->m_mass=0.0;
+    m_cellCentres[cellIndex]->m_testMass=0.0;
     m_cellCentres[cellIndex]->m_detDeformationGrad=0.0;
     m_cellCentres[cellIndex]->m_detDeformationGradElastic=0.0;
     m_cellCentres[cellIndex]->m_detDeformationGradPlastic=0.0;
@@ -407,6 +410,7 @@ void Grid::clearCellData()
     //Reset cell face X values to zero
     m_cellFacesX[cellIndex]->m_noParticlesContributing=0;
     m_cellFacesX[cellIndex]->m_mass=0.0;
+    m_cellFacesX[cellIndex]->m_testMass=0.0;
     m_cellFacesX[cellIndex]->m_deviatoricForce=0.0;
     m_cellFacesX[cellIndex]->m_velocity=0.0;
     m_cellFacesX[cellIndex]->m_heatConductivity=0.0;
@@ -415,6 +419,7 @@ void Grid::clearCellData()
     //Reset cell face Y values to zero
     m_cellFacesY[cellIndex]->m_noParticlesContributing=0;
     m_cellFacesY[cellIndex]->m_mass=0.0;
+    m_cellFacesY[cellIndex]->m_testMass=0.0;
     m_cellFacesY[cellIndex]->m_deviatoricForce=0.0;
     m_cellFacesY[cellIndex]->m_velocity=0.0;
     m_cellFacesY[cellIndex]->m_heatConductivity=0.0;
@@ -423,6 +428,7 @@ void Grid::clearCellData()
     //Reset cell face Z values to zero
     m_cellFacesZ[cellIndex]->m_noParticlesContributing=0;
     m_cellFacesZ[cellIndex]->m_mass=0.0;
+    m_cellFacesZ[cellIndex]->m_testMass=0.0;
     m_cellFacesZ[cellIndex]->m_deviatoricForce=0.0;
     m_cellFacesZ[cellIndex]->m_velocity=0.0;
     m_cellFacesZ[cellIndex]->m_heatConductivity=0.0;
