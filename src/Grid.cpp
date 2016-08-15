@@ -60,6 +60,9 @@ Grid::Grid(Eigen::Vector3f _originEdge, float _boundingBoxSize, int _noCells)
 
   //Set threshold for number of particles in non-empty cell
   m_noParticlesThreshold=6;
+  //Set whether implicit or explicit integration
+//  m_isImplictIntegration=true;
+  m_isImplictIntegration=false;
 
   //Set storage for A matrices and B vectors for deviatoric velocity calculations
   m_Amatrix_deviatoric_X.setZero(m_totNoCells, m_totNoCells);
@@ -283,14 +286,54 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep, float _veloci
   clearCellData();
 
   //TEST NEW INTERPOLATION SETUP
+  //--------------------------------------------
   interpolateParticleToGrid(_emitter, _isFirstStep);
 
-  //findParticleInCell - need to find out which particles are in which cells and their respective interp weight
-  findParticleContributionToCell(_emitter);
+  classifyCells_New();
 
-  ///Combine data transfer and classification of cells
-  //Transfer particle data to grid
-  transferParticleData(_emitter);
+  if (m_isImplictIntegration==true)
+  {
+    implicitUpdate_DeviatoricVelocity_New();
+  }
+  else
+  {
+    explicitUpdate_DeviatoricVelocity_New();
+  }
+
+  setBoundaryVelocity();
+
+
+
+  projectVelocity();
+
+  calcTemperature();
+
+
+  updateParticleFromGrid_New(_emitter, _velocityContribAlpha, _temperatureContribBeta);
+
+  //----------------------------------------------
+
+
+
+
+
+
+
+//  //findParticleInCell - need to find out which particles are in which cells and their respective interp weight
+//  findParticleContributionToCell(_emitter);
+
+//  ///Combine data transfer and classification of cells
+//  //Transfer particle data to grid
+//  transferParticleData(_emitter);
+
+////  //If first step calculate particle density during this loop as well
+////  if (_isFirstStep)
+////  {
+////    calcInitialParticleVolumes(_emitter);
+////  }
+
+//  //Classify cells
+//  classifyCells();
 
 //  //If first step calculate particle density during this loop as well
 //  if (_isFirstStep)
@@ -298,29 +341,20 @@ void Grid::update(float _dt, Emitter* _emitter, bool _isFirstStep, float _veloci
 //    calcInitialParticleVolumes(_emitter);
 //  }
 
-  //Classify cells
-  classifyCells();
+//  //Calculate deviatoric force and velocity update from it
+//  calcDeviatoricVelocity();
 
-  //If first step calculate particle density during this loop as well
-  if (_isFirstStep)
-  {
-    calcInitialParticleVolumes(_emitter);
-  }
+//  //Set boundary velocities here for now
+//  setBoundaryVelocity();
 
-  //Calculate deviatoric force and velocity update from it
-  calcDeviatoricVelocity();
+//  //Project velocity
+//  projectVelocity();
 
-  //Set boundary velocities here for now
-  setBoundaryVelocity();
+//  //Calculate new temperature
+//  calcTemperature();
 
-  //Project velocity
-  projectVelocity();
-
-  //Calculate new temperature
-  calcTemperature();
-
-  //Update particle values from grid
-  updateParticleFromGrid(_velocityContribAlpha, _temperatureContribBeta);
+//  //Update particle values from grid
+//  updateParticleFromGrid(_velocityContribAlpha, _temperatureContribBeta);
 
 }
 
@@ -336,6 +370,15 @@ void Grid::clearCellData()
     Set collision state of cell centre to colliding and faces to interior
   --------------------------------------------------------------------------------------------------------------
   */
+
+  //Set storage for A matrices and B vectors for deviatoric velocity calculations
+  m_Amatrix_deviatoric_X.setZero(m_totNoCells, m_totNoCells);
+  m_Amatrix_deviatoric_Y.setZero(m_totNoCells, m_totNoCells);
+  m_Amatrix_deviatoric_Z.setZero(m_totNoCells, m_totNoCells);
+
+  m_Bvector_deviatoric_X.setZero(m_totNoCells);
+  m_Bvector_deviatoric_Y.setZero(m_totNoCells);
+  m_Bvector_deviatoric_Z.setZero(m_totNoCells);
 
 #pragma omp parallel for
   for(int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
@@ -1460,116 +1503,116 @@ void Grid::classifyCells()
   }
 }
 
-//----------------------------------------------------------------------------------------------------------------------
+////----------------------------------------------------------------------------------------------------------------------
 
-void Grid::setBoundaryVelocity()
-{
-  /* Outline
-  ---------------------------------------------------------------------------------------------------------------------
-  Loop over all cells
-    Check if faces are actually boundaries to colliding cell
-    Done by checking whether current cell is colliding. If yes, then all faces are collision boundaries
-    If current cell not collidining but faces are, check cells before them
-      If cell before doesn't exist cause current cell is ijk=0, then set faces as collision boundaries
-      Else check cell before in either face direction and if that cell is colliding, set face to collision boundary
+//void Grid::setBoundaryVelocity()
+//{
+//  /* Outline
+//  ---------------------------------------------------------------------------------------------------------------------
+//  Loop over all cells
+//    Check if faces are actually boundaries to colliding cell
+//    Done by checking whether current cell is colliding. If yes, then all faces are collision boundaries
+//    If current cell not collidining but faces are, check cells before them
+//      If cell before doesn't exist cause current cell is ijk=0, then set faces as collision boundaries
+//      Else check cell before in either face direction and if that cell is colliding, set face to collision boundary
 
-    When face found to be collision boundary, set its velocity to zero for stick.
-    This will need to change if object it's colliding with has a velocity.
+//    When face found to be collision boundary, set its velocity to zero for stick.
+//    This will need to change if object it's colliding with has a velocity.
 
-  ---------------------------------------------------------------------------------------------------------------------
-  */
+//  ---------------------------------------------------------------------------------------------------------------------
+//  */
 
-#pragma omp parallel for
-  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
-  {
-    //Test parallel
-//    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
+//#pragma omp parallel for
+//  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
+//  {
+//    //Test parallel
+////    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
 
-    //Check whether current cell is colliding, if so set stick collision to all faces
-    if (m_cellCentres[cellIndex]->m_state==State::Colliding)
-    {
-      m_cellFacesX[cellIndex]->m_velocity=0.0;
-      m_cellFacesY[cellIndex]->m_velocity=0.0;
-      m_cellFacesZ[cellIndex]->m_velocity=0.0;
-    }
-    else
-    {
-      //Get cell index in ijk values
-      int iIndex=m_cellCentres[cellIndex]->m_iIndex;
-      int jIndex=m_cellCentres[cellIndex]->m_jIndex;
-      int kIndex=m_cellCentres[cellIndex]->m_kIndex;
+//    //Check whether current cell is colliding, if so set stick collision to all faces
+//    if (m_cellCentres[cellIndex]->m_state==State::Colliding)
+//    {
+//      m_cellFacesX[cellIndex]->m_velocity=0.0;
+//      m_cellFacesY[cellIndex]->m_velocity=0.0;
+//      m_cellFacesZ[cellIndex]->m_velocity=0.0;
+//    }
+//    else
+//    {
+//      //Get cell index in ijk values
+//      int iIndex=m_cellCentres[cellIndex]->m_iIndex;
+//      int jIndex=m_cellCentres[cellIndex]->m_jIndex;
+//      int kIndex=m_cellCentres[cellIndex]->m_kIndex;
 
-      //If current cell isn't colliding, then still need to check the cell before in each direction, unless i||j||k=0
-      //FaceX
-      if (m_cellFacesX[cellIndex]->m_state==State::Colliding)
-      {
-        //Set velocity to zero if iIndex=0
-        if (iIndex==0)
-        {
-          m_cellFacesX[cellIndex]->m_velocity=0.0;
-        }
-        //Else check the cell before it in i direction
-        else
-        {
-          //Get index of cell before in i direction
-          int neighbourIndex=MathFunctions::getVectorIndex(iIndex-1, jIndex, kIndex, m_noCells);
+//      //If current cell isn't colliding, then still need to check the cell before in each direction, unless i||j||k=0
+//      //FaceX
+//      if (m_cellFacesX[cellIndex]->m_state==State::Colliding)
+//      {
+//        //Set velocity to zero if iIndex=0
+//        if (iIndex==0)
+//        {
+//          m_cellFacesX[cellIndex]->m_velocity=0.0;
+//        }
+//        //Else check the cell before it in i direction
+//        else
+//        {
+//          //Get index of cell before in i direction
+//          int neighbourIndex=MathFunctions::getVectorIndex(iIndex-1, jIndex, kIndex, m_noCells);
 
-          //Check if colliding
-          if (m_cellCentres[neighbourIndex]->m_state==State::Colliding)
-          {
-            m_cellFacesX[cellIndex]->m_velocity=0.0;
-          }
-        }
-      }
+//          //Check if colliding
+//          if (m_cellCentres[neighbourIndex]->m_state==State::Colliding)
+//          {
+//            m_cellFacesX[cellIndex]->m_velocity=0.0;
+//          }
+//        }
+//      }
 
-      //FaceY
-      if (m_cellFacesY[cellIndex]->m_state==State::Colliding)
-      {
-        //Set velocity to zero if jIndex=0
-        if (jIndex==0)
-        {
-          m_cellFacesY[cellIndex]->m_velocity=0.0;
-        }
-        //Else check the cell before it in j direction
-        else
-        {
-          //Get index of cell before in j direction
-          int neighbourIndex=MathFunctions::getVectorIndex(iIndex, jIndex-1, kIndex, m_noCells);
+//      //FaceY
+//      if (m_cellFacesY[cellIndex]->m_state==State::Colliding)
+//      {
+//        //Set velocity to zero if jIndex=0
+//        if (jIndex==0)
+//        {
+//          m_cellFacesY[cellIndex]->m_velocity=0.0;
+//        }
+//        //Else check the cell before it in j direction
+//        else
+//        {
+//          //Get index of cell before in j direction
+//          int neighbourIndex=MathFunctions::getVectorIndex(iIndex, jIndex-1, kIndex, m_noCells);
 
-          //Check if colliding
-          if (m_cellCentres[neighbourIndex]->m_state==State::Colliding)
-          {
-            m_cellFacesY[cellIndex]->m_velocity=0.0;
-          }
-        }
-      }
-      //FaceZ
-      if (m_cellFacesZ[cellIndex]->m_state==State::Colliding)
-      {
-        //Set velocity to zero if kIndex=0
-        if (kIndex==0)
-        {
-          m_cellFacesZ[cellIndex]->m_velocity=0.0;
-        }
-        //Else check the cell before it in k direction
-        else
-        {
-          //Get index of cell before in k direction
-          int neighbourIndex=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex-1, m_noCells);
+//          //Check if colliding
+//          if (m_cellCentres[neighbourIndex]->m_state==State::Colliding)
+//          {
+//            m_cellFacesY[cellIndex]->m_velocity=0.0;
+//          }
+//        }
+//      }
+//      //FaceZ
+//      if (m_cellFacesZ[cellIndex]->m_state==State::Colliding)
+//      {
+//        //Set velocity to zero if kIndex=0
+//        if (kIndex==0)
+//        {
+//          m_cellFacesZ[cellIndex]->m_velocity=0.0;
+//        }
+//        //Else check the cell before it in k direction
+//        else
+//        {
+//          //Get index of cell before in k direction
+//          int neighbourIndex=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex-1, m_noCells);
 
-          //Check if colliding
-          if (m_cellCentres[neighbourIndex]->m_state==State::Colliding)
-          {
-            m_cellFacesZ[cellIndex]->m_velocity=0.0;
-          }
-        }
-      }
-    }
-  }
+//          //Check if colliding
+//          if (m_cellCentres[neighbourIndex]->m_state==State::Colliding)
+//          {
+//            m_cellFacesZ[cellIndex]->m_velocity=0.0;
+//          }
+//        }
+//      }
+//    }
+//  }
 
-}
+//}
 
-//----------------------------------------------------------------------------------------------------------------------
+////----------------------------------------------------------------------------------------------------------------------
 
 void Grid::findNoParticlesInCells(Emitter *_emitter, std::vector<int> &o_listParticleNo)
 {

@@ -33,7 +33,8 @@ SOURCES+= $$PWD/src/main.cpp \
     src/Grid_updateParticleFromGrid.cpp \
     src/AlembicExport.cpp \
     src/Grid_interpolateParticleToGrid.cpp \
-    src/Grid_deviatoricVelocity_New.cpp
+    src/Grid_deviatoricVelocity_New.cpp \
+    src/Grid_interpolateGridToParticle.cpp
 
 # same for the .h files
 HEADERS+= $$PWD/include/ReadGeo.h \

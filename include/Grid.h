@@ -178,6 +178,10 @@ private:
   /// @brief Threshold for number of particles that must be affecting cell. Otherwise get too small mass.
   //----------------------------------------------------------------------------------------------------------------------
   int m_noParticlesThreshold;
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Determine whether should use implicit or explicit intergration for deviatoric velocity
+  //----------------------------------------------------------------------------------------------------------------------
+  float m_isImplictIntegration;
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Clear list of InterpolationData
@@ -220,7 +224,13 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate interpolation weights differentiated based on cubic B Spline for given particle and cell
   //----------------------------------------------------------------------------------------------------------------------
-  void calcWeight_cubicBSpline_Diff(Eigen::Vector3f _particlePosition, int _iIndex, int _jIndex, int _kIndex, Eigen::Vector3f &o_weightFaceX, Eigen::Vector3f &o_weightFaceY, Eigen::Vector3f &o_weightFaceZ);
+  void calcWeight_cubicBSpline_Diff(Eigen::Vector3f _particlePosition, int _iIndex, int _jIndex, int _kIndex,
+                                    Eigen::Vector3f &o_weightFaceX, Eigen::Vector3f &o_weightFaceY, Eigen::Vector3f &o_weightFaceZ);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Verify whether cell centres and faces are colliding, empty or interior
+  /// @todo Change to switch/case statements instead of if statements
+  //----------------------------------------------------------------------------------------------------------------------
+  void classifyCells_New();
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate deviatoric force, B component and A row component contributions from a particle
@@ -236,9 +246,45 @@ private:
   //----------------------------------------------------------------------------------------------------------------------
   float calcBComponent_DeviatoricVelocity_New(Particle *_particle, Eigen::Vector3f _eVector, float _weight, float _deviatoricForce, float _massFace);
   //----------------------------------------------------------------------------------------------------------------------
-  /// @brief Calculates component of A matrix for Ax=b. In this case have (I+A)x=b where I will not be included in the A component
+  /// @brief Get A components of one row for deviatoric velocity calculation
   //----------------------------------------------------------------------------------------------------------------------
-  float calcAComponent_DeviatoricVelocity_New(Particle* _particle, Eigen::Vector3f _weight_i_diff, Eigen::Vector3f _weight_j_diff, Eigen::Vector3f _eVector);
+  void calcAComponent_DeviatoricVelocity_New(Particle* _particle, int _cellIndex_column, Eigen::Vector3f _weightDiff_FaceX_column, Eigen::Vector3f _weightDiff_FaceY_column, Eigen::Vector3f _weightDiff_FaceZ_column);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Calculates Ap matrix which is used to calculate the A matrix components for implicit deviatoric velocity integration
+  /// @brief Ap=d2Y_hat/dFE2 : eVector*weight_diff_trans*deformGradElastic
+  //----------------------------------------------------------------------------------------------------------------------
+  Eigen::Matrix3f calcApComponent_DeviatoricVelocity_New(Particle* _particle, Eigen::Vector3f _weight_diff_column, Eigen::Vector3f _eVector);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Calculate deltaR
+  /// @brief This is the delta of the rotation matrix R in polar decomposition of the deformation gradient: F=RS
+  /// @brief where F is defined as J^(-1/dimension)*F, also called deviatoric F.
+  //----------------------------------------------------------------------------------------------------------------------
+  Eigen::Matrix3f calculate_dR_New(const Eigen::Matrix3f &_deltaDeformElastic_Deviatoric, const Eigen::Matrix3f &_R_deformElastic_Deviatoric, const Eigen::Matrix3f &_S_deformElastic_Deviatoric);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Explicitly update velocity. v_new=bcomponent
+  //----------------------------------------------------------------------------------------------------------------------
+  void explicitUpdate_DeviatoricVelocity_New();
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Implicitly update velocity.
+  //----------------------------------------------------------------------------------------------------------------------
+  void implicitUpdate_DeviatoricVelocity_New();
+
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Update particle data from grid
+  //----------------------------------------------------------------------------------------------------------------------
+  void updateParticleFromGrid_New(Emitter *_emitter, float _velocityContribAlpha, float _tempContribBeta);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Calculate interpolation weights based on cubic B Spline for given particle and cell
+  //----------------------------------------------------------------------------------------------------------------------
+  void calcWeight_tightQuadraticStencil(Eigen::Vector3f _particlePosition, int _iIndex, int _jIndex, int _kIndex,
+                                    float &o_weightCentre, float &o_weightFaceX, float &o_weightFaceY, float &o_weightFaceZ);
+  //----------------------------------------------------------------------------------------------------------------------
+  /// @brief Calculate interpolation weights differentiated based on cubic B Spline for given particle and cell
+  //----------------------------------------------------------------------------------------------------------------------
+  void calcWeight_tightQuadraticStencil_Diff(Eigen::Vector3f _particlePosition, int _iIndex, int _jIndex, int _kIndex,
+                                             Eigen::Vector3f &o_weightFaceX, Eigen::Vector3f &o_weightFaceY, Eigen::Vector3f &o_weightFaceZ);
+
+  //END NEW INTERPOLATION AND DEVIATORIC CALC SETUP - 14.08.16
 
   //----------------------------------------------------------------------------------------------------------------------
   /// @brief Calculate force due to deviatoric stress

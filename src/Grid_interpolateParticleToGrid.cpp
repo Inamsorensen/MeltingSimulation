@@ -44,7 +44,7 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
   ------------------------------------------------------------------------------------------------------
   */
 
-  int noParticles=_emitter->getNoParticles();
+  int noParticles=_emitter->m_noParticles;
 
   //Set e_{a(i)} vectors
   Eigen::Vector3f e_x(1.0, 0.0, 0.0);
@@ -58,6 +58,7 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
   gridEdgePosition(1)-=halfCellSize;
   gridEdgePosition(2)-=halfCellSize;
 
+#pragma omp parallel for
   for (int particleItr=0; particleItr<noParticles; particleItr++)
   {
     Particle* particlePtr=_emitter->m_particles[particleItr];
@@ -125,6 +126,7 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
   //Calculate particle density if first step
   if (_isFirstStep==true)
   {
+    #pragma omp parallel for
     for (int particleItr=0; particleItr<noParticles; particleItr++)
     {
       Particle* particlePtr=_emitter->m_particles[particleItr];
@@ -184,6 +186,7 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
 
 
   //Loop over particles to rasterise particle data to grid
+  #pragma omp parallel for
   for (int particleItr=0; particleItr<noParticles; particleItr++)
   {
     //Get particle pointer
@@ -223,6 +226,8 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
     int jParticle=particleIndex(1);
     int kParticle=particleIndex(2);
 
+//    omp_set_nested(1);
+//#pragma omp parallel for
     for (int kIndex=(kParticle-2); kIndex<(kParticle+4); kIndex++)
     {
       for (int jIndex=(jParticle-2); jIndex<(jParticle+4); jIndex++)
@@ -249,24 +254,61 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
             float mass_FaceY=m_cellFacesY[cellIndex]->m_mass;
             float mass_FaceZ=m_cellFacesZ[cellIndex]->m_mass;
 
-            //Face variables
-            m_cellFacesX[cellIndex]->m_velocity+=(particleMass*weightX*particleVelocity(0))/mass_FaceX;
-            m_cellFacesX[cellIndex]->m_heatConductivity+=(particleMass*weightX*particleHeatConductivity)/mass_FaceX;
-            m_cellFacesY[cellIndex]->m_velocity+=(particleMass*weightY*particleVelocity(1))/mass_FaceY;
-            m_cellFacesY[cellIndex]->m_heatConductivity+=(particleMass*weightY*particleHeatConductivity)/mass_FaceY;
-            m_cellFacesZ[cellIndex]->m_velocity+=(particleMass*weightZ*particleVelocity(2))/mass_FaceZ;
-            m_cellFacesZ[cellIndex]->m_heatConductivity+=(particleMass*weightZ*particleHeatConductivity)/mass_FaceZ;
+            //Get number of particles contributing to cell centre and faces
+            int noParticles_Centre=m_cellCentres[cellIndex]->m_noParticlesContributing;
+            int noParticles_FaceX=m_cellFacesX[cellIndex]->m_noParticlesContributing;
+            int noParticles_FaceY=m_cellFacesY[cellIndex]->m_noParticlesContributing;
+            int noParticles_FaceZ=m_cellFacesZ[cellIndex]->m_noParticlesContributing;
 
-            //Centre variables
-            m_cellCentres[cellIndex]->m_detDeformationGrad+=(particleMass*weightCentre*particleDetDeformGrad)/mass_Centre;
-            m_cellCentres[cellIndex]->m_detDeformationGradElastic+=(particleMass*weightCentre*particleDetDeformGradElastic)/mass_Centre;
-            m_cellCentres[cellIndex]->m_heatCapacity+=(particleMass*weightCentre*particleHeatCapacity)/mass_Centre;
-            m_cellCentres[cellIndex]->m_temperature+=(particleMass*weightCentre*particleTemperature)/mass_Centre;
-            m_cellCentres[cellIndex]->m_lameLambdaInverse+=(particleMass*weightCentre*particleLameLambdaInv)/mass_Centre;
+            if (noParticles_FaceX>0)
+            {
+              m_cellFacesX[cellIndex]->m_velocity+=(particleMass*weightX*particleVelocity(0))/mass_FaceX;
+              m_cellFacesX[cellIndex]->m_heatConductivity+=(particleMass*weightX*particleHeatConductivity)/mass_FaceX;
+            }
+
+            if (noParticles_FaceY>0)
+            {
+              m_cellFacesY[cellIndex]->m_velocity+=(particleMass*weightY*particleVelocity(1))/mass_FaceY;
+              m_cellFacesY[cellIndex]->m_heatConductivity+=(particleMass*weightY*particleHeatConductivity)/mass_FaceY;
+            }
+
+            if (noParticles_FaceZ>0)
+            {
+              m_cellFacesZ[cellIndex]->m_velocity+=(particleMass*weightZ*particleVelocity(2))/mass_FaceZ;
+              m_cellFacesZ[cellIndex]->m_heatConductivity+=(particleMass*weightZ*particleHeatConductivity)/mass_FaceZ;
+            }
+
+//            //Face variables
+//            m_cellFacesX[cellIndex]->m_velocity+=(particleMass*weightX*particleVelocity(0))/mass_FaceX;
+//            m_cellFacesX[cellIndex]->m_heatConductivity+=(particleMass*weightX*particleHeatConductivity)/mass_FaceX;
+//            m_cellFacesY[cellIndex]->m_velocity+=(particleMass*weightY*particleVelocity(1))/mass_FaceY;
+//            m_cellFacesY[cellIndex]->m_heatConductivity+=(particleMass*weightY*particleHeatConductivity)/mass_FaceY;
+//            m_cellFacesZ[cellIndex]->m_velocity+=(particleMass*weightZ*particleVelocity(2))/mass_FaceZ;
+//            m_cellFacesZ[cellIndex]->m_heatConductivity+=(particleMass*weightZ*particleHeatConductivity)/mass_FaceZ;
+
+            if (noParticles_Centre>0)
+            {
+              //Centre variables
+              m_cellCentres[cellIndex]->m_detDeformationGrad+=(particleMass*weightCentre*particleDetDeformGrad)/mass_Centre;
+              m_cellCentres[cellIndex]->m_detDeformationGradElastic+=(particleMass*weightCentre*particleDetDeformGradElastic)/mass_Centre;
+              m_cellCentres[cellIndex]->m_heatCapacity+=(particleMass*weightCentre*particleHeatCapacity)/mass_Centre;
+              m_cellCentres[cellIndex]->m_temperature+=(particleMass*weightCentre*particleTemperature)/mass_Centre;
+              m_cellCentres[cellIndex]->m_lameLambdaInverse+=(particleMass*weightCentre*particleLameLambdaInv)/mass_Centre;
+            }
+
+//            //Centre variables
+//            m_cellCentres[cellIndex]->m_detDeformationGrad+=(particleMass*weightCentre*particleDetDeformGrad)/mass_Centre;
+//            m_cellCentres[cellIndex]->m_detDeformationGradElastic+=(particleMass*weightCentre*particleDetDeformGradElastic)/mass_Centre;
+//            m_cellCentres[cellIndex]->m_heatCapacity+=(particleMass*weightCentre*particleHeatCapacity)/mass_Centre;
+//            m_cellCentres[cellIndex]->m_temperature+=(particleMass*weightCentre*particleTemperature)/mass_Centre;
+//            m_cellCentres[cellIndex]->m_lameLambdaInverse+=(particleMass*weightCentre*particleLameLambdaInv)/mass_Centre;
 
 
             //Calculate force, B component and A row components for deviatoric velocity
-            calcDeviatoricContributions(particlePtr, cellIndex, iIndex, jIndex, kIndex, weightX, weightY, weightZ);
+            if (noParticles_FaceX>0 || noParticles_FaceY>0 || noParticles_FaceZ>0)
+            {
+              calcDeviatoricContributions(particlePtr, cellIndex, iIndex, jIndex, kIndex, weightX, weightY, weightZ);
+            }
 
           }
         }
@@ -274,119 +316,6 @@ void Grid::interpolateParticleToGrid(Emitter *_emitter, bool _isFirstStep)
     }
 
   }
-
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-
-void Grid::calcDeviatoricContributions(Particle *_particle, int _cellIndex, int _iIndex, int _jIndex, int _kIndex,
-                                       float _weightX, float _weightY, float _weightZ)
-{
-  /* Outline
-  ------------------------------------------------------------------------------------------------------
-  Calc differentiated weight
-
-  Add to force
-
-  Add to B component
-
-  Loop over all possible cells for each cell
-
-    Add to A component
-  ------------------------------------------------------------------------------------------------------
-  */
-
-  //Set e_{a(i)} vectors
-  Eigen::Vector3f e_x(1.0, 0.0, 0.0);
-  Eigen::Vector3f e_y(0.0, 1.0, 0.0);
-  Eigen::Vector3f e_z(0.0, 0.0, 1.0);
-
-  Eigen::Vector3f weightDiff_FaceX;
-  Eigen::Vector3f weightDiff_FaceY;
-  Eigen::Vector3f weightDiff_FaceZ;
-
-  //Get particle position
-  Eigen::Vector3f particlePosition=_particle->getPosition();
-
-  //Get differentiated weights
-  calcWeight_cubicBSpline_Diff(particlePosition, _iIndex, _jIndex, _kIndex, weightDiff_FaceX, weightDiff_FaceY, weightDiff_FaceZ);
-
-  //Get deviatoric forces
-  float force_FaceX=calcDeviatoricForce_New(_particle, e_x, weightDiff_FaceX);
-  float force_FaceY=calcDeviatoricForce_New(_particle, e_y, weightDiff_FaceY);
-  float force_FaceZ=calcDeviatoricForce_New(_particle, e_z, weightDiff_FaceZ);
-
-  //Add force to cell faces
-  m_cellFacesX[_cellIndex]->m_deviatoricForce+=force_FaceX;
-  m_cellFacesY[_cellIndex]->m_deviatoricForce+=force_FaceY;
-  m_cellFacesZ[_cellIndex]->m_deviatoricForce+=force_FaceZ;
-
-  //Get mass of faces
-  float mass_FaceX=m_cellFacesX[_cellIndex]->m_mass;
-  float mass_FaceY=m_cellFacesY[_cellIndex]->m_mass;
-  float mass_FaceZ=m_cellFacesZ[_cellIndex]->m_mass;
-
-  //Calculate B Components
-  float BComponentX=calcBComponent_DeviatoricVelocity_New(_particle, e_x, _weightX, force_FaceX, mass_FaceX);
-  float BComponentY=calcBComponent_DeviatoricVelocity_New(_particle, e_y, _weightY, force_FaceY, mass_FaceY);
-  float BComponentZ=calcBComponent_DeviatoricVelocity_New(_particle, e_z, _weightZ, force_FaceZ, mass_FaceZ);
-
-  //Add contributions to B vectors
-  m_Bvector_deviatoric_X(_cellIndex)+=BComponentX;
-  m_Bvector_deviatoric_Y(_cellIndex)+=BComponentY;
-  m_Bvector_deviatoric_Z(_cellIndex)+=BComponentZ;
-
-
-  //Loop over cells the particle will contribute to again to get row components for A matrices
-
-  //To calc position of particle, need origin of grid corner, not centre of first grid cell.
-  float halfCellSize=m_cellSize/2.0;
-  Eigen::Vector3f gridEdgePosition=m_origin;
-  gridEdgePosition(0)-=halfCellSize;
-  gridEdgePosition(1)-=halfCellSize;
-  gridEdgePosition(2)-=halfCellSize;
-
-  //Get particle position in grid
-  Eigen::Vector3i particleIndex=MathFunctions::getParticleGridCell(particlePosition, m_cellSize, gridEdgePosition);
-
-  //Loop over i+-2, j+-2, k+-2 to get cells that particle will contribute to
-  int iParticle=particleIndex(0);
-  int jParticle=particleIndex(1);
-  int kParticle=particleIndex(2);
-
-  for (int kIndex_neigh=(kParticle-2); kIndex_neigh<(kParticle+4); kIndex_neigh++)
-  {
-    for (int jIndex_neigh=(jParticle-2); jIndex_neigh<(jParticle+4); jIndex_neigh++)
-    {
-      for (int iIndex_neigh=(iParticle-2); iIndex_neigh<(iParticle+4); iIndex_neigh++)
-      {
-        //Check that not in outer cells or outside grid
-        if (iIndex_neigh>=0 && iIndex_neigh<=(m_noCells-1) && jIndex_neigh>=0 && jIndex_neigh<=(m_noCells-1) && kIndex_neigh>=0 && kIndex_neigh<=(m_noCells-1))
-        {
-          //Get cell index
-          int cellIndex_neigh=MathFunctions::getVectorIndex(iIndex_neigh, jIndex_neigh, kIndex_neigh, m_noCells);
-
-          Eigen::Vector3f weightDiff_FaceX_neighbour;
-          Eigen::Vector3f weightDiff_FaceY_neighbour;
-          Eigen::Vector3f weightDiff_FaceZ_neighbour;
-
-          //Get differentiated weights
-          calcWeight_cubicBSpline_Diff(particlePosition, _iIndex, _jIndex, _kIndex, weightDiff_FaceX_neighbour, weightDiff_FaceY_neighbour, weightDiff_FaceZ_neighbour);
-
-          //Calculate A components
-          float AComponentX=calcAComponent_DeviatoricVelocity_New(_particle, weightDiff_FaceX, weightDiff_FaceX_neighbour, e_x);
-          float AComponentY=calcAComponent_DeviatoricVelocity_New(_particle, weightDiff_FaceY, weightDiff_FaceY_neighbour, e_y);
-          float AComponentZ=calcAComponent_DeviatoricVelocity_New(_particle, weightDiff_FaceZ, weightDiff_FaceZ_neighbour, e_z);
-
-          m_Amatrix_deviatoric_X(_cellIndex, cellIndex_neigh)+=AComponentX;
-          m_Amatrix_deviatoric_Y(_cellIndex, cellIndex_neigh)+=AComponentY;
-          m_Amatrix_deviatoric_Z(_cellIndex, cellIndex_neigh)+=AComponentZ;
-
-        }
-      }
-    }
-  }
-
 
 }
 
@@ -493,13 +422,6 @@ void Grid::calcWeight_cubicBSpline_Diff(Eigen::Vector3f _particlePosition, int _
   Eigen::Vector3f faceYVector(xPos, yPos-halfCellSize, zPos);
   Eigen::Vector3f faceZVector(xPos, yPos, zPos-halfCellSize);
 
-
-  //Addition so particle and grid is in same reference.
-  //Origin of grid is at [-halfCell, -halfCell, -halfCell] in the particle reference system
-  _particlePosition(0)+=halfCellSize;
-  _particlePosition(1)+=halfCellSize;
-  _particlePosition(2)+=halfCellSize;
-
   //Calculate posDifference for each face and cell centre
   Eigen::Vector3f centrePosDiff=_particlePosition-centreVector;
   Eigen::Vector3f faceXPosDiff=_particlePosition-faceXVector;
@@ -511,19 +433,6 @@ void Grid::calcWeight_cubicBSpline_Diff(Eigen::Vector3f _particlePosition, int _
   float NxCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(0)/m_cellSize);
   float NyCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(1)/m_cellSize);
   float NzCentre_cubicBS=MathFunctions::calcCubicBSpline(centrePosDiff(2)/m_cellSize);
-
-
-//  //Centre
-//  float dNx_cubicBS_Centre=MathFunctions::calcCubicBSpline_Diff(centrePosDiff(0)/m_cellSize);
-//  float dNy_cubicBS_Centre=MathFunctions::calcCubicBSpline_Diff(centrePosDiff(1)/m_cellSize);
-//  float dNz_cubicBS_Centre=MathFunctions::calcCubicBSpline_Diff(centrePosDiff(2)/m_cellSize);
-
-//  o_weightCentre(0)=dNx_cubicBS_Centre*NyCentre_cubicBS*NzCentre_cubicBS;
-//  o_weightCentre(1)=dNy_cubicBS_Centre*NxCentre_cubicBS*NzCentre_cubicBS;
-//  o_weightCentre(2)=dNz_cubicBS_Centre*NxCentre_cubicBS*NyCentre_cubicBS;
-
-//  o_weightCentre*=(1.0/m_cellSize); ///Not sure about this part?
-////  o_weightCentre*=(-1.0/m_cellSize); ///Not sure about this part?
 
   //Face X
   float dNx_cubicBS_FaceX=MathFunctions::calcCubicBSpline_Diff(faceXPosDiff(0)/m_cellSize);
@@ -542,9 +451,9 @@ void Grid::calcWeight_cubicBSpline_Diff(Eigen::Vector3f _particlePosition, int _
   float dNy_cubicBS_FaceY=MathFunctions::calcCubicBSpline_Diff(faceYPosDiff(1)/m_cellSize);
   float dNz_cubicBS_FaceY=MathFunctions::calcCubicBSpline_Diff(faceYPosDiff(2)/m_cellSize);
 
-  o_weightFaceX(0)=dNx_cubicBS_FaceY*NyCentre_cubicBS*NzCentre_cubicBS;
-  o_weightFaceX(1)=dNy_cubicBS_FaceY*NxCentre_cubicBS*NzCentre_cubicBS;
-  o_weightFaceX(2)=dNz_cubicBS_FaceY*NxCentre_cubicBS*NyCentre_cubicBS;
+  o_weightFaceY(0)=dNx_cubicBS_FaceY*NyCentre_cubicBS*NzCentre_cubicBS;
+  o_weightFaceY(1)=dNy_cubicBS_FaceY*NxCentre_cubicBS*NzCentre_cubicBS;
+  o_weightFaceY(2)=dNz_cubicBS_FaceY*NxCentre_cubicBS*NyCentre_cubicBS;
 
   o_weightFaceY*=(1.0/m_cellSize); ///Not sure about this part?
 //  o_weightFaceY*=(-1.0/m_cellSize); ///Not sure about this part?
@@ -561,4 +470,421 @@ void Grid::calcWeight_cubicBSpline_Diff(Eigen::Vector3f _particlePosition, int _
   o_weightFaceZ*=(1.0/m_cellSize); ///Not sure about this part?
 //  o_weightFaceZ*=(-1.0/m_cellSize); ///Not sure about this part?
 
+}
+
+void Grid::classifyCells_New()
+{
+  /* Outline - Current setup might be time consuming since two loops. Could rectify this for bounding box, but not for level sets I think
+  ----------------------------------------------------------------------------------------------------------------------
+  Loop over all cell faces
+    Check faces against collision
+      For now use bounding box, so colliding if i<2||>n-2, j<2||>n-2, k<2||>n-2
+
+  Loop over all cell centres
+    Check if 3 faces are colliding - If cell centre is i<n-1, j<n-1 or k<n-1 then check the faces of the nearest neighbour
+    cells in each of the directions as well.
+      If all colliding - colliding
+      If not all and no particles - empty
+      Otherwise - interior
+    Set heat source temperature for colliding cells with kIndex==0. Ie. heat source element is the k=0 plane.
+    Set ambient temperature to empty cells
+
+  ----------------------------------------------------------------------------------------------------------------------
+  */
+
+  //Loop over cell faces - This loop could be made smaller when just checking the outer cells.
+  //But this is possibly easier to thread
+#pragma omp parallel for
+  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
+  {
+    //Test parallel
+//    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
+
+    //Find cell index. Will be same for the other faces
+    int iIndex=m_cellFacesX[cellIndex]->m_iIndex;
+    int jIndex=m_cellFacesX[cellIndex]->m_jIndex;
+    int kIndex=m_cellFacesX[cellIndex]->m_kIndex;
+
+    //This checks whether cell faces belong to outer cells. To set collision cells to be the outer rim of cells
+    if (iIndex==0 || iIndex==(m_noCells-1) || jIndex==0 || jIndex==(m_noCells-1) || kIndex==0 || kIndex==(m_noCells-1) )
+    {
+      //Set faces to colliding
+      m_cellFacesX[cellIndex]->m_state=State::Colliding;
+      m_cellFacesY[cellIndex]->m_state=State::Colliding;
+      m_cellFacesZ[cellIndex]->m_state=State::Colliding;
+    }
+
+    //Also need to set cell faces adjacent to the outer cells to colliding. This must be done separately for each cell
+    if (iIndex==1)
+    {
+      m_cellFacesX[cellIndex]->m_state=State::Colliding;
+    }
+    if (jIndex==1)
+    {
+      m_cellFacesY[cellIndex]->m_state=State::Colliding;
+    }
+    if (kIndex==1)
+    {
+      m_cellFacesZ[cellIndex]->m_state=State::Colliding;
+    }
+  }
+
+  //This step will work for level set collisions as well.
+  //Loop over all cells again to check which cell centres are collding
+  //Seems inefficient.
+#pragma omp parallel for
+  for (int cellIndex=0; cellIndex<m_totNoCells; cellIndex++)
+  {
+    //Test parallel
+//    printf("The parallel region is executed by thread %d\n", omp_get_thread_num());
+
+    //Find cell index.
+    int iIndex=m_cellCentres[cellIndex]->m_iIndex;
+    int jIndex=m_cellCentres[cellIndex]->m_jIndex;
+    int kIndex=m_cellCentres[cellIndex]->m_kIndex;
+
+    //Get indices of faces in the positive ijk directions
+    int cellIndex_i1jk=MathFunctions::getVectorIndex(iIndex+1, jIndex, kIndex, m_noCells);
+    int cellIndex_ij1k=MathFunctions::getVectorIndex(iIndex, jIndex+1, kIndex, m_noCells);
+    int cellIndex_ijk1=MathFunctions::getVectorIndex(iIndex, jIndex, kIndex+1, m_noCells);
+
+    //Face X
+    //Check if lower x face colliding
+    if (m_cellFacesX[cellIndex]->m_state!=State::Colliding)
+    {
+      //Check whether empty or not
+      int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_noParticlesContributing;
+      int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_noParticlesContributing;
+      int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_noParticlesContributing;
+      int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_noParticlesContributing;
+
+      //Get particle number for upper faces of cell, unless outermost cells in grid
+      int noParticlesInCellFaceX1=0;
+      int noParticlesInCellFaceY1=0;
+      int noParticlesInCellFaceZ1=0;
+
+      if (iIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_noParticlesContributing;
+      }
+      if (jIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_noParticlesContributing;
+      }
+      if (kIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_noParticlesContributing;
+      }
+
+      //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+      if (noParticlesInCellCentre>m_noParticlesThreshold
+          && noParticlesInCellFaceX1>m_noParticlesThreshold
+          && noParticlesInCellFaceX_1>m_noParticlesThreshold
+          && noParticlesInCellFaceY1>m_noParticlesThreshold
+          && noParticlesInCellFaceY_1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
+      {
+        m_cellCentres[cellIndex]->m_state=State::Interior;
+      }
+      //Otherwise the cell is empty
+      else
+      {
+        m_cellCentres[cellIndex]->m_state=State::Empty;
+        m_cellCentres[cellIndex]->m_temperature=m_ambientTemperature;
+      }
+
+      //Set face to empty as well
+      if (noParticlesInCellFaceX_1<=m_noParticlesThreshold)
+      {
+        m_cellFacesX[cellIndex]->m_state=State::Empty;
+      }
+
+      //Go to next cellIndex
+      continue;
+    }
+
+    //Check upper x face as well
+    if (iIndex<(m_noCells-1))
+    {
+      if (m_cellFacesX[cellIndex_i1jk]->m_state!=State::Colliding)
+      {
+        //Check whether empty or not
+        int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_noParticlesContributing;
+        int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_noParticlesContributing;
+        int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_noParticlesContributing;
+        int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_noParticlesContributing;
+
+        //Get particle number for upper faces of cell, unless outermost cells in grid
+        int noParticlesInCellFaceX1=0;
+        int noParticlesInCellFaceY1=0;
+        int noParticlesInCellFaceZ1=0;
+
+        if (iIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_noParticlesContributing;
+        }
+        if (jIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_noParticlesContributing;
+        }
+        if (kIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_noParticlesContributing;
+        }
+
+        //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+
+        if (noParticlesInCellCentre>m_noParticlesThreshold
+            && noParticlesInCellFaceX1>m_noParticlesThreshold
+            && noParticlesInCellFaceX_1>m_noParticlesThreshold
+            && noParticlesInCellFaceY1>m_noParticlesThreshold
+            && noParticlesInCellFaceY_1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
+        {
+          m_cellCentres[cellIndex]->m_state=State::Interior;
+        }
+        //Otherwise the cell is empty
+        else
+        {
+          m_cellCentres[cellIndex]->m_state=State::Empty;
+          m_cellCentres[cellIndex]->m_temperature=m_ambientTemperature;
+        }
+
+        //Go to next cellIndex
+        continue;
+      }
+    }
+
+    //Face Y
+    //Check if lower x face colliding
+    if (m_cellFacesY[cellIndex]->m_state!=State::Colliding)
+    {
+      //Check whether empty or not
+      int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_noParticlesContributing;
+      int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_noParticlesContributing;
+      int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_noParticlesContributing;
+      int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_noParticlesContributing;
+
+      //Get particle number for upper faces of cell, unless outermost cells in grid
+      int noParticlesInCellFaceX1=0;
+      int noParticlesInCellFaceY1=0;
+      int noParticlesInCellFaceZ1=0;
+
+      if (iIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_noParticlesContributing;
+      }
+      if (jIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_noParticlesContributing;
+      }
+      if (kIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_noParticlesContributing;
+      }
+
+      //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+      if (noParticlesInCellCentre>m_noParticlesThreshold
+          && noParticlesInCellFaceX1>m_noParticlesThreshold
+          && noParticlesInCellFaceX_1>m_noParticlesThreshold
+          && noParticlesInCellFaceY1>m_noParticlesThreshold
+          && noParticlesInCellFaceY_1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
+      {
+        m_cellCentres[cellIndex]->m_state=State::Interior;
+      }
+      //Otherwise the cell is empty
+      else
+      {
+        m_cellCentres[cellIndex]->m_state=State::Empty;
+        m_cellCentres[cellIndex]->m_temperature=m_ambientTemperature;
+      }
+
+      //Set face to empty as well
+      if (noParticlesInCellFaceY_1<=m_noParticlesThreshold)
+      {
+        m_cellFacesY[cellIndex]->m_state=State::Empty;
+      }
+
+      //Go to next cellIndex
+      continue;
+    }
+
+    //Check upper y face as well
+    if (jIndex<(m_noCells-1))
+    {
+      if (m_cellFacesY[cellIndex_ij1k]->m_state!=State::Colliding)
+      {
+        //Check whether empty or not
+        int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_noParticlesContributing;
+        int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_noParticlesContributing;
+        int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_noParticlesContributing;
+        int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_noParticlesContributing;
+
+        //Get particle number for upper faces of cell, unless outermost cells in grid
+        int noParticlesInCellFaceX1=0;
+        int noParticlesInCellFaceY1=0;
+        int noParticlesInCellFaceZ1=0;
+
+        if (iIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_noParticlesContributing;
+        }
+        if (jIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_noParticlesContributing;
+        }
+        if (kIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_noParticlesContributing;
+        }
+
+        //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+        if (noParticlesInCellCentre>m_noParticlesThreshold
+            && noParticlesInCellFaceX1>m_noParticlesThreshold
+            && noParticlesInCellFaceX_1>m_noParticlesThreshold
+            && noParticlesInCellFaceY1>m_noParticlesThreshold
+            && noParticlesInCellFaceY_1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
+        {
+          m_cellCentres[cellIndex]->m_state=State::Interior;
+        }
+        //Otherwise the cell is empty
+        else
+        {
+          m_cellCentres[cellIndex]->m_state=State::Empty;
+          m_cellCentres[cellIndex]->m_temperature=m_ambientTemperature;
+        }
+
+        //Go to next cellIndex
+        continue;
+      }
+    }
+
+    //Face Z
+    //Check if lower x face colliding
+    if (m_cellFacesZ[cellIndex]->m_state!=State::Colliding)
+    {
+      //Check whether empty or not
+      int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_noParticlesContributing;
+      int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_noParticlesContributing;
+      int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_noParticlesContributing;
+      int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_noParticlesContributing;
+
+      //Get particle number for upper faces of cell, unless outermost cells in grid
+      int noParticlesInCellFaceX1=0;
+      int noParticlesInCellFaceY1=0;
+      int noParticlesInCellFaceZ1=0;
+
+      if (iIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_noParticlesContributing;
+      }
+      if (jIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_noParticlesContributing;
+      }
+      if (kIndex!=(m_noCells-1))
+      {
+        noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_noParticlesContributing;
+      }
+
+      //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+      if (noParticlesInCellCentre>m_noParticlesThreshold
+          && noParticlesInCellFaceX1>m_noParticlesThreshold
+          && noParticlesInCellFaceX_1>m_noParticlesThreshold
+          && noParticlesInCellFaceY1>m_noParticlesThreshold
+          && noParticlesInCellFaceY_1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ1>m_noParticlesThreshold
+          && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
+      {
+        m_cellCentres[cellIndex]->m_state=State::Interior;
+      }
+      //Otherwise the cell is empty
+      else
+      {
+        m_cellCentres[cellIndex]->m_state=State::Empty;
+        m_cellCentres[cellIndex]->m_temperature=m_ambientTemperature;
+      }
+
+      //Set face to empty as well
+      if (noParticlesInCellFaceZ_1<=m_noParticlesThreshold)
+      {
+        m_cellFacesZ[cellIndex]->m_state=State::Empty;
+      }
+
+      //Go to next cellIndex
+      continue;
+    }
+
+    //Check upper x face as well
+    if (kIndex<(m_noCells-1))
+    {
+      if (m_cellFacesZ[cellIndex_ijk1]->m_state!=State::Colliding)
+      {
+        //Check whether empty or not
+        int noParticlesInCellCentre=m_cellCentres[cellIndex]->m_noParticlesContributing;
+        int noParticlesInCellFaceX_1=m_cellFacesX[cellIndex]->m_noParticlesContributing;
+        int noParticlesInCellFaceY_1=m_cellFacesY[cellIndex]->m_noParticlesContributing;
+        int noParticlesInCellFaceZ_1=m_cellFacesZ[cellIndex]->m_noParticlesContributing;
+
+        //Get particle number for upper faces of cell, unless outermost cells in grid
+        int noParticlesInCellFaceX1=0;
+        int noParticlesInCellFaceY1=0;
+        int noParticlesInCellFaceZ1=0;
+
+        if (iIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceX1=m_cellFacesX[cellIndex_i1jk]->m_noParticlesContributing;
+        }
+        if (jIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceY1=m_cellFacesY[cellIndex_ij1k]->m_noParticlesContributing;
+        }
+        if (kIndex!=(m_noCells-1))
+        {
+          noParticlesInCellFaceZ1=m_cellFacesZ[cellIndex_ijk1]->m_noParticlesContributing;
+        }
+
+        //If cell centre and all faces belonging to cells have particles affecting it, then cell is interior
+        if (noParticlesInCellCentre>m_noParticlesThreshold
+            && noParticlesInCellFaceX1>m_noParticlesThreshold
+            && noParticlesInCellFaceX_1>m_noParticlesThreshold
+            && noParticlesInCellFaceY1>m_noParticlesThreshold
+            && noParticlesInCellFaceY_1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ1>m_noParticlesThreshold
+            && noParticlesInCellFaceZ_1>m_noParticlesThreshold)
+        {
+          m_cellCentres[cellIndex]->m_state=State::Interior;
+        }
+        //Otherwise the cell is empty
+        else
+        {
+          m_cellCentres[cellIndex]->m_state=State::Empty;
+          m_cellCentres[cellIndex]->m_temperature=m_ambientTemperature;
+        }
+
+        //Go to next cellIndex
+        continue;
+      }
+    }
+
+    //This section will not be reached if faces that are non-colliding are found
+    //Set temperatures for colliding cells that are colliding with a heat source object
+    //Heat source object set to j=0 plane, ie. jIndex==0
+    if (jIndex==0)
+    {
+      m_cellCentres[cellIndex]->m_temperature=m_heatSourceTemperature;
+    }
+    //Need to set empty collision cells to ambient temperature
+    else if (m_cellCentres[cellIndex]->m_noParticlesContributing==0)
+    {
+      m_cellCentres[cellIndex]->m_temperature=m_ambientTemperature;
+    }
+
+  }
 }

@@ -20,10 +20,10 @@ void MathFunctions::MinRes(const Eigen::MatrixXf &_A, const Eigen::VectorXf &_B,
   //Check that matrices are symmetric
   Eigen::MatrixXf A_transpose=_A.transpose();
 
-  if (A_transpose!=_A)
-  {
-    throw std::invalid_argument("A matrix is not symmetric.");
-  }
+//  if (A_transpose!=_A)
+//  {
+//    throw std::invalid_argument("A matrix is not symmetric.");
+//  }
 
   //Set empty matrix to compare preconditioner to
   Eigen::MatrixXf emptyMatrix;
